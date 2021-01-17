@@ -63,15 +63,15 @@ export class FirebaseSync {
     createDevice<T extends BaseDevice>(device: T): Observable<FirebaseDevice<T>> {
         return merge(this.syncIds$, new Observable<FirebaseDevice<T>>(observer => {
             this.ids$.next(this.ids$.value.concat(device.id));
-            if (isScene(device)) {
-                observer.next(new FirebaseSceneDevice(this, device));
-            } else {
-                observer.next(new FirebaseDevice<T>(this, device));
-            }
+            const firebaseDevice = isScene(device)
+                ? new FirebaseSceneDevice(this, device)
+                : new FirebaseDevice<T>(this, device);
+            observer.next(firebaseDevice);
 
             return () => {
                 const filtered = this.ids$.value.filter(v => v !== device.id);
                 this.ids$.next(filtered);
+                firebaseDevice.cancelDisconnectRule();
             };
         })).pipe(
             switchMap(async dev => {

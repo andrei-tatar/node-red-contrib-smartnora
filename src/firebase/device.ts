@@ -5,6 +5,7 @@ import { publish, refCount } from 'rxjs/operators';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
+    private onDisconnectRule?: firebase.database.OnDisconnect;
 
     state$ = new Observable<T['state']>(observer => {
         const handler = (snapshot: firebase.database.DataSnapshot) => {
@@ -37,12 +38,17 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
 
     async init() {
         const { state, noraSpecific, ...rest } = this.device;
+        this.onDisconnectRule = this.state.child('online').onDisconnect();
         await Promise.all([
             this.state.set(state),
             this.attributes.update(rest),
             this.noraSpecific.set(noraSpecific ?? {}),
-            this.state.child('online').onDisconnect().set(false),
+            this.onDisconnectRule.set(false),
         ]);
+    }
+
+    cancelDisconnectRule() {
+        setTimeout(() => this.onDisconnectRule?.cancel(), 1000);
     }
 
     updateState(update: Partial<T['state']>) {
