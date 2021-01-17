@@ -21,6 +21,7 @@ module.exports = function (RED: any) {
             convertValueType(RED, config.closevalue, config.closevalueType, { defaultValue: false });
 
         const device$ = FirebaseConnection
+            .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<OpenCloseDevice>({
@@ -69,14 +70,17 @@ module.exports = function (RED: any) {
             if (config.passthru) {
                 this.send(msg);
             }
-
-            const myOpenValue = getValue(RED, this, openValue, openType);
-            const myCloseValue = getValue(RED, this, closeValue, closeType);
-            const device = await device$.pipe(first()).toPromise();
-            if (RED.util.compareObjects(myOpenValue, msg.payload)) {
-                await device.updateState({ openPercent: 100 });
-            } else if (RED.util.compareObjects(myCloseValue, msg.payload)) {
-                await device.updateState({ openPercent: 0 });
+            try {
+                const myOpenValue = getValue(RED, this, openValue, openType);
+                const myCloseValue = getValue(RED, this, closeValue, closeType);
+                const device = await device$.pipe(first()).toPromise();
+                if (RED.util.compareObjects(myOpenValue, msg.payload)) {
+                    await device.updateState({ openPercent: 100 });
+                } else if (RED.util.compareObjects(myCloseValue, msg.payload)) {
+                    await device.updateState({ openPercent: 0 });
+                }
+            } catch (err) {
+                this.warn(err);
             }
         });
 

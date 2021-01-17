@@ -16,6 +16,7 @@ module.exports = function (RED: any) {
         const stateString$ = new Subject<string>();
 
         const device$ = FirebaseConnection
+            .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<SpeakerDevice>({
@@ -62,9 +63,12 @@ module.exports = function (RED: any) {
             if (config.passthru) {
                 this.send(msg);
             }
-
-            const device = await device$.pipe(first()).toPromise();
-            await device.updateStateSafer(msg?.payload);
+            try {
+                const device = await device$.pipe(first()).toPromise();
+                await device.updateStateSafer(msg?.payload);
+            } catch (err) {
+                this.warn(err);
+            }
         });
 
         this.on('close', () => {
@@ -77,4 +81,3 @@ module.exports = function (RED: any) {
         }
     });
 };
-

@@ -69,6 +69,7 @@ module.exports = function (RED: any) {
         const stateString$ = new Subject<string>();
 
         const device$ = FirebaseConnection
+            .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any)),
@@ -108,42 +109,45 @@ module.exports = function (RED: any) {
             if (config.passthru) {
                 this.send(msg);
             }
+            try {
+                const device = await device$.pipe(first()).toPromise();
+                if (!brightnessControl) {
+                    const myOnValue = getValue(RED, this, onValue, onType);
+                    const myOffValue = getValue(RED, this, offValue, offType);
+                    if (RED.util.compareObjects(myOnValue, msg.payload)) {
+                        await device.updateState({ on: true });
+                    } else if (RED.util.compareObjects(myOffValue, msg.payload)) {
+                        await device.updateState({ on: false });
+                    }
+                } else {
+                    if (!await device.updateStateSafer(msg?.payload)) {
+                        const brightness = Math.max(0, Math.min(100, Math.round(msg.payload)));
 
-            const device = await device$.pipe(first()).toPromise();
-            if (!brightnessControl) {
-                const myOnValue = getValue(RED, this, onValue, onType);
-                const myOffValue = getValue(RED, this, offValue, offType);
-                if (RED.util.compareObjects(myOnValue, msg.payload)) {
-                    await device.updateState({ on: true });
-                } else if (RED.util.compareObjects(myOffValue, msg.payload)) {
-                    await device.updateState({ on: false });
-                }
-            } else {
-                if (!await device.updateStateSafer(msg?.payload)) {
-                    const brightness = Math.max(0, Math.min(100, Math.round(msg.payload)));
-
-                    if (isFinite(brightness)) {
-                        if (brightness === 0) {
-                            if (brightnessOverride !== 0) {
-                                await device.updateState({
-                                    on: false,
-                                    brightness: brightnessOverride,
-                                });
+                        if (isFinite(brightness)) {
+                            if (brightness === 0) {
+                                if (brightnessOverride !== 0) {
+                                    await device.updateState({
+                                        on: false,
+                                        brightness: brightnessOverride,
+                                    });
+                                } else {
+                                    await device.updateState({
+                                        on: false,
+                                    });
+                                }
                             } else {
                                 await device.updateState({
-                                    on: false,
+                                    on: true,
+                                    brightness: brightness,
                                 });
                             }
                         } else {
-                            await device.updateState({
-                                on: true,
-                                brightness: brightness,
-                            });
+                            this.error('Payload must be a number in range 0-100');
                         }
-                    } else {
-                        this.error('Payload must be a number in range 0-100');
                     }
                 }
+            } catch (err) {
+                this.warn(err);
             }
         });
 

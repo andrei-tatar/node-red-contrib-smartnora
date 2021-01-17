@@ -2,16 +2,23 @@ import firebase from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
 
-import { combineLatest, EMPTY, merge, Observable, of } from 'rxjs';
-import { finalize, ignoreElements, map, startWith, switchMap, tap } from 'rxjs/operators';
-import { NodeInterface, publishReplayRefCountWithDelay } from '..';
+import { combineLatest, EMPTY, merge, Observable, of, timer } from 'rxjs';
+import { delayWhen, finalize, ignoreElements, map, retryWhen, startWith, switchMap, tap } from 'rxjs/operators';
+import { Logger, NodeInterface, publishReplayRefCountWithDelay } from '..';
 import { firebaseConfig, NoraConfig } from '../config';
 import { FirebaseSync } from './sync';
 
 export class FirebaseConnection {
+    private static logger: Logger | null;
+
     private static readonly configs: {
         [key: string]: Observable<FirebaseSync>;
     } = {};
+
+    static withLogger(logger: Logger) {
+        this.logger ??= logger;
+        return this;
+    }
 
     static fromConfig(config: NoraConfig, node: NodeInterface, state$: Observable<string> = EMPTY) {
         const key = this.getConfigKey(config);
@@ -20,6 +27,15 @@ export class FirebaseConnection {
             cached = this.configs[key] = this.createFromConfig(config)
                 .pipe(
                     finalize(() => delete this.configs[key]),
+                    retryWhen(err$ => err$.pipe(
+                        delayWhen(err => {
+                            node.status({ fill: 'red', shape: 'ring', text: 'error connecting' });
+                            const seconds = Math.round(Math.random() * 120) / 2 + 30;
+                            this.logger?.error(`nora: ${err}`);
+                            this.logger?.warn(`nora: trying again in ${seconds} sec`);
+                            return timer(seconds * 1000);
+                        })
+                    )),
                     publishReplayRefCountWithDelay(5000),
                 );
         }

@@ -19,6 +19,7 @@ module.exports = function (RED: any) {
         const { value: offValue, type: offType } = convertValueType(RED, config.offvalue, config.offvalueType, { defaultValue: false });
 
         const device$ = FirebaseConnection
+            .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<OnOffDevice>({
@@ -61,11 +62,16 @@ module.exports = function (RED: any) {
             }
             const myOnValue = getValue(RED, this, onValue, onType);
             const myOffValue = getValue(RED, this, offValue, offType);
-            const device = await device$.pipe(first()).toPromise();
-            if (RED.util.compareObjects(myOnValue, msg.payload)) {
-                await device.updateState({ on: true });
-            } else if (RED.util.compareObjects(myOffValue, msg.payload)) {
-                await device.updateState({ on: false });
+
+            try {
+                const device = await device$.pipe(first()).toPromise();
+                if (RED.util.compareObjects(myOnValue, msg.payload)) {
+                    await device.updateState({ on: true });
+                } else if (RED.util.compareObjects(myOffValue, msg.payload)) {
+                    await device.updateState({ on: false });
+                }
+            } catch (err) {
+                this.warn(err);
             }
         });
 

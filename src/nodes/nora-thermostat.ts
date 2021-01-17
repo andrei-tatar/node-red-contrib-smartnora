@@ -17,6 +17,7 @@ module.exports = function (RED: any) {
         const availableModes: ThermostatMode[] = config.modes.split(',');
 
         const device$ = FirebaseConnection
+            .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<TemperatureSettingDevice>({
@@ -70,33 +71,37 @@ module.exports = function (RED: any) {
                 this.send(msg);
             }
 
-            const device = await device$.pipe(first()).toPromise();
-            await device.updateStateSafer(msg?.payload, [
-                {
-                    from: 'mode',
-                    to: 'thermostatMode',
-                },
-                {
-                    from: 'setpoint',
-                    to: 'thermostatTemperatureSetpoint',
-                },
-                {
-                    from: 'setpointHigh',
-                    to: 'thermostatTemperatureSetpointHigh',
-                },
-                {
-                    from: 'setpointLow',
-                    to: 'thermostatTemperatureSetpointLow',
-                },
-                {
-                    from: 'temperature',
-                    to: 'thermostatTemperatureAmbient',
-                },
-                {
-                    from: 'humidity',
-                    to: 'thermostatHumidityAmbient',
-                },
-            ]);
+            try {
+                const device = await device$.pipe(first()).toPromise();
+                await device.updateStateSafer(msg?.payload, [
+                    {
+                        from: 'mode',
+                        to: 'thermostatMode',
+                    },
+                    {
+                        from: 'setpoint',
+                        to: 'thermostatTemperatureSetpoint',
+                    },
+                    {
+                        from: 'setpointHigh',
+                        to: 'thermostatTemperatureSetpointHigh',
+                    },
+                    {
+                        from: 'setpointLow',
+                        to: 'thermostatTemperatureSetpointLow',
+                    },
+                    {
+                        from: 'temperature',
+                        to: 'thermostatTemperatureAmbient',
+                    },
+                    {
+                        from: 'humidity',
+                        to: 'thermostatHumidityAmbient',
+                    },
+                ]);
+            } catch (err) {
+                this.warn(err);
+            }
         });
 
         this.on('close', () => {

@@ -26,6 +26,7 @@ module.exports = function (RED: any) {
             config.unjammedValueType, { defaultValue: false });
 
         const device$ = FirebaseConnection
+            .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<LockUnlockDevice>({
@@ -75,21 +76,25 @@ module.exports = function (RED: any) {
 
             const myLockValue = getValue(RED, this, lockValue, lockType);
             const myUnlockValue = getValue(RED, this, unlockValue, unlockType);
-            const device = await device$.pipe(first()).toPromise();
-            if (msg.topic?.toLowerCase() === 'jammed') {
-                const myJammedValue = getValue(RED, this, jammedValue, jammedType);
-                const myUnjammedValue = getValue(RED, this, unjammedValue, unjammedType);
-                if (RED.util.compareObjects(myJammedValue, msg.payload)) {
-                    await device.updateState({ isJammed: true });
-                } else if (RED.util.compareObjects(myUnjammedValue, msg.payload)) {
-                    await device.updateState({ isJammed: false });
+            try {
+                const device = await device$.pipe(first()).toPromise();
+                if (msg.topic?.toLowerCase() === 'jammed') {
+                    const myJammedValue = getValue(RED, this, jammedValue, jammedType);
+                    const myUnjammedValue = getValue(RED, this, unjammedValue, unjammedType);
+                    if (RED.util.compareObjects(myJammedValue, msg.payload)) {
+                        await device.updateState({ isJammed: true });
+                    } else if (RED.util.compareObjects(myUnjammedValue, msg.payload)) {
+                        await device.updateState({ isJammed: false });
+                    }
+                } else {
+                    if (RED.util.compareObjects(myLockValue, msg.payload)) {
+                        await device.updateState({ isLocked: true });
+                    } else if (RED.util.compareObjects(myUnlockValue, msg.payload)) {
+                        await device.updateState({ isLocked: false });
+                    }
                 }
-            } else {
-                if (RED.util.compareObjects(myLockValue, msg.payload)) {
-                    await device.updateState({ isLocked: true });
-                } else if (RED.util.compareObjects(myUnlockValue, msg.payload)) {
-                    await device.updateState({ isLocked: false });
-                }
+            } catch (err) {
+                this.warn(err);
             }
         });
 

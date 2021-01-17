@@ -18,6 +18,7 @@ module.exports = function (RED: any) {
         const close$ = new Subject();
 
         FirebaseConnection
+            .withLogger(RED.log)
             .fromConfig(noraConfig, this)
             .pipe(
                 switchMap(connection => connection.createDevice<SceneDevice>({
