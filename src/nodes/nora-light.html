@@ -1,0 +1,197 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-light', {
+        category: 'nora',
+        color: 'rgb(153, 204, 255)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Light',
+                required: true,
+            },
+            lightcolor: {
+                value: false,
+            },
+            brightnesscontrol: {
+                value: true,
+            },
+            turnonwhenbrightnesschanges: {
+                value: false,
+            },
+            passthru: {
+                value: false,
+            },
+            statepayload: {
+                value: true,
+            },
+            brightnessoverride: {
+                value: '',
+                validate: function (v) {
+                    return !v || RED.validators.number()(v);
+                },
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+            onvalue: {
+                value: true,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'onvalueType') : function (v) {
+                    return true
+                })
+            },
+            onvalueType: {
+                value: 'bool'
+            },
+            offvalue: {
+                value: false,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'offvalueType') : function (v) {
+                    return true
+                })
+            },
+            offvalueType: {
+                value: 'bool'
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'light',
+        label: function () {
+            return this.name || this.devicename || 'light';
+        },
+        oneditprepare: function () {
+            $('#node-input-onvalue').typedInput({
+                default: 'str',
+                typeField: $("#node-input-onvalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-offvalue').typedInput({
+                default: 'str',
+                typeField: $("#node-input-offvalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-brightnesscontrol').change(function () {
+                if (this.checked) {
+                    $('#light-on').hide();
+                    $('#light-off').hide();
+                    $('#light-full-state').show();
+                    $('#light-color').show();
+                    $('#light-brightnesschangeon').show();
+
+                    if ($('#node-input-statepayload').is(':checked')) {
+                        $('#light-brightnessoverride').hide();
+                    } else {
+                        $('#light-brightnessoverride').show();
+                    }
+                } else {
+                    $('#light-on').show();
+                    $('#light-off').show();
+                    $('#light-full-state').hide();
+                    $('#light-brightnessoverride').hide();
+                    $('#light-color').hide();
+                    $('#light-brightnesschangeon').hide();
+                }
+            });
+            $('#node-input-statepayload').change(function () {
+                if (this.checked || !$('#node-input-brightnesscontrol').is(':checked')) {
+                    $('#light-brightnessoverride').hide();
+                } else {
+                    $('#light-brightnessoverride').show();
+                }
+            });
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-light">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Light</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-brightnesscontrol"><i class="fa fa-lightbulb-o"></i> Allow brightness control: </label>
+        <input type="checkbox" checked id="node-input-brightnesscontrol" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row" id="light-brightnesschangeon">
+        <label style="width:auto" for="node-input-turnonwhenbrightnesschanges"><i class="fa fa-lightbulb-o"></i> Turn on when brightness/color changes: </label>
+        <input type="checkbox" checked id="node-input-turnonwhenbrightnesschanges" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row" id="light-color">
+        <label style="width:auto" for="node-input-lightcolor"><i class="fa fa-arrow-right"></i> Color support (RGB): </label>
+        <input type="checkbox" id="node-input-lightcolor" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row" id="light-full-state">
+        <label style="width:auto" for="node-input-statepayload"><i class="fa fa-arrow-right"></i> Send/receive complete state as payload: </label>
+        <input type="checkbox" checked id="node-input-statepayload" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row" id="light-brightnessoverride">
+        <label for="node-input-brightnessoverride" style="width:auto"><i class="fa fa-lightbulb-o"></i> Override brightness when input is 0</label>
+        <input type="text" id="node-input-brightnessoverride" style="width:100px">
+    </div>
+    <div class="form-row" id="light-on">
+        <label for="node-input-onvalue" style="padding-left:25px; margin-right:-25px">On Payload</label>
+        <input type="text" id="node-input-onvalue" style="width:70%">
+        <input type="hidden" id="node-input-onvalueType">
+    </div>
+    <div class="form-row" id="light-off">
+        <label for="node-input-offvalue" style="padding-left:25px; margin-right:-25px">Off Payload</label>
+        <input type="text" id="node-input-offvalue" style="width:70%">
+        <input type="hidden" id="node-input-offvalueType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-light">
+    <p>
+    Represents a <a href="https://developers.google.com/actions/smarthome/guides/light">Google Home light</a>. Outputs
+    a message when Google Home changes the state of the light and updates the
+    state of the light in Google Home on input messages.
+    <br>
+    If <strong>allow brightness control</strong> is unchecked, the node will work like a switch
+    outputing the On payload when the light is turned on or the off payload when turned off.
+    <br>
+    In brightnesss control mode, if <strong>Send/receive complete state</strong> is checked, the input/output payload
+    is in the following format <code>{on: boolean, brightness: number (0-100), color: { spectrumHsv: { hue: number (0-360), saturation: number (0-1), value: number (0-1) } } }</code>, otherwise the payload is only a
+    number (0-100) representing the brightness (0 meaning the light is off, 1-100 on with the specificed brightness).
+    <br>
+    <strong>Override brightness when input is 0</strong> is the value the brightness is set when <strong>Send/receive
+        complete state</strong> is unchecked and a value of 0 is received on the input. This is used so that the next
+    time you ask Google Home to turn on a light, it uses this override brightness instead of the last value. You can
+    leave the input empty to use the last brightness value.
+    <br>
+    <strong>Color HSV</strong>: represents colors as a (hue, saturation, value) triplet. Any color value in HSV may be converted to RGB. Hue has a range of [0, 360) degrees (exclusive of 360, since it wraps around to 0 degrees). Saturation and value are represented by floats in the range [0.0, 1.0].
+    <br>
+    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
+</p>
+</script>

@@ -1,0 +1,124 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-scene', {
+        category: 'nora',
+        color: 'rgb(153, 204, 255)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Scene',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            scenereversible: {
+                value: false,
+            },
+            name: {
+                value: ''
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+            onvalue: {
+                value: true,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'onvalueType') : function (v) {
+                        return true
+                    })
+            },
+            onvalueType: {
+                value: 'bool'
+            },
+            offvalue: {
+                value: false,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'offvalueType') : function (v) {
+                        return true
+                    })
+            },
+            offvalueType: {
+                value: 'bool'
+            },
+        },
+        inputs: 0,
+        outputs: 1,
+        paletteLabel: 'scene',
+        label: function () {
+            return this.name || this.devicename || 'scene';
+        },
+        oneditprepare: function () {
+            $('#node-input-onvalue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-onvalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-offvalue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-offvalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-scenereversible').change(function () {
+                if (this.checked) {
+                    $('#deactivate-payload').show();
+                } else {
+                    $('#deactivate-payload').hide();
+                }
+            });
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-scene">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Scene</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-scenereversible"><i class="fa fa-arrow-right"></i> Scene reversible: </label>
+        <input type="checkbox" id="node-input-scenereversible" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-onvalue" style="padding-left:25px; margin-right:-25px">Activate</label>
+        <input type="text" id="node-input-onvalue" style="width:70%">
+        <input type="hidden" id="node-input-onvalueType">
+    </div>
+    <div class="form-row" id="deactivate-payload">
+        <label for="node-input-offvalue" style="padding-left:25px; margin-right:-25px">Deactivate</label>
+        <input type="text" id="node-input-offvalue" style="width:70%">
+        <input type="hidden" id="node-input-offvalueType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-scene">
+<p>
+    Represents a <a href="https://developers.google.com/actions/smarthome/traits/scene">Google Home scene</a>.
+    <br>
+    Outputs the <strong>Activate</strong> message when Google Home activates the scene. If <strong>Scene reversible</strong>
+    is checked, it will output the <strong>Deactivate</strong> message when Google Home deactivates the scene.
+    <br>
+    <strong>Room Hint</strong>: Provides the current room of the scene in the user's home to simplify setup.
+</p>
+</script>

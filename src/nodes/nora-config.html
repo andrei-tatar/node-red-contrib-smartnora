@@ -1,0 +1,53 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-config', {
+        category: 'config',
+        defaults: {
+            name: {
+                value: 'nora config'
+            },
+            group: {
+                value: '',
+            },
+            notify: {
+                value: false,
+            },
+        },
+        credentials: {
+            email: { type: 'text' },
+            password: { type: 'text' },
+        },
+        paletteLabel: 'nora config',
+        label: function () {
+            return this.name || 'nora config';
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-email"><i class="fa fa-key"></i> Email</label>
+        <input type="text" id="node-config-input-email">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-email"><i class="fa fa-key"></i> Password</label>
+        <input type="text" id="node-config-input-password">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-group"><i class="fa fa-object-group"></i> Group</label>
+        <input type="text" id="node-config-input-group">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-config-input-notify"><i class="fa fa-arrow-right"></i> Send <code>msg</code> if state doesn't change after command: </label>
+        <input type="checkbox" id="node-config-input-notify" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-config">
+    <p>NORA configuration node. Create your user account by visiting 
+        <a href="https://nora-firebase.web.app/">https://nora-firebase.web.app/</a>.
+    </p>
+</script>

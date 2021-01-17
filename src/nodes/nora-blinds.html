@@ -1,0 +1,86 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-blinds', {
+        category: 'nora',
+        color: 'rgb(153, 204, 255)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Blinds',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            invert: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'blinds',
+        label: function () {
+            return this.name || this.devicename || 'blinds';
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-blinds">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Blinds</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-invert"><i class="fa fa-history"></i> Invert value: </label>
+        <input type="checkbox" id="node-input-invert" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-blinds">
+<p>
+    <strong>Experimental!</strong> Represents a <a href="https://github.com/actions-on-google/smart-home-nodejs/issues/253">Google Home Blinds</a>.
+    <br>
+    Input payload can have one or more be of the following properties
+    <code>
+        <strong>openPercent</strong> - number (0-100). represents how open the blinds are;<br>
+    </code>
+    Output payload has the properties that can be changed from Google Home:
+    <code>
+        <strong>openPercent</strong> - number (0-100). represents how open the blinds are;<br>
+    </code>
+    <br>
+    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
+</p>
+</script>

@@ -1,0 +1,176 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-thermostat', {
+        category: 'nora',
+        color: 'rgb(153, 204, 255)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Thermostat',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            modes: {
+                value: 'off',
+            },
+            unit: {
+                value: 'C',
+                validate: function (v) {return v === 'C' || v === 'F';},
+            },
+            topic: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            commandOnly: {
+                value: false,
+            },
+            queryOnly: {
+                value: false,
+            },
+            bufferRangeCelsius: {
+                value: 2,
+                validate: function (v) {
+                    return !v || RED.validators.number()(v) && v >= 0.5 && v <= 20;
+                },
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'thermostat',
+        label: function () {
+            return this.name || this.devicename || 'thermostat';
+        },
+        oneditprepare: function () {
+            var availableModes = ['off', 'heat', 'cool', 'heatcool', 'on', 'auto', 'fan-only', 'purifier', 'eco', 'dry'];
+            var row;
+            var modes = this.modes.split(',');
+            availableModes.forEach(function (mode, index) {
+                var rowIndex = Math.floor(index / 3);
+                if (index % 3 === 0) {
+                    $('#modes-container').append(
+                        '<div class="mode-row" mode-row-index="' + rowIndex + '"></div>'
+                    );
+                }
+                $('[mode-row-index=' + rowIndex + ']').append(
+                    '<div class="mode-item">' +
+                    '<input type="checkbox" ' +
+                    (modes.indexOf(mode) >= 0 ? 'checked ' : '') +
+                    (mode === 'off' ? 'disabled ' : '') +
+                    'class="thermostat-mode" data-mode="' + mode + '" id="mode-' + mode + '">' +
+                    '<label for="mode-' + mode + '">' + mode + '</label>' +
+                    '</div>'
+                );
+            });
+            if ((this.unit || 'C') === 'C') {
+                $('#unit-celsius').prop('checked', true);
+            } else {
+                $('#unit-fahrenheit').prop('checked', true);
+            }
+        },
+        oneditsave: function () {
+            var modes = [];
+            $('.thermostat-mode:checked').each(function () {
+                modes.push($(this).attr('data-mode'));
+            });
+            this.modes = modes.join(',');
+            this.unit = $('#unit-celsius').prop('checked') ? 'C' : 'F';
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-thermostat">
+    <style>
+        .mode-row {
+            display: flex;
+            flex-direction:row;
+        }
+        .mode-item {
+            display:flex;
+            flex-direction:row;
+        }
+        #modes-container {
+            display:flex;
+            flex-direction:column;
+        }
+    </style>
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Thermostat</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto"><i class="fa fa-thermometer-half"></i> Temperature Unit: </label>
+        <input style="width:auto;margin:0" id="unit-celsius" type="radio" name="unit" value="C"><label style="width:40px" for="unit-celsius">&nbsp;C</label>
+        <input style="width:auto;margin:0" id="unit-fahrenheit" type="radio" name="unit" value="F"><label  style="width:40px" for="unit-fahrenheit">&nbsp;F</label>
+    </div>
+    <div class="form-row d-flex flex-column">
+        <label style="width:100%"><i class="fa fa-cog"></i> Supported modes</label>
+        <div id="modes-container"></div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-bufferRangeCelsius" style="width:auto"><i class="fa fa-random"></i> Buffer range celsius</label>
+        <input type="text" id="node-input-bufferRangeCelsius" style="width:20%">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-commandOnly"><i class="fa fa-exchange"></i>  Indicates if the device operates using one-way (checked) or two-way communication: </label>
+        <input type="checkbox" id="node-input-commandOnly" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-queryOnly"><i class="fa fa-question"></i>  Required if the device supports query-only execution: </label>
+        <input type="checkbox" id="node-input-queryOnly" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-thermostat">
+    <p>
+    Represents a <a href="https://developers.google.com/actions/smarthome/guides/thermostat">Google Home Thermostat</a>.
+    <br>
+    Input payload can have one or more be of the following properties
+    <code>
+        <strong>mode</strong> - string. Thermostat mode, one from the selected available modes;<br>
+        <strong>setpoint</strong> - number. Setpoint temperature in degrees celsius; (if mode is not 'heatcool')<br>
+        <strong>setpointLow</strong> - number. Setpoint low temperature in degrees celsius; (if mode is 'heatcool')<br>
+        <strong>setpointHigh</strong> - number. Setpoint high temperature in degrees celsius; (if mode is 'heatcool')<br>
+        <strong>temperature</strong> - number. Ambient temperature in degrees celsius;<br>
+        <strong>humidity</strong> - number. Ambient relative humidity (0 - 100);<br>
+    </code>
+    Output payload has the properties that can be changed from Google Home:
+    <code>
+        <strong>mode</strong> - string. Thermostat mode. 'on' should set the thermostat to one of the previous working modes (heat/cool).<br>
+        <strong>setpoint</strong> - number. Setpoint temperature in degrees celsius; (if mode is not 'heatcool')<br>
+        <strong>setpointLow</strong> - number. Setpoint temperature in degrees celsius; (if mode is 'heatcool')<br>
+        <strong>setpointHigh</strong> - number. Setpoint temperature in degrees celsius; (if mode is 'heatcool')<br>
+    </code>
+    <br>
+    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
+</p>
+</script>
