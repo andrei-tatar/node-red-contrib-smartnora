@@ -12,6 +12,8 @@ export interface NodeInterface {
     log(msg: string): void;
     warn(msg: string): void;
     error(msg: string): void;
+
+    status(params: { fill: string, text: string, shape: string }): void;
 }
 
 export interface ConfigNode {

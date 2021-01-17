@@ -1,7 +1,10 @@
 import { BaseDevice, Device, isScene, SceneDevice } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { BehaviorSubject, merge, Observable } from 'rxjs';
-import { debounceTime, first, ignoreElements, publish, refCount, switchMap, timestamp } from 'rxjs/operators';
+import {
+    debounceTime, distinctUntilChanged, first, ignoreElements,
+    publish, publishReplay, refCount, switchMap,
+} from 'rxjs/operators';
 import { FirebaseDevice } from './device';
 import { FirebaseSceneDevice } from './scene-device';
 
@@ -14,6 +17,17 @@ export class FirebaseSync {
         switchMap(_ => this.removeMissingDevices()),
         ignoreElements(),
         publish(),
+        refCount(),
+    );
+
+    readonly connected$ = new Observable<boolean>(observer => {
+        const handler = (s: firebase.database.DataSnapshot) => observer.next(s.val());
+        const connected = this.db.ref('.info/connected');
+        connected.on('value', handler);
+        return () => connected.off('value', handler);
+    }).pipe(
+        distinctUntilChanged(),
+        publishReplay(1),
         refCount(),
     );
 

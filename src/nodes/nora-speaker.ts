@@ -16,7 +16,7 @@ module.exports = function (RED: any) {
         const stateString$ = new Subject<string>();
 
         const device$ = FirebaseConnection
-            .fromConfig(noraConfig, stateString$, this)
+            .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<SpeakerDevice>({
                     id: getId(config),

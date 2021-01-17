@@ -2,8 +2,8 @@ import firebase from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
 
-import { Observable, Subject } from 'rxjs';
-import { finalize, map, switchMap } from 'rxjs/operators';
+import { combineLatest, EMPTY, merge, Observable, of } from 'rxjs';
+import { finalize, ignoreElements, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { NodeInterface, publishReplayRefCountWithDelay } from '..';
 import { firebaseConfig, NoraConfig } from '../config';
 import { FirebaseSync } from './sync';
@@ -13,7 +13,7 @@ export class FirebaseConnection {
         [key: string]: Observable<FirebaseSync>;
     } = {};
 
-    static fromConfig(config: NoraConfig, updateState: Subject<string>, node: NodeInterface) {
+    static fromConfig(config: NoraConfig, node: NodeInterface, state$: Observable<string> = EMPTY) {
         const key = this.getConfigKey(config);
         let cached = this.configs[key];
         if (!cached) {
@@ -23,7 +23,25 @@ export class FirebaseConnection {
                     publishReplayRefCountWithDelay(5000),
                 );
         }
-        return cached;
+
+        return cached.pipe(
+            switchMap(connection => merge(
+                this.updateState(connection, node, state$),
+                of(connection),
+            )),
+        );
+    }
+
+    private static updateState(connection: FirebaseSync, node: NodeInterface, state$: Observable<string>) {
+        return combineLatest([connection.connected$, state$.pipe(startWith(null))])
+            .pipe(
+                tap(([connected, state]) => {
+                    node.status(connected
+                        ? { fill: 'green', shape: 'dot', text: `${state || 'connected'}` }
+                        : { fill: 'red', shape: 'ring', text: 'disconnected' });
+                }),
+                ignoreElements(),
+            );
     }
 
     private static getConfigKey(config: NoraConfig) {

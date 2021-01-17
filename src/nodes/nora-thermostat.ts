@@ -17,7 +17,7 @@ module.exports = function (RED: any) {
         const availableModes: ThermostatMode[] = config.modes.split(',');
 
         const device$ = FirebaseConnection
-            .fromConfig(noraConfig, stateString$, this)
+            .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<TemperatureSettingDevice>({
                     id: getId(config),

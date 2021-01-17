@@ -19,7 +19,7 @@ module.exports = function (RED: any) {
         const { value: offValue, type: offType } = convertValueType(RED, config.offvalue, config.offvalueType, { defaultValue: false });
 
         const device$ = FirebaseConnection
-            .fromConfig(noraConfig, stateString$, this)
+            .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.createDevice<OnOffDevice>({
                     id: getId(config),
