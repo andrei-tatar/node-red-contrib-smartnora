@@ -64,6 +64,7 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
 
         const currentState = await this.state.once('value').then(r => r.val());
         this.updateProperties(update, currentState, currentState, mapping);
+        await this.updateState(currentState);
         return true;
     }
 
