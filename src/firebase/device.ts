@@ -1,7 +1,7 @@
 import { BaseDevice } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Observable } from 'rxjs';
-import { publishReplay, refCount } from 'rxjs/operators';
+import { filter, publishReplay, refCount } from 'rxjs/operators';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
@@ -14,6 +14,7 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
         this.state.on('value', handler);
         return () => this.state.off('value', handler);
     }).pipe(
+        filter(v => !!v && typeof v === 'object'),
         publishReplay(1),
         refCount(),
     );
@@ -44,9 +45,8 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
         setTimeout(() => this.onDisconnectRule?.cancel(), 1000);
     }
 
-    updateState(update: Partial<T['state']>) {
-        // TODO: do a http call
-        // return this.state.update(update);
+    async updateState(update: Partial<T['state']>) {
+        await this.sync.updateState(this.device.id, update);
     }
 
     async updateStateSafer<TPayload, TState = Partial<T['state']>>(

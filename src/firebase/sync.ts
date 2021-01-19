@@ -88,22 +88,47 @@ export class FirebaseSync {
         }));
     }
 
+    async updateState(deviceId: string, state: Partial<Device['state']>) {
+        await this.http({
+            path: 'client/update-state',
+            body: state,
+            query: `id=${encodeURIComponent(deviceId)}`
+        });
+    }
+
     private async syncDevices(devices: FirebaseDevice[]) {
+        await this.http({
+            path: 'client/sync',
+            body: devices.map(d => d.device),
+        });
+        await Promise.all(devices.map(d => d.init()));
+    }
+
+    private async http({
+        path,
+        query = '',
+        method = 'POST',
+        body,
+    }: {
+        path: string,
+        query?: string,
+        method?: string,
+        body: any,
+    }) {
         const token = await this.app.auth().currentUser?.getIdToken();
-        const response = await fetch(`${functionsEndpoint}client/sync?group=${encodeURIComponent(this.group)}`, {
-            method: 'POST',
+        const response = await fetch(`${functionsEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`, {
+            method: method,
             agent: this.agent,
             headers: {
                 'authorization': `Bearer ${token}`,
                 'content-type': 'application/json',
             },
-            body: JSON.stringify(devices.map(d => d.device)),
+            body: body ? JSON.stringify(body) : undefined,
         });
         if (response.status !== 200) {
-            throw new Error(`Unable to sync devices (${response.status} ${await response.text()})`);
+            throw new Error(`HTTP response (${response.status} ${await response.text()})`);
         }
-
-        await Promise.all(devices.map(d => d.init()));
+        return response;
     }
 }
 
