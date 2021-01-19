@@ -19,7 +19,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.createDevice<SpeakerDevice>({
+                switchMap(connection => connection.withDevice<SpeakerDevice>({
                     id: getId(config),
                     type: 'action.devices.types.SPEAKER',
                     traits: ['action.devices.traits.Volume', 'action.devices.traits.OnOff'],

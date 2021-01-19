@@ -24,7 +24,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.createDevice<OpenCloseDevice>({
+                switchMap(connection => connection.withDevice<OpenCloseDevice>({
                     id: getId(config),
                     type: 'action.devices.types.GARAGE',
                     traits: ['action.devices.traits.OpenClose'],

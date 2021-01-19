@@ -20,7 +20,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.createDevice<TemperatureSettingDevice>({
+                switchMap(connection => connection.withDevice<TemperatureSettingDevice>({
                     id: getId(config),
                     type: 'action.devices.types.THERMOSTAT',
                     traits: ['action.devices.traits.TemperatureSetting'],

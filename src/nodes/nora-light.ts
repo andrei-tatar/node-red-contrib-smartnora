@@ -72,7 +72,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.createDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any)),
+                switchMap(connection => connection.withDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any)),
                 publishReplay(1),
                 refCount(),
                 takeUntil(close$),

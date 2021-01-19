@@ -29,7 +29,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.createDevice<LockUnlockDevice>({
+                switchMap(connection => connection.withDevice<LockUnlockDevice>({
                     id: getId(config),
                     type: 'action.devices.types.LOCK',
                     traits: ['action.devices.traits.LockUnlock'],

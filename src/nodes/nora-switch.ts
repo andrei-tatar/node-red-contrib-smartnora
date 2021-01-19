@@ -22,7 +22,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.createDevice<OnOffDevice>({
+                switchMap(connection => connection.withDevice<OnOffDevice>({
                     id: getId(config),
                     type: 'action.devices.types.SWITCH',
                     traits: ['action.devices.traits.OnOff'],

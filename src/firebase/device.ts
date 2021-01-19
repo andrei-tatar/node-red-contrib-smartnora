@@ -1,7 +1,7 @@
 import { BaseDevice } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Observable } from 'rxjs';
-import { publish, refCount } from 'rxjs/operators';
+import { publishReplay, refCount } from 'rxjs/operators';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
@@ -14,16 +14,12 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
         this.state.on('value', handler);
         return () => this.state.off('value', handler);
     }).pipe(
-        publish(),
+        publishReplay(1),
         refCount(),
     );
 
     protected get state() {
         return this.sync.states.child(this.device.id);
-    }
-
-    protected get attributes() {
-        return this.sync.attributes.child(this.device.id);
     }
 
     protected get noraSpecific() {
@@ -32,17 +28,14 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
 
     constructor(
         private sync: FirebaseSync,
-        private device: T,
+        public readonly device: Readonly<T>,
     ) {
     }
 
     async init() {
-        const { state, noraSpecific, ...rest } = this.device;
+        this.onDisconnectRule?.cancel();
         this.onDisconnectRule = this.state.child('online').onDisconnect();
         await Promise.all([
-            this.state.set(state),
-            this.attributes.update(rest),
-            this.noraSpecific.set(noraSpecific ?? {}),
             this.onDisconnectRule.set(false),
         ]);
     }
@@ -52,7 +45,8 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
     }
 
     updateState(update: Partial<T['state']>) {
-        return this.state.update(update);
+        // TODO: do a http call
+        // return this.state.update(update);
     }
 
     async updateStateSafer<TPayload, TState = Partial<T['state']>>(

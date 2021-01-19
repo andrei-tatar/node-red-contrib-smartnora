@@ -21,7 +21,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this)
             .pipe(
-                switchMap(connection => connection.createDevice<SceneDevice>({
+                switchMap(connection => connection.withDevice<SceneDevice>({
                     id: getId(config),
                     type: 'action.devices.types.SCENE',
                     traits: ['action.devices.traits.Scene'],
