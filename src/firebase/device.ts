@@ -1,10 +1,10 @@
-import { BaseDevice } from '@andrei-tatar/nora-firebase-common';
+import { Device } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { concat, defer, merge, Observable } from 'rxjs';
 import { filter, first, ignoreElements, publishReplay, refCount } from 'rxjs/operators';
 import { FirebaseSync } from './sync';
 
-export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
+export class FirebaseDevice<T extends Device = Device> {
     private onDisconnectRule?: firebase.database.OnDisconnect;
     private pendingUpdates: object | null = null;
     private updatesSuspended = true;
@@ -21,13 +21,13 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
         refCount(),
     );
 
-    updates$ = concat([
+    updates$ = concat(
         defer(async () => {
             this.onDisconnectRule?.cancel();
             this.onDisconnectRule = this.state.child('online').onDisconnect();
             await this.onDisconnectRule.set(false);
         }),
-        merge([
+        merge(
             defer(async () => {
                 let pendingUpdates = this.pendingUpdates;
                 while (pendingUpdates != null) {
@@ -44,8 +44,8 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
                     timeout.unref();
                 };
             }),
-        ])
-    ]).pipe(
+        )
+    ).pipe(
         ignoreElements()
     );
 

@@ -1,4 +1,4 @@
-import { LockUnlockDevice, LockUnlockState } from '@andrei-tatar/nora-firebase-common';
+import { LockUnlockDevice } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, skip, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { NodeInterface } from '..';
@@ -44,6 +44,8 @@ module.exports = function (RED: any) {
                         online: true,
                         isLocked: false,
                         isJammed: false,
+                    },
+                    noraSpecific: {
                     },
                 })),
                 publishReplay(1),
@@ -103,7 +105,7 @@ module.exports = function (RED: any) {
             close$.complete();
         });
 
-        function notifyState(state: LockUnlockState) {
+        function notifyState(state: LockUnlockDevice['state']) {
             if (state.isJammed) {
                 stateString$.next(`(jammed)`);
             } else {

@@ -1,4 +1,4 @@
-import { TemperatureSettingDevice, TemperatureSettingState, ThermostatMode } from '@andrei-tatar/nora-firebase-common';
+import { TemperatureSettingDevice } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, skip, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { NodeInterface } from '..';
@@ -14,7 +14,7 @@ module.exports = function (RED: any) {
 
         const close$ = new Subject();
         const stateString$ = new Subject<string>();
-        const availableModes: ThermostatMode[] = config.modes.split(',');
+        const availableModes = config.modes.split(',');
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)
@@ -41,6 +41,8 @@ module.exports = function (RED: any) {
                         thermostatMode: 'off',
                         thermostatTemperatureAmbient: 25,
                         thermostatTemperatureSetpoint: 20,
+                    },
+                    noraSpecific: {
                     },
                 })),
                 publishReplay(1),
@@ -109,7 +111,7 @@ module.exports = function (RED: any) {
             close$.complete();
         });
 
-        function notifyState(state: TemperatureSettingState) {
+        function notifyState(state: TemperatureSettingDevice['state']) {
             const setpoint = state.thermostatMode === 'heatcool' ?
                 R`${state.thermostatTemperatureSetpointLow}-${state.thermostatTemperatureSetpointHigh}` :
                 R`${state.thermostatTemperatureSetpoint}`;

@@ -1,4 +1,4 @@
-import { OpenCloseDevice, OpenCloseState } from '@andrei-tatar/nora-firebase-common';
+import { OpenCloseDevice } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, skip, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { NodeInterface } from '..';
@@ -28,6 +28,8 @@ module.exports = function (RED: any) {
                     },
                     roomHint: config.roomhint,
                     willReportState: true,
+                    noraSpecific: {
+                    },
                     state: {
                         online: true,
                         openPercent: 100,
@@ -73,7 +75,7 @@ module.exports = function (RED: any) {
             close$.complete();
         });
 
-        function notifyState(state: OpenCloseState) {
+        function notifyState(state: OpenCloseDevice['state']) {
             stateString$.next(`(${'openPercent' in state && adjustPercent(state.openPercent)}%)`);
         }
 

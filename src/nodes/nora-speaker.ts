@@ -1,4 +1,4 @@
-import { SpeakerDevice } from '@andrei-tatar/nora-firebase-common';
+import { Device, OnOffDevice, VolumeDevice } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, skip, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { NodeInterface } from '..';
@@ -19,10 +19,10 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.withDevice<SpeakerDevice>({
+                switchMap(connection => connection.withDevice<VolumeDevice & OnOffDevice>({
                     id: getId(config),
                     type: 'action.devices.types.SPEAKER',
-                    traits: ['action.devices.traits.Volume', 'action.devices.traits.OnOff'],
+                    traits: ['action.devices.traits.Volume', 'action.devices.traits.OnOff'] as never,
                     name: {
                         name: config.devicename,
                     },
@@ -33,6 +33,8 @@ module.exports = function (RED: any) {
                         online: true,
                         currentVolume: 50,
                         isMuted: false,
+                    },
+                    noraSpecific: {
                     },
                     attributes: {
                         volumeCanMuteAndUnmute: false,
@@ -76,7 +78,7 @@ module.exports = function (RED: any) {
             close$.complete();
         });
 
-        function notifyState(state: SpeakerDevice['state']) {
+        function notifyState(state: (VolumeDevice & OnOffDevice)['state']) {
             stateString$.next(`(${state.on ? 'on' : 'off'}:${state.currentVolume})`);
         }
     });

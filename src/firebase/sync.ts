@@ -1,43 +1,31 @@
-import { BaseDevice, Device, isScene, SceneDevice } from '@andrei-tatar/nora-firebase-common';
+import { Device, isScene, SceneDevice } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch from 'node-fetch';
-import { concat, merge, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, concat, merge, Observable, of, VirtualTimeScheduler } from 'rxjs';
 import {
     debounceTime, distinctUntilChanged, ignoreElements,
-    publish, publishReplay, refCount, scan, switchMap,
+    publish, publishReplay, refCount, switchMap,
 } from 'rxjs/operators';
 import { functionsEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
-    private events$ = new Subject<DeviceEvent>();
     private agent = new Agent({
         keepAlive: true,
         keepAliveMsecs: 5000,
     });
 
-    private devices$ = this.events$.pipe(
-        scan((devices: FirebaseDevice[], event: DeviceEvent) => {
-            switch (event.type) {
-                case 'add':
-                    return [...devices, event.device];
-                case 'remove':
-                    return devices.filter(d => d.device.id !== event.deviceId);
-            }
-        }, []),
-        publishReplay(1),
-        refCount(),
-    );
+    private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
 
     private sync$ = this.devices$.pipe(
         debounceTime(1000),
         switchMap(devices =>
-            concat([
+            concat(
                 this.syncDevices(devices),
-                merge(devices.map(d => d.updates$)),
-            ]),
+                merge(...devices.map(d => d.updates$)),
+            ),
         ),
         ignoreElements(),
         publish(),
@@ -75,18 +63,17 @@ export class FirebaseSync {
     }
 
     withDevice<T extends SceneDevice>(device: T): Observable<FirebaseSceneDevice<T>>;
-    withDevice<T extends BaseDevice>(device: T): Observable<FirebaseDevice<T>>;
-    withDevice<T extends BaseDevice>(device: T): Observable<FirebaseDevice<T>> {
+    withDevice<T extends Device>(device: T): Observable<FirebaseDevice<T>>;
+    withDevice<T extends Device>(device: T): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
             const firebaseDevice = isScene(device)
                 ? new FirebaseSceneDevice(this, device)
                 : new FirebaseDevice<T>(this, device);
             observer.next(firebaseDevice);
-
-            this.events$.next({ type: 'add', device: firebaseDevice });
+            this.devices$.next(this.devices$.value.concat(firebaseDevice));
 
             return () => {
-                this.events$.next({ type: 'remove', deviceId: device.id });
+                this.devices$.next(this.devices$.value.filter(d => d !== firebaseDevice));
             };
         });
     }
@@ -133,11 +120,3 @@ export class FirebaseSync {
         return response;
     }
 }
-
-type DeviceEvent = {
-    type: 'add',
-    device: FirebaseDevice,
-} | {
-    type: 'remove',
-    deviceId: string,
-};

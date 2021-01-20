@@ -7,7 +7,7 @@
   ],
   "main": "index.js",
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.0.6",
+    "@andrei-tatar/nora-firebase-common": "^1.0.9",
     "firebase": "^8.2.3",
     "node-fetch": "^2.6.1",
     "rxjs": "^6.6.3"

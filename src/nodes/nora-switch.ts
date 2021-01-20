@@ -1,4 +1,4 @@
-import { OnOffDevice, OnOffState } from '@andrei-tatar/nora-firebase-common';
+import { OnOffDevice } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, skip, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { NodeInterface } from '..';
@@ -36,7 +36,9 @@ module.exports = function (RED: any) {
                         online: true,
                     },
                     attributes: {
-                    }
+                    },
+                    noraSpecific: {
+                    },
                 })),
                 publishReplay(1),
                 refCount(),
@@ -79,7 +81,7 @@ module.exports = function (RED: any) {
             close$.complete();
         });
 
-        function notifyState(state: OnOffState) {
+        function notifyState(state: OnOffDevice['state']) {
             stateString$.next(`(${state.on ? 'on' : 'off'})`);
         }
     });

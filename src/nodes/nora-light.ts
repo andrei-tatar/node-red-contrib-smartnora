@@ -1,6 +1,6 @@
 import {
-    BrightnessDevice, BrightnessState, ColorSettingDevice, ColorSettingState,
-    Device, isBrightness, isColorSetting, OnOffDevice, OnOffState
+    BrightnessDevice, ColorSettingDevice, Device,
+    isBrightness, isColorSetting, OnOffDevice
 } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, skip, switchMap, takeUntil, tap } from 'rxjs/operators';
@@ -25,7 +25,7 @@ module.exports = function (RED: any) {
 
         const close$ = new Subject();
 
-        const deviceConfig: Device = {
+        const deviceConfig: OnOffDevice = {
             id: getId(config),
             type: 'action.devices.types.LIGHT',
             traits: ['action.devices.traits.OnOff'],
@@ -37,6 +37,8 @@ module.exports = function (RED: any) {
             state: {
                 online: true,
                 on: false,
+            },
+            noraSpecific: {
             },
             attributes: {
             },
@@ -156,15 +158,15 @@ module.exports = function (RED: any) {
             close$.complete();
         });
 
-        function notifyState(state: OnOffState & BrightnessState & ColorSettingState) {
+        function notifyState(state: OnOffDevice['state'] & BrightnessDevice['state'] & ColorSettingDevice['state']) {
             let stateString = state.on ? 'on' : 'off';
             if (brightnessControl && 'brightness' in state) {
                 stateString += ` ${state.brightness}`;
             }
             if (colorControl && 'color' in state && 'spectrumHsv' in state.color) {
-                stateString += R` hue: ${state.color.spectrumHsv.hue}°`;
-                stateString += R` sat: ${Number(state.color.spectrumHsv.saturation * 100)}%`;
-                stateString += R` val: ${Number(state.color.spectrumHsv.value * 100)}%`;
+                stateString += R` hue: ${state.color.spectrumHsv?.hue}°`;
+                stateString += R` sat: ${Number(state.color.spectrumHsv?.saturation ?? 0 * 100)}%`;
+                stateString += R` val: ${Number(state.color.spectrumHsv?.value ?? 0 * 100)}%`;
             }
 
             stateString$.next(`(${stateString})`);
