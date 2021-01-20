@@ -13,6 +13,8 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
         super(sync, device);
     }
 
+    private readonly pendingScene = this.noraSpecific.child('pendingScene');
+
     readonly activateScene$ = new Observable<{ deactivate: boolean }>(observer => {
         const handler = (snapshot: firebase.database.DataSnapshot) => {
             const value = snapshot.val();
@@ -20,11 +22,11 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
                 observer.next(value);
             }
         };
-        this.noraSpecific.child('pendingScene').on('value', handler);
+        this.pendingScene.on('value', handler);
         return () => this.state.off('value', handler);
     }).pipe(
         switchMap(async v => {
-            await this.noraSpecific.child('pendingScene').remove();
+            await this.pendingScene.remove();
             return v;
         }),
     );

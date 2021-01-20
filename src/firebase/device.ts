@@ -1,11 +1,13 @@
 import { BaseDevice } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
-import { Observable } from 'rxjs';
-import { filter, publishReplay, refCount } from 'rxjs/operators';
+import { concat, defer, merge, Observable } from 'rxjs';
+import { filter, first, ignoreElements, publishReplay, refCount } from 'rxjs/operators';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
     private onDisconnectRule?: firebase.database.OnDisconnect;
+    private pendingUpdates: object | null = null;
+    private updatesSuspended = true;
 
     state$ = new Observable<T['state']>(observer => {
         const handler = (snapshot: firebase.database.DataSnapshot) => {
@@ -19,13 +21,36 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
         refCount(),
     );
 
-    protected get state() {
-        return this.sync.states.child(this.device.id);
-    }
+    updates$ = concat([
+        defer(async () => {
+            this.onDisconnectRule?.cancel();
+            this.onDisconnectRule = this.state.child('online').onDisconnect();
+            await this.onDisconnectRule.set(false);
+        }),
+        merge([
+            defer(async () => {
+                let pendingUpdates = this.pendingUpdates;
+                while (pendingUpdates != null) {
+                    this.pendingUpdates = null;
+                    await this.sync.updateState(this.device.id, pendingUpdates);
+                    pendingUpdates = this.pendingUpdates;
+                }
+                this.updatesSuspended = false;
+            }),
+            new Observable(_ => {
+                return () => {
+                    this.updatesSuspended = true;
+                    const timeout = setTimeout(() => this.onDisconnectRule?.cancel(), 500);
+                    timeout.unref();
+                };
+            }),
+        ])
+    ]).pipe(
+        ignoreElements()
+    );
 
-    protected get noraSpecific() {
-        return this.sync.noraSpecific.child(this.device.id);
-    }
+    protected readonly state = this.sync.states.child(this.device.id);
+    protected readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
 
     constructor(
         private sync: FirebaseSync,
@@ -33,20 +58,16 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
     ) {
     }
 
-    async init() {
-        this.onDisconnectRule?.cancel();
-        this.onDisconnectRule = this.state.child('online').onDisconnect();
-        await Promise.all([
-            this.onDisconnectRule.set(false),
-        ]);
-    }
-
-    cancelDisconnectRule() {
-        setTimeout(() => this.onDisconnectRule?.cancel(), 1000);
-    }
-
     async updateState(update: Partial<T['state']>) {
-        await this.sync.updateState(this.device.id, update);
+        if (this.updatesSuspended) {
+            if (this.pendingUpdates != null) {
+                Object.assign(this.pendingUpdates, update);
+            } else {
+                this.pendingUpdates = update;
+            }
+        } else {
+            await this.sync.updateState(this.device.id, update);
+        }
     }
 
     async updateStateSafer<TPayload, TState = Partial<T['state']>>(
@@ -56,7 +77,7 @@ export class FirebaseDevice<T extends BaseDevice = BaseDevice> {
             return false;
         }
 
-        const currentState = await this.state.once('value').then(r => r.val());
+        const currentState = await this.state$.pipe(first()).toPromise();
         this.updateProperties(update, currentState, currentState, mapping);
         await this.updateState(currentState);
         return true;
