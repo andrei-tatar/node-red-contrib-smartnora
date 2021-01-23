@@ -7,7 +7,7 @@
   ],
   "main": "index.js",
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.0.9",
+    "@andrei-tatar/nora-firebase-common": "^1.0.17",
     "firebase": "^8.2.3",
     "node-fetch": "^2.6.1",
     "rxjs": "^6.6.3"
@@ -21,7 +21,7 @@
   "scripts": {
     "clean": "rm -rf build",
     "build": "tslint -p . && tsc && cp src/nodes/*.html build/nodes/ && cp -r src/nodes/icons build/nodes/icons",
-    "pub": "npm run clean && npm run build && npm publish --registry https://registry.npmjs.org/"
+    "pub": "npm run clean && npm run build && npm publish --access=public --registry https://registry.npmjs.org/"
   },
   "author": "Andrei Tatar",
   "license": "ISC",

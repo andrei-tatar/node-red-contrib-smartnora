@@ -68,7 +68,7 @@ module.exports = function (RED: any) {
             }
             try {
                 const device = await device$.pipe(first()).toPromise();
-                await device.updateStateSafer(msg?.payload);
+                await device.updateState(msg?.payload);
             } catch (err) {
                 this.warn(err);
             }

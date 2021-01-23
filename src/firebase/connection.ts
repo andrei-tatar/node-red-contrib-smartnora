@@ -75,7 +75,7 @@ export class FirebaseConnection {
                     .signInWithEmailAndPassword(config.email, config.password);
                 return app;
             }),
-            map(app => new FirebaseSync(app, config.group)),
+            map(app => new FirebaseSync(app, config.group, this.logger)),
         );
     }
 }

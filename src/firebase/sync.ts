@@ -2,11 +2,13 @@ import { Device, isScene, SceneDevice } from '@andrei-tatar/nora-firebase-common
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch from 'node-fetch';
-import { BehaviorSubject, concat, merge, Observable, of, VirtualTimeScheduler } from 'rxjs';
+import { BehaviorSubject, concat, merge, Observable, of, Subject, VirtualTimeScheduler } from 'rxjs';
 import {
     debounceTime, distinctUntilChanged, ignoreElements,
+    mergeMap,
     publish, publishReplay, refCount, switchMap,
 } from 'rxjs/operators';
+import { Logger, publishReplayRefCountWithDelay } from '..';
 import { functionsEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { FirebaseSceneDevice } from './scene-device';
@@ -14,22 +16,29 @@ import { FirebaseSceneDevice } from './scene-device';
 export class FirebaseSync {
     private agent = new Agent({
         keepAlive: true,
-        keepAliveMsecs: 5000,
+        keepAliveMsecs: 15000,
     });
 
     private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
+    private jobQueue$ = new Subject<Job>();
 
     private sync$ = this.devices$.pipe(
         debounceTime(1000),
         switchMap(devices =>
             concat(
                 this.syncDevices(devices),
-                merge(...devices.map(d => d.updates$)),
+                merge(...devices.map(d => d.connectedAndSynced$)),
             ),
         ),
         ignoreElements(),
         publish(),
         refCount(),
+    );
+
+    private handleJobs$ = this.jobQueue$.pipe(
+        mergeMap(job => this.handleJob(job), 1),
+        ignoreElements(),
+        publishReplayRefCountWithDelay(1000),
     );
 
     readonly connected$ = new Observable<boolean>(observer => {
@@ -38,7 +47,7 @@ export class FirebaseSync {
         return () => this.connected.off('value', handler);
     }).pipe(
         switchMap(connected => connected
-            ? merge(this.sync$, of(connected))
+            ? merge(this.handleJobs$, this.sync$, of(connected))
             : of(connected)
         ),
         distinctUntilChanged(),
@@ -54,6 +63,7 @@ export class FirebaseSync {
     constructor(
         private app: firebase.app.App,
         private readonly group: string = '<default>',
+        private logger: Logger | null,
     ) {
         this.uid = this.app.auth().currentUser?.uid;
         const db = firebase.database(app);
@@ -67,8 +77,8 @@ export class FirebaseSync {
     withDevice<T extends Device>(device: T): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
             const firebaseDevice = isScene(device)
-                ? new FirebaseSceneDevice(this, device)
-                : new FirebaseDevice<T>(this, device);
+                ? new FirebaseSceneDevice(this, device, this.logger)
+                : new FirebaseDevice<T>(this, device, this.logger);
             observer.next(firebaseDevice);
             this.devices$.next(this.devices$.value.concat(firebaseDevice));
 
@@ -79,7 +89,7 @@ export class FirebaseSync {
     }
 
     async updateState(deviceId: string, state: Partial<Device['state']>) {
-        await this.http({
+        await this.queueHttpCall({
             path: 'client/update-state',
             body: state,
             query: `id=${encodeURIComponent(deviceId)}`
@@ -87,13 +97,22 @@ export class FirebaseSync {
     }
 
     private async syncDevices(devices: FirebaseDevice[]) {
-        await this.http({
+        await this.queueHttpCall({
             path: 'client/sync',
             body: devices.map(d => d.device),
         });
     }
 
-    private async http({
+    private async handleJob<T>(job: Job<T>) {
+        try {
+            const result = await job.factory();
+            job.resolve(result);
+        } catch (err) {
+            job.reject(err);
+        }
+    }
+
+    private async queueHttpCall({
         path,
         query = '',
         method = 'POST',
@@ -104,19 +123,34 @@ export class FirebaseSync {
         method?: string,
         body: any,
     }) {
-        const token = await this.app.auth().currentUser?.getIdToken();
-        const response = await fetch(`${functionsEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`, {
-            method: method,
-            agent: this.agent,
-            headers: {
-                'authorization': `Bearer ${token}`,
-                'content-type': 'application/json',
-            },
-            body: body ? JSON.stringify(body) : undefined,
+        return new Promise((resolve, reject) => {
+            this.jobQueue$.next({
+                factory: async () => {
+                    const token = await this.app.auth().currentUser?.getIdToken();
+                    const url = `${functionsEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
+                    const response = await fetch(url, {
+                        method: method,
+                        agent: this.agent,
+                        headers: {
+                            'authorization': `Bearer ${token}`,
+                            'content-type': 'application/json',
+                        },
+                        body: body ? JSON.stringify(body) : undefined,
+                    });
+                    if (response.status !== 200) {
+                        throw new Error(`HTTP response (${response.status} ${await response.text()})`);
+                    }
+                    return response;
+                },
+                resolve,
+                reject,
+            });
         });
-        if (response.status !== 200) {
-            throw new Error(`HTTP response (${response.status} ${await response.text()})`);
-        }
-        return response;
     }
+}
+
+interface Job<T = any> {
+    factory: () => Promise<T>;
+    resolve: (value: T) => void;
+    reject: (error: any) => void;
 }

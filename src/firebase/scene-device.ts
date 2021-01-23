@@ -2,6 +2,7 @@ import { SceneDevice } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { Logger } from '..';
 import { FirebaseDevice } from './device';
 import { FirebaseSync } from './sync';
 
@@ -9,8 +10,9 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
     constructor(
         sync: FirebaseSync,
         device: T,
+        logger: Logger | null,
     ) {
-        super(sync, device);
+        super(sync, device, logger);
     }
 
     private readonly pendingScene = this.noraSpecific.child('pendingScene');

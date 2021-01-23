@@ -8,12 +8,12 @@ node-red-contrib-nora-firebase
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg?style=flat-square&logo=paypal)](https://paypal.me/andreitatar)
 
 This module provides a set of nodes in Node-RED for Google smart home Action integration via [NORA](https://nora-firebase.web.app/).
+This is a new implementation based on firebase for NORA.
 
-## ~~In Testing~~
+## Alpha Testing
 
-~~In order to be able to link NORA to your Google Home, send me a PM on [Node-RED Forum](https://discourse.nodered.org/u/andrei-tatar/summary) with the gmail address you use with your Google Home and I will add it to the "Testers" list.~~
+This is in alpha testing.
 
-Publicly available and free of charge. If a very big number of active users is exceeded (more than 2K...) I may need to charge or block access. Also, if you like NORA and find it useful or you simply want to support the development and adding new features, **consider donating using [Paypal Me](https://paypal.me/andreitatar)**.
 
 ## Supported nodes with devices/traits:
 
@@ -29,9 +29,10 @@ Publicly available and free of charge. If a very big number of active users is e
 | blinds     | open/close                    |
 | garage     | open/close                    |
 
+
 ## Forum
 
-For feedback, you can join the Node-RED topic opened for this project on the Node-RED forum: [Node-RED google home integration](https://discourse.nodered.org/t/node-red-google-home-integration/4829)
+Send me a message to join the NORA Discord server.
 
 ## Setup
 
@@ -46,11 +47,11 @@ For feedback, you can join the Node-RED topic opened for this project on the Nod
 
 <img src="https://raw.githubusercontent.com/andrei-tatar/node-red-contrib-nora-firebase/master/doc/3_new_nodes.png" width=200>
 
-### Get the NORA service token (*These steps need to happen only once*)
+### Create a NORA account (*These steps need to happen only once*)
 
 1. Go to [NORA homepage](https://nora-firebase.web.app/)
-2. Login with your Google or Github account
-3. Copy the generated token in your clipboard to be later used in Node-RED.
+2. Create an account using your email address and a password
+3. Verify your email address by clicking the link in the email
 
 ### Create/Adapt a Node-RED flow
 
@@ -58,7 +59,7 @@ For feedback, you can join the Node-RED topic opened for this project on the Nod
 
 <img src="https://raw.githubusercontent.com/andrei-tatar/node-red-contrib-nora-firebase/master/doc/4_flow.png" width=400>
 
-2. Edit the light node. Add a new nora-config (configs can be reused between multiple nora devices) in which you need to paste the token copied from the NORA homepage. The `Group` is used if you want to use multiple connections to the same NORA account (if you use multiple Node-RED instances).
+2. Edit the light node. Add a new nora-config (configs can be reused between multiple nora devices) in which you need to enter your credentials (email/password) used when you created your NORA account. The `Group` is used if you want to use multiple connections to the same NORA account (if you use multiple Node-RED instances - leave it blank if you don't plan on using this!).
 
 <img src="https://raw.githubusercontent.com/andrei-tatar/node-red-contrib-nora-firebase/master/doc/5_edit_node.png" width=800>
 

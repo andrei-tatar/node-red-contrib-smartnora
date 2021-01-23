@@ -126,7 +126,7 @@ module.exports = function (RED: any) {
                         await device.updateState({ on: false });
                     }
                 } else {
-                    if (!await device.updateStateSafer(msg?.payload)) {
+                    if (!await device.updateState(msg?.payload)) {
                         const brightness = Math.max(0, Math.min(100, Math.round(msg.payload)));
 
                         if (isFinite(brightness)) {

@@ -1,19 +1,21 @@
-import { Device } from '@andrei-tatar/nora-firebase-common';
+import { Device, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
-import { concat, defer, merge, NEVER, Observable, of } from 'rxjs';
-import { filter, finalize, first, ignoreElements, map, publish, publishReplay, refCount, switchMap } from 'rxjs/operators';
-import { publishReplayRefCountWithDelay } from '..';
+import { Observable } from 'rxjs';
+import { filter, ignoreElements, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
+import { Logger, publishReplayRefCountWithDelay } from '..';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends Device = Device> {
-    private pendingUpdates: object | null = null;
-    private updatesSuspended = true;
-
+    private connectedAndSynced = false;
     private disconnectRule$ = new Observable(observer => {
         const rule = this.state.child('state/online').onDisconnect();
         rule.set(false);
         observer.next(rule);
-        return () => rule.cancel();
+        this.connectedAndSynced = true;
+        return () => {
+            this.connectedAndSynced = false;
+            rule.cancel();
+        };
     }).pipe(
         publishReplayRefCountWithDelay(500),
     );
@@ -32,6 +34,12 @@ export class FirebaseDevice<T extends Device = Device> {
         return () => this.state.off('value', handler);
     }).pipe(
         filter(v => !!v && typeof v === 'object'),
+        tap(({ state }) => {
+            this.device.state = state;
+            if (!this.connectedAndSynced) {
+                this.device.state.online = true;
+            }
+        }),
         publishReplay(1),
         refCount(),
     );
@@ -41,25 +49,11 @@ export class FirebaseDevice<T extends Device = Device> {
     );
 
     readonly stateUpdates$ = this._state$.pipe(
-        filter(({ update }) => update.by !== 'client' && new Date().getTime() - update.timestamp < 10000),
+        filter(({ update }) => update.by !== 'client' && this.connectedAndSynced),
         map(({ state }) => state),
     );
 
-    updates$ = concat(
-        merge(
-            this.disconnectRule$,
-            defer(async () => {
-                let pendingUpdates = this.pendingUpdates;
-                while (pendingUpdates != null) {
-                    this.pendingUpdates = null;
-                    await this.sync.updateState(this.device.id, pendingUpdates);
-                    pendingUpdates = this.pendingUpdates;
-                }
-                this.updatesSuspended = false;
-            }),
-        )
-    ).pipe(
-        finalize(() => this.updatesSuspended = true),
+    connectedAndSynced$ = this.disconnectRule$.pipe(
         ignoreElements(),
         publish(),
         refCount(),
@@ -70,64 +64,92 @@ export class FirebaseDevice<T extends Device = Device> {
 
     constructor(
         private sync: FirebaseSync,
-        public readonly device: Readonly<T>,
+        public readonly device: T,
+        private logger: Logger | null,
     ) {
     }
 
-    async updateState(update: Partial<T['state']>) {
-        if (this.updatesSuspended) {
-            if (this.pendingUpdates != null) {
-                Object.assign(this.pendingUpdates, update);
-            } else {
-                this.pendingUpdates = update;
-            }
-        } else {
-            await this.sync.updateState(this.device.id, update);
-        }
-    }
-
-    async updateStateSafer<TPayload, TState = Partial<T['state']>>(
+    async updateState<TState = Partial<T['state']>, TPayload = TState>(
         update: TPayload,
         mapping?: { from: keyof TPayload, to: keyof TState }[]) {
+
         if (typeof update !== 'object') {
             return false;
         }
 
-        const currentState = await this.state$.pipe(first()).toPromise();
-        this.updateProperties(update, currentState, currentState, mapping);
-        await this.updateState(currentState);
+        const currentState = this.device.state;
+        const safeUpdate = await this.getSafeUpdate(update, currentState, mapping);
+        if (safeUpdate) {
+            try {
+                if (!this.connectedAndSynced) {
+                    throw new Error('device not connected/synced');
+                }
+                await this.sync.updateState(this.device.id, safeUpdate);
+            } catch (err) {
+                // update current state of device for next sync
+                this.device.state = {
+                    ...this.device.state,
+                    ...update,
+                };
+                throw err;
+            }
+        }
         return true;
     }
 
-    private updateProperties(from: any, to: any, rootState: any,
+    private async getSafeUpdate(
+        update: any,
+        currentState: any,
         mapping?: { from: keyof any, to: keyof any }[],
-        path = 'msg.payload.') {
+        path = 'msg.payload.',
+        safeUpdateObject: any = {},
+        validateUpdate?: () => Promise<boolean>) {
 
-        for (const [key, v] of Object.entries(from)) {
-            let value: any = v;
+        validateUpdate ??= async () => {
+            const result = await validate(this.device.traits, 'state', safeUpdateObject);
+            return result.valid;
+        };
 
-            const mapTo = mapping?.find(m => m.from === key)?.to ?? key;
+        for (const [key, v] of Object.entries(update)) {
+            let updateValue: any = v;
+            const updateKey = mapping?.find(m => m.from === key)?.to ?? key;
 
-            const prevValue = to[mapTo];
-            if (typeof prevValue !== typeof value) {
-                if (typeof prevValue === 'number') {
-                    value = +value;
+            const previousValue = currentState[updateKey];
+            if (typeof previousValue !== typeof updateValue) {
+                if (typeof previousValue === 'number') {
+                    updateValue = +updateValue;
                 }
 
-                if (typeof prevValue === 'boolean') {
-                    value = !!value;
+                if (typeof previousValue === 'boolean') {
+                    updateValue = !!updateValue;
                 }
             }
 
-            if (typeof value === 'object' && typeof prevValue === 'object') {
-                this.updateProperties(v, { ...prevValue }, rootState, mapping, `${path}${key}.`);
-            } else {
-                to[mapTo] = value;
+            if (typeof previousValue === 'number') {
+                updateValue = Math.round(updateValue * 10) / 10;
+            }
 
-                // if (!validate('state', rootState)) {
-                //     throw new Error(`Invalid property ${path}${key} with value ${value}`);
-                // }
+            if (typeof updateValue === 'object' && typeof previousValue === 'object') {
+                const partial = {};
+                safeUpdateObject[updateKey] = updateValue; // set it for validation
+                updateValue = await this.getSafeUpdate(updateValue, previousValue, mapping, `${path}${key}.`, partial, validateUpdate);
+                delete safeUpdateObject[updateKey];
+
+            } else {
+                if (updateValue === previousValue) {
+                    updateValue = undefined;
+                }
+            }
+
+            if (updateValue !== undefined) {
+                safeUpdateObject[updateKey] = updateValue;
+                if (!await validateUpdate()) {
+                    delete safeUpdateObject[updateKey];
+                    this.logger?.warn(`[${this.device.id}] ignoring property for update ${path}${key} - invalid for ${this.device.type}`);
+                }
             }
         }
+
+        return Object.keys(safeUpdateObject).length ? safeUpdateObject : undefined;
     }
 }
