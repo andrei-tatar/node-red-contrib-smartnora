@@ -23,7 +23,7 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
             }
         };
         this.pendingScene.on('value', handler);
-        return () => this.state.off('value', handler);
+        return () => this.pendingScene.off('value', handler);
     }).pipe(
         switchMap(async v => {
             await this.pendingScene.remove();

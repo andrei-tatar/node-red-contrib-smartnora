@@ -1,15 +1,30 @@
 import { Device } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
-import { concat, defer, merge, Observable } from 'rxjs';
-import { filter, first, ignoreElements, publishReplay, refCount } from 'rxjs/operators';
+import { concat, defer, merge, NEVER, Observable, of } from 'rxjs';
+import { filter, finalize, first, ignoreElements, map, publish, publishReplay, refCount, switchMap } from 'rxjs/operators';
+import { publishReplayRefCountWithDelay } from '..';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends Device = Device> {
-    private onDisconnectRule?: firebase.database.OnDisconnect;
     private pendingUpdates: object | null = null;
     private updatesSuspended = true;
 
-    state$ = new Observable<T['state']>(observer => {
+    private disconnectRule$ = new Observable(observer => {
+        const rule = this.state.child('state/online').onDisconnect();
+        rule.set(false);
+        observer.next(rule);
+        return () => rule.cancel();
+    }).pipe(
+        publishReplayRefCountWithDelay(500),
+    );
+
+    private readonly _state$ = new Observable<{
+        state: T['state'],
+        update: {
+            by: 'server' | 'client',
+            timestamp: number,
+        }
+    }>(observer => {
         const handler = (snapshot: firebase.database.DataSnapshot) => {
             observer.next(snapshot.val());
         };
@@ -21,13 +36,18 @@ export class FirebaseDevice<T extends Device = Device> {
         refCount(),
     );
 
+    readonly state$ = this._state$.pipe(
+        map(({ state }) => state),
+    );
+
+    readonly stateUpdates$ = this._state$.pipe(
+        filter(({ update }) => update.by !== 'client' && new Date().getTime() - update.timestamp < 10000),
+        map(({ state }) => state),
+    );
+
     updates$ = concat(
-        defer(async () => {
-            this.onDisconnectRule?.cancel();
-            this.onDisconnectRule = this.state.child('online').onDisconnect();
-            await this.onDisconnectRule.set(false);
-        }),
         merge(
+            this.disconnectRule$,
             defer(async () => {
                 let pendingUpdates = this.pendingUpdates;
                 while (pendingUpdates != null) {
@@ -37,16 +57,12 @@ export class FirebaseDevice<T extends Device = Device> {
                 }
                 this.updatesSuspended = false;
             }),
-            new Observable(_ => {
-                return () => {
-                    this.updatesSuspended = true;
-                    const timeout = setTimeout(() => this.onDisconnectRule?.cancel(), 500);
-                    timeout.unref();
-                };
-            }),
         )
     ).pipe(
-        ignoreElements()
+        finalize(() => this.updatesSuspended = true),
+        ignoreElements(),
+        publish(),
+        refCount(),
     );
 
     protected readonly state = this.sync.states.child(this.device.id);

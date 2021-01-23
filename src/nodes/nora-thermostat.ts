@@ -1,6 +1,6 @@
 import { TemperatureSettingDevice } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
-import { first, publishReplay, refCount, skip, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { getId, R } from './util';
@@ -52,8 +52,12 @@ module.exports = function (RED: any) {
 
         device$.pipe(
             switchMap(d => d.state$),
-            tap((state) => notifyState(state)),
-            skip(1),
+            tap(state => notifyState(state)),
+            takeUntil(close$),
+        ).subscribe();
+
+        device$.pipe(
+            switchMap(d => d.stateUpdates$),
             takeUntil(close$),
         ).subscribe(state => {
             notifyState(state);
