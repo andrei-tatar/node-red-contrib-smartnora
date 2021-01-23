@@ -1,3 +1,4 @@
+import { TwoFactor } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 
 module.exports = function (RED: any) {
@@ -8,6 +9,14 @@ module.exports = function (RED: any) {
             this.password = this.credentials && this.credentials.password;
             this.group = (config.group || '<default>').trim();
             this.valid = !!this.email?.length && !!this.password?.length;
+
+            if (config.twofactor === 'pin' || config.twofactor === 'ack') {
+                const twoFactor: TwoFactor = {
+                    type: config.twofactor,
+                    pin: config.twofactor === 'pin' ? config.twofactorpin?.trim() : undefined,
+                };
+                this.twoFactor = twoFactor;
+            }
         },
         {
             credentials: {

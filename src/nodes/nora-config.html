@@ -11,6 +11,12 @@
             notify: {
                 value: false,
             },
+            twofactor: {
+                value: 'off',
+            },
+            twofactorpin: {
+                value: ''
+            },
         },
         credentials: {
             email: { type: 'text' },
@@ -19,6 +25,15 @@
         paletteLabel: 'nora config',
         label: function () {
             return this.name || 'nora config';
+        },
+        oneditprepare: function () {
+            $('#node-config-input-twofactor').change(function () {
+                if ($(this).val() === 'pin') {
+                    $('#node-config-twofactor-pin').show();
+                } else {
+                    $('#node-config-twofactor-pin').hide();
+                }
+            });
         },
     });
 </script>
@@ -29,16 +44,28 @@
         <input type="text" id="node-config-input-name">
     </div>
     <div class="form-row">
-        <label for="node-config-input-email"><i class="fa fa-key"></i> Email</label>
+        <label for="node-config-input-email"><i class="fa fa-envelope"></i> Email</label>
         <input type="text" id="node-config-input-email">
     </div>
     <div class="form-row">
-        <label for="node-config-input-email"><i class="fa fa-key"></i> Password</label>
-        <input type="text" id="node-config-input-password">
+        <label for="node-config-input-password"><i class="fa fa-key"></i> Password</label>
+        <input type="password" id="node-config-input-password">
     </div>
     <div class="form-row">
         <label for="node-config-input-group"><i class="fa fa-object-group"></i> Group</label>
         <input type="text" id="node-config-input-group">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-config-input-twofactor">
+            <option value="off">Off</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-config-twofactor-pin" class="form-row">
+        <label for="node-config-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-config-input-twofactorpin">
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-config-input-notify"><i class="fa fa-arrow-right"></i> Send <code>msg</code> if state doesn't change after command: </label>

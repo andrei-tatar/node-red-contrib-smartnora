@@ -4,7 +4,7 @@ import {
 } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { NodeInterface } from '..';
+import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { convertValueType, getId, getValue, R } from './util';
 
@@ -12,7 +12,7 @@ module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-light', function (this: NodeInterface, config: any) {
         RED.nodes.createNode(this, config);
 
-        const noraConfig = RED.nodes.getNode(config.nora);
+        const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
         const brightnessControl = !!config.brightnesscontrol;
@@ -39,6 +39,7 @@ module.exports = function (RED: any) {
                 on: false,
             },
             noraSpecific: {
+                twoFactor: noraConfig.twoFactor,
             },
             attributes: {
             },
@@ -48,9 +49,7 @@ module.exports = function (RED: any) {
             deviceConfig.traits.push('action.devices.traits.Brightness');
             if (isBrightness(deviceConfig)) {
                 deviceConfig.state.brightness = 100;
-                deviceConfig.noraSpecific = {
-                    turnOnWhenBrightnessChanges,
-                };
+                deviceConfig.noraSpecific.turnOnWhenBrightnessChanges = turnOnWhenBrightnessChanges;
             }
         }
         if (colorControl) {

@@ -1,7 +1,7 @@
 import { SceneDevice } from '@andrei-tatar/nora-firebase-common';
 import { Subject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
-import { NodeInterface } from '..';
+import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { convertValueType, getId, getValue } from './util';
 
@@ -9,7 +9,7 @@ module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-scene', function (this: NodeInterface, config: any) {
         RED.nodes.createNode(this, config);
 
-        const noraConfig = RED.nodes.getNode(config.nora);
+        const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
         const { value: onValue, type: onType } = convertValueType(RED, config.onvalue, config.onvalueType, { defaultValue: true });
@@ -37,6 +37,7 @@ module.exports = function (RED: any) {
                         online: true
                     },
                     noraSpecific: {
+                        twoFactor: noraConfig.twoFactor,
                     },
                 })),
                 switchMap(device => device.activateScene$),

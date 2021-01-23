@@ -2,8 +2,9 @@ import { Device, isScene, SceneDevice } from '@andrei-tatar/nora-firebase-common
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch from 'node-fetch';
-import { BehaviorSubject, concat, merge, Observable, of, Subject, VirtualTimeScheduler } from 'rxjs';
+import { BehaviorSubject, concat, EMPTY, merge, Observable, of, Subject } from 'rxjs';
 import {
+    catchError,
     debounceTime, distinctUntilChanged, ignoreElements,
     mergeMap,
     publish, publishReplay, refCount, switchMap,
@@ -33,6 +34,10 @@ export class FirebaseSync {
         ignoreElements(),
         publish(),
         refCount(),
+        catchError(err => {
+            this.logger?.warn(`unhandled error: ${err.message}\n${err.stack}`);
+            return EMPTY;
+        }),
     );
 
     private handleJobs$ = this.jobQueue$.pipe(
