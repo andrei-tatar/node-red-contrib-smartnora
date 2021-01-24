@@ -86,39 +86,33 @@ export class FirebaseDevice<T extends Device = Device> {
         const currentState = this.device.state;
         const safeUpdate = await this.getSafeUpdate(update, currentState, mapping);
         if (safeUpdate) {
-            try {
-                if (!this.connectedAndSynced) {
-                    throw new Error('device not connected/synced');
-                }
-                await this.sync.updateState(this.device.id, safeUpdate);
-            } catch (err) {
-                // update current state of device for next sync
-                this.device.state = {
-                    ...this.device.state,
-                    ...update,
-                };
-                throw err;
+            this.device.state = {
+                ...this.device.state,
+                ...update,
+            };
+            if (!this.connectedAndSynced) {
+                throw new Error('device not connected/synced');
             }
+            await this.sync.updateState(this.device.id, safeUpdate);
         }
         return true;
     }
 
     executeCommand(command: string, params: any) {
         const updates = executeCommand({ command, params, device: this.device });
-        let state: T['state'] | null = null;
+        this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
 
         if (updates?.updateState) {
-            state = {
+            const currentState = {
                 ...this.device.state,
                 ...updates.updateState,
             };
             this.updateState(updates.updateState);
-            this._localStateUpdate$.next(state);
+            this._localStateUpdate$.next(currentState);
+            return currentState;
         }
 
-        this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
-
-        return state ?? this.device.state;
+        return this.device.state;
     }
 
     private async getSafeUpdate(
