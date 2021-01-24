@@ -6,7 +6,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
-import { convertValueType, getId, getValue, R } from './util';
+import { convertValueType, getId, getValue, R, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-light', function (this: NodeInterface, config: any) {
@@ -74,6 +74,7 @@ module.exports = function (RED: any) {
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
                 switchMap(connection => connection.withDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any)),
+                withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
                 takeUntil(close$),

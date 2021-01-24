@@ -1,6 +1,6 @@
-import { Device, validate } from '@andrei-tatar/nora-firebase-common';
+import { Device, executeCommand, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
-import { Observable } from 'rxjs';
+import { merge, Observable, Subject } from 'rxjs';
 import { filter, ignoreElements, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
 import { FirebaseSync } from './sync';
@@ -44,13 +44,18 @@ export class FirebaseDevice<T extends Device = Device> {
         refCount(),
     );
 
+    private readonly _localStateUpdate$ = new Subject<T['state']>();
+
     readonly state$ = this._state$.pipe(
         map(({ state }) => state),
     );
 
-    readonly stateUpdates$ = this._state$.pipe(
-        filter(({ update }) => update.by !== 'client' && this.connectedAndSynced),
-        map(({ state }) => state),
+    readonly stateUpdates$ = merge(
+        this._state$.pipe(
+            filter(({ update }) => update.by !== 'client' && this.connectedAndSynced),
+            map(({ state }) => state),
+        ),
+        this._localStateUpdate$,
     );
 
     connectedAndSynced$ = this.disconnectRule$.pipe(
@@ -63,6 +68,7 @@ export class FirebaseDevice<T extends Device = Device> {
     protected readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
 
     constructor(
+        readonly cloudId: string,
         private sync: FirebaseSync,
         public readonly device: T,
         private logger: Logger | null,
@@ -95,6 +101,24 @@ export class FirebaseDevice<T extends Device = Device> {
             }
         }
         return true;
+    }
+
+    executeCommand(command: string, params: any) {
+        const updates = executeCommand({ command, params, device: this.device });
+        let state: T['state'] | null = null;
+
+        if (updates?.updateState) {
+            state = {
+                ...this.device.state,
+                ...updates.updateState,
+            };
+            this.updateState(updates.updateState);
+            this._localStateUpdate$.next(state);
+        }
+
+        this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
+
+        return state ?? this.device.state;
     }
 
     private async getSafeUpdate(

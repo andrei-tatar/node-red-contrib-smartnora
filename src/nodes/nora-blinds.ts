@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
-import { getId } from './util';
+import { getId, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-blinds', function (this: NodeInterface, config: any) {
@@ -38,6 +38,7 @@ module.exports = function (RED: any) {
                     attributes: {
                     },
                 })),
+                withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
                 takeUntil(close$),

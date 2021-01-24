@@ -20,7 +20,7 @@ export class FirebaseSync {
         keepAliveMsecs: 15000,
     });
 
-    private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
+    private devices$ = new BehaviorSubject<FirebaseDevice<any>[]>([]);
     private jobQueue$ = new Subject<Job>();
 
     private sync$ = this.devices$.pipe(
@@ -81,9 +81,10 @@ export class FirebaseSync {
     withDevice<T extends Device>(device: T): Observable<FirebaseDevice<T>>;
     withDevice<T extends Device>(device: T): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
+            const cloudId = `${this.group}|${device.id}`;
             const firebaseDevice = isScene(device)
-                ? new FirebaseSceneDevice(this, device, this.logger)
-                : new FirebaseDevice<T>(this, device, this.logger);
+                ? new FirebaseSceneDevice(cloudId, this, device, this.logger)
+                : new FirebaseDevice<T>(cloudId, this, device, this.logger);
             observer.next(firebaseDevice);
             this.devices$.next(this.devices$.value.concat(firebaseDevice));
 

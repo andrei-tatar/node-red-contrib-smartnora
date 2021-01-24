@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
-import { convertValueType, getId, getValue } from './util';
+import { convertValueType, getId, getValue, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-garage', function (this: NodeInterface, config: any) {
@@ -43,6 +43,7 @@ module.exports = function (RED: any) {
                     attributes: {
                     },
                 })),
+                withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
                 takeUntil(close$),

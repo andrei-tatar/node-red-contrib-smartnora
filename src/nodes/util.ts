@@ -1,3 +1,9 @@
+import { EMPTY, merge, MonoTypeOperatorFunction, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { ConfigNode } from '..';
+import { FirebaseDevice } from '../firebase/device';
+import { LocalExecution } from '../local-execution/local-execution';
+
 export function convertValueType(RED: any, value: any, type: any,
     { defaultType = 'bool', defaultValue = false }: { defaultType?: string, defaultValue?: any } = {}) {
     if (type === 'flow' || type === 'global') {
@@ -36,3 +42,19 @@ export function R(parts: TemplateStringsArray, ...substitutions: any[]) {
     return String.raw(parts, ...rounded);
 }
 
+export function withLocalExecution<T>(config: ConfigNode): MonoTypeOperatorFunction<T> {
+    return source => source.pipe(
+        switchMap(device => {
+            if (!(device instanceof FirebaseDevice)) {
+                throw new Error('device must derive FirebaseDevice');
+            }
+
+            return merge(
+                config.localExecution
+                    ? LocalExecution.instance.registerDeviceForLocalExecution(device)
+                    : EMPTY,
+                of(device)
+            );
+        }),
+    );
+}

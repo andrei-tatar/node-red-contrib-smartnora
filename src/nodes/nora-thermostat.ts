@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
-import { getId, R } from './util';
+import { getId, R, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-thermostat', function (this: NodeInterface, config: any) {
@@ -46,6 +46,7 @@ module.exports = function (RED: any) {
                         twoFactor: noraConfig.twoFactor,
                     },
                 })),
+                withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
                 takeUntil(close$),

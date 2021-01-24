@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
-import { convertValueType, getId, getValue } from './util';
+import { convertValueType, getId, getValue, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-scene', function (this: NodeInterface, config: any) {
@@ -40,6 +40,7 @@ module.exports = function (RED: any) {
                         twoFactor: noraConfig.twoFactor,
                     },
                 })),
+                withLocalExecution(noraConfig),
                 switchMap(device => device.activateScene$),
                 takeUntil(close$),
             ).subscribe(({ deactivate }) => {

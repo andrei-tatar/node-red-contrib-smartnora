@@ -8,14 +8,14 @@
             group: {
                 value: '',
             },
-            notify: {
-                value: false,
-            },
             twofactor: {
                 value: 'off',
             },
             twofactorpin: {
                 value: ''
+            },
+            localexecution: {
+                value: true,
             },
         },
         credentials: {
@@ -68,8 +68,8 @@
         <input type="text" id="node-config-input-twofactorpin">
     </div>
     <div class="form-row">
-        <label style="width:auto" for="node-config-input-notify"><i class="fa fa-arrow-right"></i> Send <code>msg</code> if state doesn't change after command: </label>
-        <input type="checkbox" id="node-config-input-notify" style="display:inline-block; width:auto; vertical-align:top;">
+        <label style="width:auto" for="node-input-localexecution"><i class="fa fa-gear"></i> Local execution support: </label>
+        <input type="checkbox" checked id="node-input-localexecution" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
 </script>
 
