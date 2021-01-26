@@ -61,3 +61,41 @@ export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperat
         });
     };
 }
+
+const NO_EVENT = Symbol('no-event');
+
+export function throttleAfterFirstEvent<T>(time: number): MonoTypeOperatorFunction<T> {
+    return source => new Observable<T>(observer => {
+        let timer: NodeJS.Timer | null = null;
+        let lastEvent: T | Symbol = NO_EVENT;
+
+        const timeoutHandler = () => {
+            timer = null;
+            if (lastEvent !== NO_EVENT) {
+                observer.next(lastEvent as T);
+            }
+        };
+
+        return source.subscribe(
+            event => {
+                if (!timer) {
+                    lastEvent = NO_EVENT;
+                    observer.next(event);
+                    timer = setTimeout(timeoutHandler, time);
+                } else {
+                    lastEvent = event;
+                    clearTimeout(timer);
+                    timer = setTimeout(timeoutHandler, time);
+                }
+            },
+            error => {
+                timer && clearTimeout(timer);
+                observer.error(error);
+            },
+            () => {
+                timer && clearTimeout(timer);
+                observer.complete();
+            }
+        );
+    });
+}

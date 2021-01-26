@@ -28,8 +28,18 @@ export class FirebaseDevice<T extends Device = Device> {
         }
     }>(observer => {
         const handler = (snapshot: firebase.database.DataSnapshot) => observer.next(snapshot.val());
+        const noraHandler = (snapshot: firebase.database.DataSnapshot) => {
+            if (this.connectedAndSynced) {
+                // keep noraSpecific in sync as it's needed for local execution
+                this.device.noraSpecific = snapshot.val();
+            }
+        };
         this.state.on('value', handler);
-        return () => this.state.off('value', handler);
+        this.noraSpecific.on('value', noraHandler);
+        return () => {
+            this.state.off('value', handler);
+            this.noraSpecific.off('value', noraHandler);
+        };
     }).pipe(
         filter(v => !!v && typeof v === 'object'),
         publishReplay(1),

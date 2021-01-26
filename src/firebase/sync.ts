@@ -5,11 +5,11 @@ import fetch from 'node-fetch';
 import { BehaviorSubject, concat, EMPTY, merge, Observable, of, Subject } from 'rxjs';
 import {
     catchError,
-    debounceTime, distinctUntilChanged, ignoreElements,
+    debounceTime, distinctUntilChanged, groupBy, ignoreElements,
     mergeMap,
     publish, publishReplay, refCount, switchMap,
 } from 'rxjs/operators';
-import { Logger, publishReplayRefCountWithDelay } from '..';
+import { Logger, publishReplayRefCountWithDelay, throttleAfterFirstEvent } from '..';
 import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { FirebaseSceneDevice } from './scene-device';
@@ -41,6 +41,8 @@ export class FirebaseSync {
     );
 
     private handleJobs$ = this.jobQueue$.pipe(
+        groupBy(j => j.id),
+        mergeMap(jobsById => jobsById.pipe(throttleAfterFirstEvent(1000))),
         mergeMap(job => this.handleJob(job), 1),
         ignoreElements(),
         publishReplayRefCountWithDelay(1000),
@@ -99,6 +101,7 @@ export class FirebaseSync {
             path: 'update-state',
             query: `id=${encodeURIComponent(deviceId)}`,
             body: state,
+            jobId: deviceId,
         });
     }
 
@@ -108,6 +111,7 @@ export class FirebaseSync {
             path: 'sync',
             query: `version=${encodeURIComponent(version)}`,
             body: devices.map(d => d.device),
+            jobId: 'sync',
         });
     }
 
@@ -125,14 +129,17 @@ export class FirebaseSync {
         query = '',
         method = 'POST',
         body,
+        jobId,
     }: {
         path: string,
         query?: string,
         method?: string,
         body: any,
+        jobId: string,
     }) {
         return new Promise((resolve, reject) => {
             this.jobQueue$.next({
+                id: jobId,
                 factory: async () => {
                     const token = await this.app.auth().currentUser?.getIdToken();
                     const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
@@ -158,6 +165,7 @@ export class FirebaseSync {
 }
 
 interface Job<T = any> {
+    id: string;
     factory: () => Promise<T>;
     resolve: (value: T) => void;
     reject: (error: any) => void;
