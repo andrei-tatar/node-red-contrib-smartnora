@@ -77,7 +77,7 @@ export class LocalExecution {
     registerDeviceForLocalExecution(device: FirebaseDevice): Observable<never> {
         device.device.otherDeviceIds = [{ deviceId: device.cloudId }];
         device.device.customData = {
-            proxyId: LocalExecution.instance,
+            proxyId: LocalExecution.proxyId,
         };
         return merge(
             this.services$,

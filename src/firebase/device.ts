@@ -27,12 +27,7 @@ export class FirebaseDevice<T extends Device = Device> {
             timestamp: number,
         }
     }>(observer => {
-        const handler = (snapshot: firebase.database.DataSnapshot) => {
-            if (!this.connectedAndSynced) {
-                this.device.state.online = true;
-            }
-            observer.next(snapshot.val());
-        };
+        const handler = (snapshot: firebase.database.DataSnapshot) => observer.next(snapshot.val());
         this.state.on('value', handler);
         return () => this.state.off('value', handler);
     }).pipe(
@@ -51,7 +46,13 @@ export class FirebaseDevice<T extends Device = Device> {
         this._state$.pipe(
             filter(({ update }) => update.by !== 'client' && this.connectedAndSynced),
             map(({ state }) => state),
-            tap(state => this.device.state = state)
+            tap(state => {
+                const prevOnline = this.device.state.online;
+                this.device.state = state;
+                if (!this.connectedAndSynced) {
+                    this.device.state.online = prevOnline;
+                }
+            }),
         ),
         this._localStateUpdate$,
     );
