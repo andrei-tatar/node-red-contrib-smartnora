@@ -87,7 +87,7 @@ export class FirebaseDevice<T extends Device = Device> {
         if (safeUpdate) {
             this.device.state = {
                 ...this.device.state,
-                ...update,
+                ...safeUpdate,
             };
             if (!this.connectedAndSynced) {
                 throw new Error('device not connected/synced');

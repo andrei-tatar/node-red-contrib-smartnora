@@ -42,15 +42,8 @@ export class LocalExecution {
                     deviceId: string,
                     command: string,
                     params: any,
-                } | {
-                    type: 'DISCOVER',
                 }>(req);
                 switch (body.type) {
-                    case 'DISCOVER':
-                        this.sendJson(res, {
-                            deviceIds: this.devices$.value.map(d => d.cloudId),
-                        });
-                        return;
                     case 'EXECUTE':
                         const device = this.devices$.value.find(d => d.cloudId === body.deviceId);
                         this.sendJson(res, device?.executeCommand(body.command, body.params) ?? { online: false });
