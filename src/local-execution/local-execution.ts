@@ -1,6 +1,7 @@
 import { encodeAsync } from 'cbor';
 import { createSocket, Socket } from 'dgram';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { networkInterfaces } from 'os';
 import { BehaviorSubject, merge, Observable } from 'rxjs';
 import { filter, ignoreElements, switchMap } from 'rxjs/operators';
 import { publishReplayRefCountWithDelay } from '..';
@@ -27,6 +28,7 @@ export class LocalExecution {
         filter(msg => msg.data.compare(Buffer.from(DISCOVERY_PACKET, 'hex')) === 0),
         switchMap(async ({ socket, from }) => {
             const responsePacket = await encodeAsync({
+                type: 'proxy',
                 proxyId: LocalExecution.proxyId,
                 port: HTTP_PORT,
             });
@@ -63,6 +65,18 @@ export class LocalExecution {
     );
 
     private static getUniqueId() {
+        // we need a unique device id that stays the same between reboots or restarts.
+        // Google Home doesn't start a new discovery process very often
+
+        const interfaces = networkInterfaces();
+        for (const [_, networks] of Object.entries(interfaces)) {
+            for (const net of networks) {
+                if (net.mac !== '00:00:00:00:00:00') {
+                    return net.mac.replace(/:/gm, '');
+                }
+            }
+        }
+
         const random = new Array(16).fill(0).map(_ => Math.floor(Math.random() * 255));
         return Buffer.from(random).toString('hex');
     }
