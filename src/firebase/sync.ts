@@ -10,7 +10,7 @@ import {
     publish, publishReplay, refCount, switchMap,
 } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
-import { functionsEndpoint } from '../config';
+import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { FirebaseSceneDevice } from './scene-device';
 
@@ -96,15 +96,17 @@ export class FirebaseSync {
 
     async updateState(deviceId: string, state: Partial<Device['state']>) {
         await this.queueHttpCall({
-            path: 'client/update-state',
+            path: 'update-state',
+            query: `id=${encodeURIComponent(deviceId)}`,
             body: state,
-            query: `id=${encodeURIComponent(deviceId)}`
         });
     }
 
     private async syncDevices(devices: FirebaseDevice[]) {
+        const version = require('../../package.json').version;
         await this.queueHttpCall({
-            path: 'client/sync',
+            path: 'sync',
+            query: `version=${encodeURIComponent(version)}`,
             body: devices.map(d => d.device),
         });
     }
@@ -133,7 +135,7 @@ export class FirebaseSync {
             this.jobQueue$.next({
                 factory: async () => {
                     const token = await this.app.auth().currentUser?.getIdToken();
-                    const url = `${functionsEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
+                    const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
                     const response = await fetch(url, {
                         method: method,
                         agent: this.agent,

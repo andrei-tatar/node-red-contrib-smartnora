@@ -5,7 +5,7 @@ export interface NoraConfig {
     password: string;
 }
 
-export const functionsEndpoint = 'https://us-central1-nora-firebase.cloudfunctions.net/';
+export const apiEndpoint = 'https://smart-nora.eu/api/client/';
 
 export const firebaseConfig = {
     apiKey: 'AIzaSyCE4ogvmNJG8Vvkzf1wfWKhjzCALlLGLsw',

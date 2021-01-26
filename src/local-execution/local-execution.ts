@@ -1,7 +1,6 @@
 import { encodeAsync } from 'cbor';
 import { createSocket, Socket } from 'dgram';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { networkInterfaces } from 'os';
 import { BehaviorSubject, merge, Observable } from 'rxjs';
 import { filter, ignoreElements, switchMap } from 'rxjs/operators';
 import { publishReplayRefCountWithDelay } from '..';
@@ -13,10 +12,11 @@ const DISCOVERY_REPLY_PORT = 6989;
 const HTTP_PORT = 6987;
 
 export class LocalExecution {
+    private static readonly proxyId = LocalExecution.getUniqueId();
+
     static readonly instance = new LocalExecution();
 
     private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
-    private proxyId = this.getUniqueId();
 
     private discovery$ = new Observable<{ socket: Socket, data: Buffer, from: string }>(observer => {
         const socket = createSocket('udp4');
@@ -27,7 +27,7 @@ export class LocalExecution {
         filter(msg => msg.data.compare(Buffer.from(DISCOVERY_PACKET, 'hex')) === 0),
         switchMap(async ({ socket, from }) => {
             const responsePacket = await encodeAsync({
-                proxyId: this.proxyId,
+                proxyId: LocalExecution.proxyId,
                 port: HTTP_PORT,
             });
             socket.send(responsePacket, DISCOVERY_REPLY_PORT, from);
@@ -69,8 +69,16 @@ export class LocalExecution {
         publishReplayRefCountWithDelay(1000),
     );
 
+    private static getUniqueId() {
+        const random = new Array(16).fill(0).map(_ => Math.floor(Math.random() * 255));
+        return Buffer.from(random).toString('hex');
+    }
+
     registerDeviceForLocalExecution(device: FirebaseDevice): Observable<never> {
         device.device.otherDeviceIds = [{ deviceId: device.cloudId }];
+        device.device.customData = {
+            proxyId: LocalExecution.instance,
+        };
         return merge(
             this.services$,
             new Observable(_ => {
@@ -82,18 +90,6 @@ export class LocalExecution {
         ).pipe(
             ignoreElements(),
         );
-    }
-
-    private getUniqueId() {
-        const interfaces = networkInterfaces();
-        for (const [_, networks] of Object.entries(interfaces)) {
-            for (const net of networks) {
-                if (net.mac !== '00:00:00:00:00:00') {
-                    return net.mac.replace(/:/gm, '');
-                }
-            }
-        }
-        throw new Error('need a better machine id');
     }
 
     private readBody<T>(request: IncomingMessage) {
