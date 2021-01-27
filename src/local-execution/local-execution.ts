@@ -2,7 +2,7 @@ import { encodeAsync } from 'cbor';
 import { createSocket, Socket } from 'dgram';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { networkInterfaces } from 'os';
-import { BehaviorSubject, merge, Observable } from 'rxjs';
+import { BehaviorSubject, EMPTY, merge, Observable } from 'rxjs';
 import { filter, ignoreElements, switchMap } from 'rxjs/operators';
 import { publishReplayRefCountWithDelay } from '..';
 import { FirebaseDevice } from '../firebase/device';
@@ -82,6 +82,11 @@ export class LocalExecution {
     }
 
     registerDeviceForLocalExecution(device: FirebaseDevice): Observable<never> {
+        if (device.device.noraSpecific?.twoFactor?.type?.length) {
+            // two - factor devices don't support local execution path;
+            return EMPTY;
+        }
+
         device.device.otherDeviceIds = [{ deviceId: device.cloudId }];
         device.device.customData = {
             proxyId: LocalExecution.proxyId,
