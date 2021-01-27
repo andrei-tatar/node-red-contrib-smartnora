@@ -1,4 +1,4 @@
-import { Device, executeCommand, validate } from '@andrei-tatar/nora-firebase-common';
+import { Device, executeCommand, isColorSetting, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
 import { filter, ignoreElements, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
@@ -130,7 +130,9 @@ export class FirebaseDevice<T extends Device = Device> {
         mapping?: { from: keyof any, to: keyof any }[],
         path = 'msg.payload.',
         safeUpdateObject: any = {},
-        validateUpdate?: () => Promise<boolean>) {
+        validateUpdate?: () => Promise<boolean>,
+        removePropertiesIfSameValue = true,
+    ) {
 
         validateUpdate ??= async () => {
             const result = await validate(this.device.traits, 'state', safeUpdateObject);
@@ -153,17 +155,24 @@ export class FirebaseDevice<T extends Device = Device> {
             }
 
             if (typeof previousValue === 'number') {
-                updateValue = Math.round(updateValue * 10) / 10;
+
+                // hackish way to preserve  accuracy on sat/val
+                const skipRoundingNumbers = isColorSetting(this.device) && path.indexOf('color') >= 0;
+
+                if (!skipRoundingNumbers) {
+                    updateValue = Math.round(updateValue * 10) / 10;
+                }
             }
 
             if (typeof updateValue === 'object' && typeof previousValue === 'object') {
                 const partial = {};
                 safeUpdateObject[updateKey] = updateValue; // set it for validation
-                updateValue = await this.getSafeUpdate(updateValue, previousValue, mapping, `${path}${key}.`, partial, validateUpdate);
+                updateValue = await this.getSafeUpdate(updateValue, previousValue, mapping,
+                    `${path}${key}.`, partial, validateUpdate, false);
                 delete safeUpdateObject[updateKey];
 
             } else {
-                if (updateValue === previousValue) {
+                if (removePropertiesIfSameValue && updateValue === previousValue) {
                     updateValue = undefined;
                 }
             }

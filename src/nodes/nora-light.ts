@@ -169,8 +169,8 @@ module.exports = function (RED: any) {
             }
             if (colorControl && 'color' in state && 'spectrumHsv' in state.color) {
                 stateString += R` hue: ${state.color.spectrumHsv?.hue}°`;
-                stateString += R` sat: ${Number(state.color.spectrumHsv?.saturation ?? 0 * 100)}%`;
-                stateString += R` val: ${Number(state.color.spectrumHsv?.value ?? 0 * 100)}%`;
+                stateString += R` sat: ${(state.color.spectrumHsv?.saturation ?? 0) * 100}%`;
+                stateString += R` val: ${(state.color.spectrumHsv?.value ?? 0) * 100}%`;
             }
 
             stateString$.next(`(${stateString})`);
