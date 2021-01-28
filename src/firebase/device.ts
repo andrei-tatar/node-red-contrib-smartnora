@@ -1,4 +1,4 @@
-import { Device, executeCommand, isColorSetting, validate } from '@andrei-tatar/nora-firebase-common';
+import { Device, executeCommand, isColorSetting, updateHasChanges, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
 import { filter, ignoreElements, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
@@ -94,7 +94,7 @@ export class FirebaseDevice<T extends Device = Device> {
 
         const currentState = this.device.state;
         const safeUpdate = this.getSafeUpdate(update, currentState, mapping);
-        if (safeUpdate) {
+        if (safeUpdate && updateHasChanges(safeUpdate, this.device.state)) {
             this.device.state = {
                 ...this.device.state,
                 ...safeUpdate,
@@ -109,8 +109,6 @@ export class FirebaseDevice<T extends Device = Device> {
 
     executeCommand(command: string, params: any) {
         const updates = executeCommand({ command, params, device: this.device });
-        // tslint:disable-next-line: no-console
-        console.log(params, updates);
         this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
 
         if (updates?.updateState) {
@@ -132,11 +130,9 @@ export class FirebaseDevice<T extends Device = Device> {
         mapping?: { from: keyof any, to: keyof any }[],
         path = 'msg.payload.',
         safeUpdateObject: any = {},
-        validateUpdate?: () => boolean,
-        removePropertiesIfSameValue = true,
+        isValid?: () => boolean,
     ) {
-
-        validateUpdate ??= () => validate(this.device.traits, 'state', safeUpdateObject).valid;
+        isValid ??= () => validate(this.device.traits, 'state', safeUpdateObject).valid;
 
         for (const [key, v] of Object.entries(update)) {
             let updateValue: any = v;
@@ -154,35 +150,32 @@ export class FirebaseDevice<T extends Device = Device> {
             }
 
             if (typeof previousValue === 'number') {
-
-                // hackish way to preserve  accuracy on sat/val
+                // hackish way to preserve accuracy on sat/val
                 const skipRoundingNumbers = isColorSetting(this.device) && path.indexOf('color') >= 0;
 
                 if (!skipRoundingNumbers) {
+                    // round up temperature and humidity to 1 digit as assistant doesn't support accuracy better than .5
+                    // helps to keep the updates lower
                     updateValue = Math.round(updateValue * 10) / 10;
                 }
             }
 
             if (typeof updateValue === 'object' && typeof previousValue === 'object') {
                 const partial = {};
-                safeUpdateObject[updateKey] = updateValue; // set it for validation
-                updateValue = this.getSafeUpdate(updateValue, previousValue, mapping, `${path}${key}.`, partial, validateUpdate, false);
+                safeUpdateObject[updateKey] = partial; // set it for validation
+                updateValue = this.getSafeUpdate(updateValue, previousValue, mapping, `${path}${key}.`, partial, isValid);
                 delete safeUpdateObject[updateKey];
-            } else {
-                if (removePropertiesIfSameValue && updateValue === previousValue) {
-                    updateValue = undefined;
-                }
             }
 
             if (updateValue !== undefined) {
                 safeUpdateObject[updateKey] = updateValue;
-                if (!validateUpdate()) {
+                if (!isValid()) {
                     delete safeUpdateObject[updateKey];
                     this.logger?.warn(`[${this.device.id}] ignoring property for update ${path}${key} - invalid for ${this.device.type}`);
                 }
             }
         }
 
-        return Object.keys(safeUpdateObject).length ? safeUpdateObject : undefined;
+        return safeUpdateObject;
     }
 }
