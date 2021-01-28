@@ -40,6 +40,7 @@ module.exports = function (RED: any) {
                     attributes: {
                         volumeCanMuteAndUnmute: false,
                         volumeMaxLevel: 100,
+                        levelStepSize: parseInt(config.step, 10) || 1,
                     },
                 })),
                 withLocalExecution(noraConfig),

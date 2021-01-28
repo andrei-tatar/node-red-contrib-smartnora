@@ -93,7 +93,7 @@ export class FirebaseDevice<T extends Device = Device> {
         }
 
         const currentState = this.device.state;
-        const safeUpdate = await this.getSafeUpdate(update, currentState, mapping);
+        const safeUpdate = this.getSafeUpdate(update, currentState, mapping);
         if (safeUpdate) {
             this.device.state = {
                 ...this.device.state,
@@ -109,6 +109,8 @@ export class FirebaseDevice<T extends Device = Device> {
 
     executeCommand(command: string, params: any) {
         const updates = executeCommand({ command, params, device: this.device });
+        // tslint:disable-next-line: no-console
+        console.log(params, updates);
         this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
 
         if (updates?.updateState) {
@@ -124,20 +126,17 @@ export class FirebaseDevice<T extends Device = Device> {
         return this.device.state;
     }
 
-    private async getSafeUpdate(
+    private getSafeUpdate(
         update: any,
         currentState: any,
         mapping?: { from: keyof any, to: keyof any }[],
         path = 'msg.payload.',
         safeUpdateObject: any = {},
-        validateUpdate?: () => Promise<boolean>,
+        validateUpdate?: () => boolean,
         removePropertiesIfSameValue = true,
     ) {
 
-        validateUpdate ??= async () => {
-            const result = await validate(this.device.traits, 'state', safeUpdateObject);
-            return result.valid;
-        };
+        validateUpdate ??= () => validate(this.device.traits, 'state', safeUpdateObject).valid;
 
         for (const [key, v] of Object.entries(update)) {
             let updateValue: any = v;
@@ -167,10 +166,8 @@ export class FirebaseDevice<T extends Device = Device> {
             if (typeof updateValue === 'object' && typeof previousValue === 'object') {
                 const partial = {};
                 safeUpdateObject[updateKey] = updateValue; // set it for validation
-                updateValue = await this.getSafeUpdate(updateValue, previousValue, mapping,
-                    `${path}${key}.`, partial, validateUpdate, false);
+                updateValue = this.getSafeUpdate(updateValue, previousValue, mapping, `${path}${key}.`, partial, validateUpdate, false);
                 delete safeUpdateObject[updateKey];
-
             } else {
                 if (removePropertiesIfSameValue && updateValue === previousValue) {
                     updateValue = undefined;
@@ -179,7 +176,7 @@ export class FirebaseDevice<T extends Device = Device> {
 
             if (updateValue !== undefined) {
                 safeUpdateObject[updateKey] = updateValue;
-                if (!await validateUpdate()) {
+                if (!validateUpdate()) {
                     delete safeUpdateObject[updateKey];
                     this.logger?.warn(`[${this.device.id}] ignoring property for update ${path}${key} - invalid for ${this.device.type}`);
                 }
