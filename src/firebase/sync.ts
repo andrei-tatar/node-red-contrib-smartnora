@@ -21,13 +21,13 @@ export class FirebaseSync {
     });
 
     private devices$ = new BehaviorSubject<FirebaseDevice<any>[]>([]);
-    private jobQueue$ = new Subject<Job>();
+    private jobQueue$ = new Subject<JobInQueue>();
 
     private sync$ = this.devices$.pipe(
         debounceTime(1000),
         switchMap(devices =>
             concat(
-                this.syncDevices(devices),
+                this.syncDevices(),
                 merge(...devices.map(d => d.connectedAndSynced$)),
             ),
         ),
@@ -41,8 +41,10 @@ export class FirebaseSync {
     );
 
     private handleJobs$ = this.jobQueue$.pipe(
-        groupBy(j => j.id),
-        mergeMap(jobsById => jobsById.pipe(throttleAfterFirstEvent(1000))),
+        groupBy(this.getJobId),
+        mergeMap(jobsByType => jobsByType.pipe(
+            throttleAfterFirstEvent(5000, this.mergeJob)
+        )),
         mergeMap(job => this.handleJob(job), 1),
         ignoreElements(),
         publishReplayRefCountWithDelay(1000),
@@ -97,76 +99,136 @@ export class FirebaseSync {
     }
 
     async updateState(deviceId: string, state: Partial<Device['state']>) {
-        await this.queueHttpCall({
-            path: 'update-state',
-            query: `id=${encodeURIComponent(deviceId)}`,
-            body: state,
-            jobId: deviceId,
+        await this.queueJob({
+            type: 'report-state',
+            deviceId,
+            update: state,
         });
     }
 
-    private async syncDevices(devices: FirebaseDevice[]) {
-        const version = require('../../package.json').version;
-        await this.queueHttpCall({
-            path: 'sync',
-            query: `version=${encodeURIComponent(version)}`,
-            body: devices.map(d => d.device),
-            jobId: 'sync',
+    private async syncDevices() {
+        await this.queueJob({
+            type: 'sync',
         });
     }
 
-    private async handleJob<T>(job: Job<T>) {
-        try {
-            const result = await job.factory();
-            job.resolve(result);
-        } catch (err) {
-            job.reject(err);
+    private getJobId(j: JobInQueue) {
+        switch (j.job.type) {
+            case 'sync':
+                return j.job.type;
+            case 'report-state':
+                return `${j.job.type}-${j.job.deviceId}`;
         }
     }
 
-    private async queueHttpCall({
+    private mergeJob(current: JobInQueue, previous: JobInQueue): JobInQueue {
+        switch (current.job.type) {
+            case 'sync':
+                if (previous.job.type !== 'sync') {
+                    throw new Error(`can't merge jobs with different types`);
+                }
+                previous.resolve();
+                return current;
+
+            case 'report-state':
+                if (previous.job.type !== 'report-state') {
+                    throw new Error(`can't merge jobs with different types`);
+                }
+                previous.reject(new Error('update was merged with a new one'));
+                return {
+                    job: {
+                        type: current.job.type,
+                        deviceId: current.job.deviceId,
+                        update: {
+                            ...previous.job.update,
+                            ...current.job.update,
+                        },
+                    },
+                    resolve: current.resolve,
+                    reject: current.reject,
+                };
+        }
+    }
+
+    private async handleJob({ job, reject, resolve }: JobInQueue) {
+        try {
+            switch (job.type) {
+                case 'sync':
+                    const devices = this.devices$.value;
+                    const version = require('../../package.json').version;
+                    await this.doHttpCall({
+                        path: 'sync',
+                        query: `version=${encodeURIComponent(version)}`,
+                        body: devices.map(d => d.device),
+                    });
+                    break;
+                case 'report-state':
+                    await this.doHttpCall({
+                        path: 'update-state',
+                        query: `id=${encodeURIComponent(job.deviceId)}`,
+                        body: job.update,
+                    });
+                    break;
+            }
+            resolve();
+        } catch (err) {
+            reject(err);
+        }
+    }
+
+    private async queueJob(job: Job) {
+        return new Promise((resolve, reject) => {
+            this.jobQueue$.next({
+                job,
+                resolve,
+                reject
+            });
+        });
+    }
+
+    private async doHttpCall({
         path,
         query = '',
         method = 'POST',
         body,
-        jobId,
     }: {
         path: string,
         query?: string,
         method?: string,
         body: any,
-        jobId: string,
     }) {
-        return new Promise((resolve, reject) => {
-            this.jobQueue$.next({
-                id: jobId,
-                factory: async () => {
-                    const token = await this.app.auth().currentUser?.getIdToken();
-                    const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
-                    const response = await fetch(url, {
-                        method: method,
-                        agent: this.agent,
-                        headers: {
-                            'authorization': `Bearer ${token}`,
-                            'content-type': 'application/json',
-                        },
-                        body: body ? JSON.stringify(body) : undefined,
-                    });
-                    if (response.status !== 200) {
-                        throw new Error(`HTTP response (${response.status} ${await response.text()})`);
-                    }
-                    return response;
-                },
-                resolve,
-                reject,
-            });
+        const token = await this.app.auth().currentUser?.getIdToken();
+        const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
+        const response = await fetch(url, {
+            method: method,
+            agent: this.agent,
+            headers: {
+                'authorization': `Bearer ${token}`,
+                'content-type': 'application/json',
+            },
+            body: body ? JSON.stringify(body) : undefined,
         });
+        if (response.status !== 200) {
+            throw new Error(`HTTP response (${response.status} ${await response.text()})`);
+        }
+        return response;
     }
 }
 
-interface Job<T = any> {
-    id: string;
-    factory: () => Promise<T>;
-    resolve: (value: T) => void;
-    reject: (error: any) => void;
+interface SyncJob {
+    type: 'sync';
+}
+
+interface ReportStateJob {
+    type: 'report-state';
+    deviceId: string;
+    update: { [key: string]: any };
+}
+
+type Job = SyncJob | ReportStateJob;
+
+interface JobInQueue {
+    job: Job;
+    resolve: (value?: any) => void;
+    reject: (err: Error) => void;
 }
