@@ -7,22 +7,27 @@
   ],
   "main": "index.js",
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.0.28",
+    "@andrei-tatar/nora-firebase-common": "^1.0.29",
     "cbor": "^6.0.1",
     "firebase": "^8.2.3",
     "node-fetch": "^2.6.1",
     "rxjs": "^6.6.3"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.2.0",
     "@types/node-fetch": "^2.5.8",
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1",
     "ts-node": "^9.1.1",
     "tslint": "^6.1.3",
     "typescript": "^4.1.3"
   },
   "scripts": {
     "clean": "rm -rf build",
-    "build": "tslint -p . && tsc && cp src/nodes/*.html build/nodes/ && cp -r src/nodes/icons build/nodes/icons",
-    "pub": "npm run clean && npm run build && npm publish --access=public --registry https://registry.npmjs.org/"
+    "build": "tslint -p . && tsc && npm test && cp src/nodes/*.html build/nodes/ && cp -r src/nodes/icons build/nodes/icons",
+    "pub": "npm run clean && npm run build && npm publish --access=public --registry https://registry.npmjs.org/",
+    "test": "mocha --reporter spec --require ts-node/register 'src/**/*.test.ts'"
   },
   "author": "Andrei Tatar",
   "license": "ISC",

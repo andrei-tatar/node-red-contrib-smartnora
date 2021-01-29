@@ -6,7 +6,7 @@
             "request": "launch",
             "name": "Launch",
             "args": [
-                "./src/index.ts",
+                "${file}",
             ],
             "runtimeArgs": [
                 "--nolazy",

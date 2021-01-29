@@ -1,8 +1,9 @@
-import { Device, executeCommand, isColorSetting, updateHasChanges, validate } from '@andrei-tatar/nora-firebase-common';
+import { Device, executeCommand, updateHasChanges, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
 import { filter, ignoreElements, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
+import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends Device = Device> {
@@ -93,7 +94,15 @@ export class FirebaseDevice<T extends Device = Device> {
         }
 
         const currentState = this.device.state;
-        const safeUpdate = this.getSafeUpdate(update, currentState, mapping);
+        const safeUpdate = {};
+        getSafeUpdate({
+            update,
+            currentState,
+            safeUpdateObject: safeUpdate,
+            isValid: () => validate(this.device.traits, 'state', safeUpdate).valid,
+            mapping,
+            warn: (msg) => this?.logger?.warn(`[${this.device.name.name}] ignoring property ${msg}`),
+        });
         if (safeUpdate && updateHasChanges(safeUpdate, this.device.state)) {
             this.device.state = {
                 ...this.device.state,
@@ -124,58 +133,5 @@ export class FirebaseDevice<T extends Device = Device> {
         return this.device.state;
     }
 
-    private getSafeUpdate(
-        update: any,
-        currentState: any,
-        mapping?: { from: keyof any, to: keyof any }[],
-        path = 'msg.payload.',
-        safeUpdateObject: any = {},
-        isValid?: () => boolean,
-    ) {
-        isValid ??= () => validate(this.device.traits, 'state', safeUpdateObject).valid;
 
-        for (const [key, v] of Object.entries(update)) {
-            let updateValue: any = v;
-            const updateKey = mapping?.find(m => m.from === key)?.to ?? key;
-
-            const previousValue = currentState[updateKey];
-            if (typeof previousValue !== typeof updateValue) {
-                if (typeof previousValue === 'number') {
-                    updateValue = +updateValue;
-                }
-
-                if (typeof previousValue === 'boolean') {
-                    updateValue = !!updateValue;
-                }
-            }
-
-            if (typeof previousValue === 'number') {
-                // hackish way to preserve accuracy on sat/val
-                const skipRoundingNumbers = isColorSetting(this.device) && path.indexOf('color') >= 0;
-
-                if (!skipRoundingNumbers) {
-                    // round up temperature and humidity to 1 digit as assistant doesn't support accuracy better than .5
-                    // helps to keep the updates lower
-                    updateValue = Math.round(updateValue * 10) / 10;
-                }
-            }
-
-            if (typeof updateValue === 'object' && typeof previousValue === 'object') {
-                const partial = {};
-                safeUpdateObject[updateKey] = partial; // set it for validation
-                updateValue = this.getSafeUpdate(updateValue, previousValue, mapping, `${path}${key}.`, partial, isValid);
-                delete safeUpdateObject[updateKey];
-            }
-
-            if (updateValue !== undefined) {
-                safeUpdateObject[updateKey] = updateValue;
-                if (!isValid()) {
-                    delete safeUpdateObject[updateKey];
-                    this.logger?.warn(`[${this.device.id}] ignoring property for update ${path}${key} - invalid for ${this.device.type}`);
-                }
-            }
-        }
-
-        return safeUpdateObject;
-    }
 }
