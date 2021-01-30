@@ -58,11 +58,10 @@ export class FirebaseDevice<T extends Device = Device> {
             filter(({ update }) => update.by !== 'client' && this.connectedAndSynced),
             map(({ state }) => state),
             tap(state => {
-                const prevOnline = this.device.state.online;
-                this.device.state = state;
-                if (!this.connectedAndSynced) {
-                    this.device.state.online = prevOnline;
-                }
+                this.device.state = {
+                    ...state,
+                    online: this.device.state.online,
+                };
             }),
         ),
         this._localStateUpdate$,
@@ -132,6 +131,4 @@ export class FirebaseDevice<T extends Device = Device> {
 
         return this.device.state;
     }
-
-
 }
