@@ -7,7 +7,7 @@
   ],
   "main": "index.js",
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.0.29",
+    "@andrei-tatar/nora-firebase-common": "^1.0.32",
     "cbor": "^6.0.1",
     "firebase": "^8.2.3",
     "node-fetch": "^2.6.1",
@@ -43,7 +43,8 @@
       "noraf-outlet": "build/nodes/nora-outlet.js",
       "noraf-light": "build/nodes/nora-light.js",
       "noraf-garage": "build/nodes/nora-garage.js",
-      "noraf-lock": "build/nodes/nora-lock.js"
+      "noraf-lock": "build/nodes/nora-lock.js",
+      "noraf-notify": "build/nodes/nora-notify.js"
     }
   }
 }

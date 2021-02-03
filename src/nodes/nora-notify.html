@@ -1,0 +1,62 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-notify', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            title: {
+                value: 'Sample Title',
+                required: true,
+            },
+            body: {
+                value: '',
+                required: true,
+            },
+            icon: {
+                value: undefined,
+            },
+            name: {
+                value: ''
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'notify',
+        label: function () {
+            return this.name || this.title || 'notify';
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-notify">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-title"><i class="fa fa-i-cursor"></i> Title</label>
+        <input type="text" id="node-input-title">
+    </div>
+    <div class="form-row">
+        <label for="node-input-body"><i class="fa fa-i-cursor"></i> Body</label>
+        <input type="text" id="node-input-body">
+    </div>
+    <div class="form-row">
+        <label for="node-input-icon" style="padding-left:25px; margin-right:-25px">Icon</label>
+        <input type="text" id="node-input-icon">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-notify">
+    <p>
+        Use this node to send push notifications to your subscribed devices.
+    </p>
+</script>

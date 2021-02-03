@@ -1,4 +1,4 @@
-import { Device, isScene, SceneDevice } from '@andrei-tatar/nora-firebase-common';
+import { Device, isScene, SceneDevice, validate, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch from 'node-fetch';
@@ -15,6 +15,7 @@ import { FirebaseDevice } from './device';
 import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
+    private db;
     private agent = new Agent({
         keepAlive: true,
         keepAliveMsecs: 15000,
@@ -75,10 +76,10 @@ export class FirebaseSync {
         private logger: Logger | null,
     ) {
         this.uid = this.app.auth().currentUser?.uid;
-        const db = firebase.database(app);
-        this.states = db.ref(`device_states/${this.uid}/${this.group}`);
-        this.noraSpecific = db.ref(`device_nora/${this.uid}/${this.group}`);
-        this.connected = db.ref('.info/connected');
+        this.db = firebase.database(app);
+        this.states = this.db.ref(`device_states/${this.uid}/${this.group}`);
+        this.noraSpecific = this.db.ref(`device_nora/${this.uid}/${this.group}`);
+        this.connected = this.db.ref('.info/connected');
     }
 
     withDevice<T extends SceneDevice>(device: T): Observable<FirebaseSceneDevice<T>>;
@@ -106,6 +107,32 @@ export class FirebaseSync {
         });
     }
 
+    async sendNotification(notification: WebpushNotification) {
+        await this.queueJob({
+            type: 'notify',
+            notification,
+        });
+    }
+
+    watchForActions(identifier: string): Observable<string> {
+        const ref = this.db.ref(`user/${this.uid}/actions/${identifier}`);
+        return new Observable<string>(observer => {
+            const handler = (snapshot: firebase.database.DataSnapshot) => {
+                const value: { action: string, timestamp: number } | null = snapshot.val();
+                if (value) {
+                    observer.next(value.action);
+                }
+            };
+            ref.on('value', handler);
+            return () => ref.off('value', handler);
+        }).pipe(
+            switchMap(async v => {
+                await ref.remove();
+                return v;
+            }),
+        );
+    }
+
     private async syncDevices() {
         await this.queueJob({
             type: 'sync',
@@ -114,10 +141,10 @@ export class FirebaseSync {
 
     private getJobId(j: JobInQueue) {
         switch (j.job.type) {
-            case 'sync':
-                return j.job.type;
             case 'report-state':
                 return `${j.job.type}-${j.job.deviceId}`;
+            default:
+                return j.job.type;
         }
     }
 
@@ -147,6 +174,9 @@ export class FirebaseSync {
                     resolve: current.resolve,
                     reject: current.reject,
                 };
+            case 'notify':
+                current.reject(new Error('too many notifications per sec'));
+                return previous;
         }
     }
 
@@ -167,6 +197,12 @@ export class FirebaseSync {
                         path: 'update-state',
                         query: `id=${encodeURIComponent(job.deviceId)}`,
                         body: job.update,
+                    });
+                    break;
+                case 'notify':
+                    await this.doHttpCall({
+                        path: 'notify',
+                        body: job.notification,
                     });
                     break;
             }
@@ -225,7 +261,12 @@ interface ReportStateJob {
     update: { [key: string]: any };
 }
 
-type Job = SyncJob | ReportStateJob;
+interface SendNotificationJob {
+    type: 'notify';
+    notification: WebpushNotification;
+}
+
+type Job = SyncJob | ReportStateJob | SendNotificationJob;
 
 interface JobInQueue {
     job: Job;
