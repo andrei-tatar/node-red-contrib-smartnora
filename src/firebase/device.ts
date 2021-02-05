@@ -124,9 +124,9 @@ export class FirebaseDevice<T extends Device = Device> {
                 ...this.device.state,
                 ...updates.updateState,
             };
-            this.updateState(updates.updateState).catch(err => {
+            this.updateState(updates.updateState).catch(err =>
                 this.logger?.warn(`error while executing local command, ${err.message}: ${err.stack}`)
-            });
+            );
             this._localStateUpdate$.next(currentState);
             return currentState;
         }

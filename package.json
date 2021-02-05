@@ -1,8 +1,15 @@
 {
-  "name": "node-red-contrib-nora-firebase",
-  "version": "1.0.17",
-  "description": "Set of nodes for google home integration based on firebase",
+  "name": "node-red-contrib-smartnora",
+  "version": "0.0.1",
+  "description": "Set of nodes for Smart NORA (https://smart-nora.eu/) integration",
+  "keywords": [
+    "node-red"
+  ],
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andrei-tatar/node-red-contrib-smartnora.git"
+  },
   "dependencies": {
     "@andrei-tatar/nora-firebase-common": "^1.0.32",
     "cbor": "^6.0.1",
