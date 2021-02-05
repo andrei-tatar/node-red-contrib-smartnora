@@ -52,7 +52,7 @@ module.exports = function (RED: any) {
                     this.warn(`Not a valid notification object: ${JSON.stringify(result.errors)}`);
                 }
             } catch (err) {
-                this.warn(err);
+                this.warn(`while updating state ${err.message}: ${err.stack}`);
             }
         });
 

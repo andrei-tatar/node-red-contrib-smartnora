@@ -1,13 +1,11 @@
-import { Device, isScene, SceneDevice, validate, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
+import { Device, isScene, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch from 'node-fetch';
-import { BehaviorSubject, concat, EMPTY, merge, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, concat, merge, Observable, of, Subject, timer } from 'rxjs';
 import {
-    catchError,
-    debounceTime, distinctUntilChanged, groupBy, ignoreElements,
-    mergeMap,
-    publish, publishReplay, refCount, switchMap,
+    debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
+    mergeMap, publish, publishReplay, refCount, retryWhen, switchMap,
 } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay, throttleAfterFirstEvent } from '..';
 import { apiEndpoint } from '../config';
@@ -35,10 +33,13 @@ export class FirebaseSync {
         ignoreElements(),
         publish(),
         refCount(),
-        catchError(err => {
-            this.logger?.warn(`unhandled error: ${err.message}\n${err.stack}`);
-            return EMPTY;
-        }),
+        retryWhen(err$ => err$.pipe(
+            delayWhen(err => {
+                const seconds = Math.round(Math.random() * 120) / 2 + 30;
+                this.logger?.warn(`unhandled error (trying again in ${seconds} sec): ${err.message}\n${err.stack}`);
+                return timer(seconds * 1000);
+            })
+        )),
     );
 
     private handleJobs$ = this.jobQueue$.pipe(

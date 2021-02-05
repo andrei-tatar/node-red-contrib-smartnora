@@ -88,7 +88,7 @@ module.exports = function (RED: any) {
                     await device.updateState({ openPercent: 0 });
                 }
             } catch (err) {
-                this.warn(err);
+                this.warn(`while updating state ${err.message}: ${err.stack}`);
             }
         });
 

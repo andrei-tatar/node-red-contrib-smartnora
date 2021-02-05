@@ -76,7 +76,7 @@ module.exports = function (RED: any) {
                 const device = await device$.pipe(first()).toPromise();
                 await device.updateState(msg?.payload);
             } catch (err) {
-                this.warn(err);
+                this.warn(`while updating state ${err.message}: ${err.stack}`);
             }
         });
 

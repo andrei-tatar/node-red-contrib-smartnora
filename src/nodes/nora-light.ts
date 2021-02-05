@@ -153,7 +153,7 @@ module.exports = function (RED: any) {
                     }
                 }
             } catch (err) {
-                this.warn(err);
+                this.warn(`while updating state ${err.message}: ${err.stack}`);
             }
         });
 

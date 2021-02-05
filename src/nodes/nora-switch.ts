@@ -78,7 +78,7 @@ module.exports = function (RED: any) {
                     await device.updateState({ on: false });
                 }
             } catch (err) {
-                this.warn(err);
+                this.warn(`while updating state ${err.message}: ${err.stack}`);
             }
         });
 
