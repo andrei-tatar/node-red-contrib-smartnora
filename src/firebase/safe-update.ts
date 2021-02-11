@@ -5,8 +5,19 @@ export interface GetSafeUpdateParams {
     isValid: () => boolean;
     mapping?: { from: keyof any, to: keyof any }[];
     path?: string;
+    statePath?: string;
     warn?: (prop: string) => void;
 }
+
+const skipRoundingStatePaths = new Set<string>([
+    'color.spectrumHsv.hue',
+    'color.spectrumHsv.saturation',
+    'color.spectrumHsv.value',
+]);
+const roundTo = new Map<string, number>([
+    ['thermostatTemperatureAmbient', 2],
+    ['thermostatHumidityAmbient', 1]
+]);
 
 export function getSafeUpdate({
     update,
@@ -15,11 +26,15 @@ export function getSafeUpdate({
     isValid,
     mapping,
     path = 'msg.payload.',
+    statePath,
     warn,
 }: GetSafeUpdateParams) {
     for (const [key, v] of Object.entries(update)) {
+        if (typeof key !== 'string') { continue; }
+
         let updateValue: any = v;
         const updateKey = mapping?.find(m => m.from === key)?.to ?? key;
+        const currentStatePath = statePath ? `${statePath}.${String(updateKey)}` : String(updateKey);
 
         const previousValue = currentState[updateKey];
         if (typeof previousValue !== typeof updateValue) {
@@ -33,13 +48,10 @@ export function getSafeUpdate({
         }
 
         if (typeof previousValue === 'number') {
-            // hackish way to preserve accuracy on sat/val
-            const skipRoundingNumbers = path.indexOf('color') >= 0;
-
+            const skipRoundingNumbers = skipRoundingStatePaths.has(currentStatePath);
             if (!skipRoundingNumbers) {
-                // round up temperature and humidity to 1 digit as assistant doesn't support accuracy better than .5
-                // helps to keep the updates lower
-                updateValue = Math.round(updateValue * 10) / 10;
+                const roundToDigits = roundTo.get(currentStatePath) ?? 10;
+                updateValue = Math.round(updateValue * roundToDigits) / roundToDigits;
             }
         }
 
@@ -52,7 +64,8 @@ export function getSafeUpdate({
                 safeUpdateObject: updateChild,
                 isValid,
                 mapping,
-                path: `${path}${key}.`
+                path: `${path}${key}.`,
+                statePath: currentStatePath
             });
             delete safeUpdateObject[updateKey];
             updateValue = updateChild;

@@ -228,27 +228,37 @@ export class FirebaseSync {
         query = '',
         method = 'POST',
         body,
+        tries = 3,
+        delayBetweenRetries = 500,
     }: {
         path: string,
         query?: string,
         method?: string,
         body: any,
+        tries?: number,
+        delayBetweenRetries?: number,
     }) {
-        const token = await this.app.auth().currentUser?.getIdToken();
-        const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
-        const response = await fetch(url, {
-            method: method,
-            agent: this.agent,
-            headers: {
-                'authorization': `Bearer ${token}`,
-                'content-type': 'application/json',
-            },
-            body: body ? JSON.stringify(body) : undefined,
-        });
-        if (response.status !== 200) {
-            throw new Error(`HTTP response (${response.status} ${await response.text()})`);
+        while (tries--) {
+            const token = await this.app.auth().currentUser?.getIdToken();
+            const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
+            const response = await fetch(url, {
+                method: method,
+                agent: this.agent,
+                headers: {
+                    'authorization': `Bearer ${token}`,
+                    'content-type': 'application/json',
+                },
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            if (response.status !== 200) {
+                if (!tries) {
+                    throw new Error(`HTTP response (${response.status} ${await response.text()})`);
+                }
+                await new Promise(resolve => setTimeout(resolve, delayBetweenRetries));
+                continue;
+            }
+            return response;
         }
-        return response;
     }
 }
 

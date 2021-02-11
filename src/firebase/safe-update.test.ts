@@ -67,38 +67,35 @@ describe('getSafeUpdate', () => {
         });
     });
 
-    it('should round numbers to 1 decimal', () => {
-        const safeUpdate = {};
-
-        getSafeUpdate({
-            update: {
-                value: 1.1234,
-            },
-            currentState: {
-                value: 1,
-            },
-            isValid: () => true,
-            safeUpdateObject: safeUpdate,
-        });
-
-        expect(safeUpdate).to.deep.equal({
-            value: 1.1,
-        });
-    });
-
-    it('should not round numbers if they are child in color', () => {
+    it('should round numbers from some paths', () => {
         const safeUpdate = {};
 
         getSafeUpdate({
             update: {
                 color: {
-                    value: 1.1234,
-                }
-            },
-            currentState: {
-                color: {
-                    value: 1,
+                    spectrumHsv: {
+                        hue: 1.1234,
+                        saturation: 2.1234,
+                        value: 3.1234,
+                        shouldRound: 4.1234,
+                    },
                 },
+                thermostatTemperatureAmbient: 22.4,
+                thermostatHumidityAmbient: 33.123,
+                shouldRound: 33.345,
+            },
+            currentState: {
+                color: {
+                    spectrumHsv: {
+                        hue: 1,
+                        saturation: 2,
+                        value: 3,
+                        shouldRound: 4,
+                    },
+                },
+                thermostatTemperatureAmbient: 22,
+                thermostatHumidityAmbient: 31,
+                shouldRound: 32,
             },
             isValid: () => true,
             safeUpdateObject: safeUpdate,
@@ -106,10 +103,19 @@ describe('getSafeUpdate', () => {
 
         expect(safeUpdate).to.deep.equal({
             color: {
-                value: 1.1234,
-            }
+                spectrumHsv: {
+                    hue: 1.1234,
+                    saturation: 2.1234,
+                    value: 3.1234,
+                    shouldRound: 4.1,
+                },
+            },
+            thermostatTemperatureAmbient: 22.5,
+            thermostatHumidityAmbient: 33,
+            shouldRound: 33.3,
         });
     });
+
 
     describe('with validation', () => {
 
