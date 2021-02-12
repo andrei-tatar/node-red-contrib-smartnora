@@ -15,6 +15,10 @@ export class FirebaseConnection {
         [key: string]: Observable<FirebaseSync>;
     } = {};
 
+    private static readonly apps: {
+        [key: string]: Observable<firebase.app.App>;
+    } = {};
+
     static withLogger(logger: Logger) {
         this.logger ??= logger;
         return this;
@@ -24,8 +28,9 @@ export class FirebaseConnection {
         const key = this.getConfigKey(config);
         let cached = this.configs[key];
         if (!cached) {
-            cached = this.configs[key] = this.createFromConfig(config)
+            cached = this.configs[key] = this.getAppFromConfig(config)
                 .pipe(
+                    map(app => new FirebaseSync(app, config.group, this.logger)),
                     finalize(() => delete this.configs[key]),
                     retryWhen(err$ => err$.pipe(
                         delayWhen(err => {
@@ -64,18 +69,24 @@ export class FirebaseConnection {
         return `${config.email}:${config.group}:${config.password}`;
     }
 
-    private static createFromConfig(config: NoraConfig) {
-        return new Observable<firebase.app.App>(observer => {
-            const app = firebase.initializeApp(firebaseConfig);
-            observer.next(app);
-            return () => app.delete();
-        }).pipe(
-            switchMap(async app => {
-                await firebase.auth(app)
-                    .signInWithEmailAndPassword(config.email, config.password);
-                return app;
-            }),
-            map(app => new FirebaseSync(app, config.group, this.logger)),
-        );
+    private static getAppFromConfig(config: NoraConfig) {
+        const key = `${config.email}:${config.password}`;
+        let cached = this.apps[key];
+        if (!cached) {
+            cached = this.apps[key] = new Observable<firebase.app.App>(observer => {
+                const app = firebase.initializeApp(firebaseConfig, `app-${new Date().getTime()}`);
+                observer.next(app);
+                return () => app.delete();
+            }).pipe(
+                switchMap(async app => {
+                    await firebase.auth(app)
+                        .signInWithEmailAndPassword(config.email, config.password);
+                    return app;
+                }),
+                finalize(() => delete this.apps[key]),
+                publishReplayRefCountWithDelay(5000),
+            );
+        }
+        return cached;
     }
 }

@@ -32,7 +32,7 @@ export class FirebaseDevice<T extends Device = Device> {
         const noraHandler = (snapshot: firebase.database.DataSnapshot) => {
             if (this.connectedAndSynced) {
                 // keep noraSpecific in sync as it's needed for local execution
-                this.device.noraSpecific = snapshot.val();
+                this.device.noraSpecific = snapshot.val() ?? {};
             }
         };
         this.state.on('value', handler);
