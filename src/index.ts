@@ -31,6 +31,7 @@ export interface ConfigNode {
     valid: boolean;
     twoFactor?: TwoFactor;
     localExecution: boolean;
+    structureHint: string;
 }
 
 export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperatorFunction<T> {
