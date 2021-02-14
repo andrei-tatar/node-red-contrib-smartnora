@@ -10,7 +10,7 @@ module.exports = function (RED: any) {
             this.group = (config.group || '<default>').trim();
             this.valid = !!this.email?.length && !!this.password?.length;
             this.localExecution = config.localexecution ?? true;
-            this.structureHint = config.structureHint;
+            this.structureHint = config.structure;
 
             if (config.twofactor === 'pin' || config.twofactor === 'ack') {
                 const twoFactor: TwoFactor = {
