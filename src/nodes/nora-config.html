@@ -17,6 +17,9 @@
             localexecution: {
                 value: true,
             },
+            structure: {
+                value: ''
+            },            
         },
         credentials: {
             email: { type: 'text' },
@@ -66,6 +69,10 @@
     <div id="node-config-twofactor-pin" class="form-row">
         <label for="node-config-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
         <input type="text" id="node-config-input-twofactorpin">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-structure"><i class="fa fa-question-home"></i> Structure</label>
+        <input type="text" id="node-config-input-structure">
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-localexecution"><i class="fa fa-gear"></i> Local execution support: </label>
