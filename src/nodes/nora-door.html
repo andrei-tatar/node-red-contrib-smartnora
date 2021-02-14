@@ -75,6 +75,20 @@
                     return true
                 })
             },
+            jammedValueType: {
+                value: 'bool'
+            },
+            unjammedValue: {
+                value: false,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'unjammedValueType') : function (v) {
+                    return true
+                })
+            },
+            unjammedValueType: {
+                value: 'bool'
+            },
         },
         inputs: 1,
         outputs: 1,
@@ -153,6 +167,16 @@
         <input type="text" id="node-input-unlockValue" style="width:70%">
         <input type="hidden" id="node-input-unlockValueType">
     </div>
+        <div class="form-row">
+        <label for="node-input-jammedValue" style="padding-left:20px; margin-right:-20px">Jammed</label>
+        <input type="text" id="node-input-jammedValue" style="width:70%">
+        <input type="hidden" id="node-input-jammedValueType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-unjammedValue" style="padding-left:20px; margin-right:-20px">Unjammed</label>
+        <input type="text" id="node-input-unjammedValue" style="width:70%">
+        <input type="hidden" id="node-input-unjammedValueType">
+    </div>
     <div class="form-row">
         <label for="node-input-topic" style="padding-left:20px; margin-right:-20px" ><i class="fa fa-tasks"></i> Topic</label>
         <input type="text" id="node-input-topic" style="width:70%">
@@ -177,6 +201,7 @@
     messages translate to the state of the door.<br>
     <strong>Lock/Unlock</strong> is optional and specifies what payload should be sent for the state of the lock, and how incoming
     messages translate to the state of the lock.<br>
+    <strong>Jammed/Unjammed</strong> is optional and when combined with <i>msg.topic = Jammed</i> specifies what incoming messages translate to if the lock is jammed or unjammed. Also, any lock/unlock commands sent from Google while door is jammed won't go through and will be replaced with an error message.<br>
     <strong>Topic</strong> sets the topic of the outbound message.<br>
     <strong>Name</strong> sets the name on the node in Node-Red.<br>
 </p>
