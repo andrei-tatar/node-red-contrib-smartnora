@@ -1,0 +1,183 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-door', {
+        category: 'nora',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Door',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+            openvalue: {
+                value: true,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'openvalueType') : function (v) {
+                    return true
+                })
+            },
+            openvalueType: {
+                value: 'bool'
+            },
+            closevalue: {
+                value: false,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'closevalueType') : function (v) {
+                    return true
+                })
+            },
+            closevalueType: {
+                value: 'bool'
+            },
+            lockValue: {
+                value: true,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'lockValueType') : function (v) {
+                    return true
+                })
+            },
+            lockValueType: {
+                value: 'bool'
+            },
+            unlockValue: {
+                value: false,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'unlockValueType') : function (v) {
+                    return true
+                })
+            },
+            unlockValueType: {
+                value: 'bool'
+            },
+            jammedValue: {
+                value: true,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'jammedValueType') : function (v) {
+                    return true
+                })
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'lock',
+        label: function () {
+            return this.name || this.devicename || 'door';
+        },
+        oneditprepare: function () {
+            $('#node-input-openvalue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-openvalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-closevalue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-closevalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-lockValue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-lockValueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-unlockValue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-unlockValueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-door">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label  style="width:auto; font-weight: bold" >Google Device:</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Door Name</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label  style="width:auto; font-weight: bold" >Message Payloads:</label>
+    </div>
+    <div class="form-row">
+            <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+            <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div> 
+    <div class="form-row">
+        <label for="node-input-openvalue" style="padding-left:20px; margin-right:-10px">Open Payload</label>
+        <input type="text" id="node-input-openvalue" style="width:70%">
+        <input type="hidden" id="node-input-openvalueType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-closevalue" style="padding-left:20px; margin-right:-10px">Close Payload</label>
+        <input type="text" id="node-input-closevalue" style="width:70%">
+        <input type="hidden" id="node-input-closevalueType">
+    </div>
+    <div class="form-row">
+        <label  style="width:auto", font-style: "italic" >Optional</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-lockValue" style="padding-left:20px; margin-right:-20px">Lock</label>
+        <input type="text" id="node-input-lockValue" style="width:70%">
+        <input type="hidden" id="node-input-lockValueType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-unlockValue" style="padding-left:20px; margin-right:-20px">Unlock</label>
+        <input type="text" id="node-input-unlockValue" style="width:70%">
+        <input type="hidden" id="node-input-unlockValueType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:20px; margin-right:-20px" ><i class="fa fa-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" style="width:70%">
+    </div>
+    <div class="form-row">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-lock">
+    <p>
+    Represents a <a href="https://developers.google.com/actions/smarthome/guides/lock">Google Home lock</a>.
+    Outputs a message when Google Home changes the state of the lock and updates the
+    state of the lock in Google Home on input messages.
+    <br>
+    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.<br>
+    <strong>Door Name</strong>: Provides the device name to be sent to Google.<br>
+    <strong>OPen/Closed</strong> specifies what payload should be sent for the state of the door, and how incoming
+    messages translate to the state of the door.<br>
+    <strong>Lock/Unlock</strong> is optional and specifies what payload should be sent for the state of the lock, and how incoming
+    messages translate to the state of the lock.<br>
+    <strong>Topic</strong> sets the topic of the outbound message.<br>
+    <strong>Name</strong> sets the name on the node in Node-Red.<br>
+</p>
+</script>
