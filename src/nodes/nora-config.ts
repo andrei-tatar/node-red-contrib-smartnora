@@ -12,13 +12,24 @@ module.exports = function (RED: any) {
             this.localExecution = config.localexecution ?? true;
             this.structureHint = config.structure;
 
+            let twoFactor: TwoFactor | undefined;
             if (config.twofactor === 'pin' || config.twofactor === 'ack') {
-                const twoFactor: TwoFactor = {
+                twoFactor = {
                     type: config.twofactor,
                     pin: config.twofactor === 'pin' ? config.twofactorpin?.trim() : undefined,
                 };
-                this.twoFactor = twoFactor;
             }
+
+            let structureHint: string | undefined;
+            if (typeof config.structure === 'string') {
+                structureHint = config.structure.trim() || undefined;
+            }
+
+            this.setCommon = (device) => {
+                device.structureHint = structureHint;
+                device.noraSpecific.twoFactor = twoFactor;
+                return device;
+            };
         },
         {
             credentials: {

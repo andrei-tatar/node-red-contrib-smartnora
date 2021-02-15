@@ -16,36 +16,37 @@ module.exports = function (RED: any) {
         const stateString$ = new Subject<string>();
         const availableModes = config.modes.split(',');
 
+        const deviceConfig = noraConfig.setCommon<TemperatureSettingDevice>({
+            id: getId(config),
+            type: 'action.devices.types.THERMOSTAT',
+            traits: ['action.devices.traits.TemperatureSetting'],
+            name: {
+                name: config.devicename,
+            },
+            roomHint: config.roomhint,
+            willReportState: true,
+            attributes: {
+                availableThermostatModes: availableModes,
+                thermostatTemperatureUnit: config.unit,
+                bufferRangeCelsius: parseInt(config.bufferRangeCelsius, 10) || undefined,
+                commandOnlyTemperatureSetting: config.commandOnly ?? undefined,
+                queryOnlyTemperatureSetting: config.queryOnly ?? undefined,
+            },
+            state: {
+                online: true,
+                thermostatMode: 'off',
+                thermostatTemperatureAmbient: 25,
+                thermostatTemperatureSetpoint: 20,
+            },
+            noraSpecific: {
+            },
+        });
+
         const device$ = FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.withDevice<TemperatureSettingDevice>({
-                    id: getId(config),
-                    type: 'action.devices.types.THERMOSTAT',
-                    traits: ['action.devices.traits.TemperatureSetting'],
-                    name: {
-                        name: config.devicename,
-                    },
-                    roomHint: config.roomhint,
-                    willReportState: true,
-                    attributes: {
-                        availableThermostatModes: availableModes,
-                        thermostatTemperatureUnit: config.unit,
-                        bufferRangeCelsius: parseInt(config.bufferRangeCelsius, 10) || undefined,
-                        commandOnlyTemperatureSetting: config.commandOnly ?? undefined,
-                        queryOnlyTemperatureSetting: config.queryOnly ?? undefined,
-                    },
-                    state: {
-                        online: true,
-                        thermostatMode: 'off',
-                        thermostatTemperatureAmbient: 25,
-                        thermostatTemperatureSetpoint: 20,
-                    },
-                    noraSpecific: {
-                        twoFactor: noraConfig.twoFactor,
-                    },
-                })),
+                switchMap(connection => connection.withDevice(deviceConfig)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),

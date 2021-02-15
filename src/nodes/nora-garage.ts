@@ -20,29 +20,30 @@ module.exports = function (RED: any) {
         const { value: closeValue, type: closeType } =
             convertValueType(RED, config.closevalue, config.closevalueType, { defaultValue: false });
 
+        const deviceConfig = noraConfig.setCommon<OpenCloseDevice>({
+            id: getId(config),
+            type: 'action.devices.types.GARAGE',
+            traits: ['action.devices.traits.OpenClose'],
+            name: {
+                name: config.devicename,
+            },
+            roomHint: config.roomhint,
+            willReportState: true,
+            state: {
+                online: true,
+                openPercent: 0,
+            },
+            noraSpecific: {
+            },
+            attributes: {
+            },
+        });
+
         const device$ = FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.withDevice<OpenCloseDevice>({
-                    id: getId(config),
-                    type: 'action.devices.types.GARAGE',
-                    traits: ['action.devices.traits.OpenClose'],
-                    name: {
-                        name: config.devicename,
-                    },
-                    roomHint: config.roomhint,
-                    willReportState: true,
-                    state: {
-                        online: true,
-                        openPercent: 0,
-                    },
-                    noraSpecific: {
-                        twoFactor: noraConfig.twoFactor,
-                    },
-                    attributes: {
-                    },
-                })),
+                switchMap(connection => connection.withDevice(deviceConfig)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),

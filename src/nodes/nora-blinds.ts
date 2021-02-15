@@ -15,29 +15,30 @@ module.exports = function (RED: any) {
         const close$ = new Subject();
         const stateString$ = new Subject<string>();
 
+        const deviceConfig = noraConfig.setCommon<OpenCloseDevice>({
+            id: getId(config),
+            type: 'action.devices.types.BLINDS',
+            traits: ['action.devices.traits.OpenClose'],
+            name: {
+                name: config.devicename,
+            },
+            roomHint: config.roomhint,
+            willReportState: true,
+            noraSpecific: {
+            },
+            state: {
+                online: true,
+                openPercent: 100,
+            },
+            attributes: {
+            },
+        });
+
         const device$ = FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.withDevice<OpenCloseDevice>({
-                    id: getId(config),
-                    type: 'action.devices.types.BLINDS',
-                    traits: ['action.devices.traits.OpenClose'],
-                    name: {
-                        name: config.devicename,
-                    },
-                    roomHint: config.roomhint,
-                    willReportState: true,
-                    noraSpecific: {
-                        twoFactor: noraConfig.twoFactor,
-                    },
-                    state: {
-                        online: true,
-                        openPercent: 100,
-                    },
-                    attributes: {
-                    },
-                })),
+                switchMap(connection => connection.withDevice(deviceConfig)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),

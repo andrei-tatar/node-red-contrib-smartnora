@@ -25,30 +25,31 @@ module.exports = function (RED: any) {
         const { value: unjammedValue, type: unjammedType } = convertValueType(RED, config.unjammedValue,
             config.unjammedValueType, { defaultValue: false });
 
+        const deviceConfig = noraConfig.setCommon<LockUnlockDevice>({
+            id: getId(config),
+            type: 'action.devices.types.LOCK',
+            traits: ['action.devices.traits.LockUnlock'],
+            name: {
+                name: config.devicename,
+            },
+            roomHint: config.roomhint,
+            willReportState: true,
+            attributes: {
+            },
+            state: {
+                online: true,
+                isLocked: false,
+                isJammed: false,
+            },
+            noraSpecific: {
+            },
+        });
+
         const device$ = FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.withDevice<LockUnlockDevice>({
-                    id: getId(config),
-                    type: 'action.devices.types.LOCK',
-                    traits: ['action.devices.traits.LockUnlock'],
-                    name: {
-                        name: config.devicename,
-                    },
-                    roomHint: config.roomhint,
-                    willReportState: true,
-                    attributes: {
-                    },
-                    state: {
-                        online: true,
-                        isLocked: false,
-                        isJammed: false,
-                    },
-                    noraSpecific: {
-                        twoFactor: noraConfig.twoFactor,
-                    },
-                })),
+                switchMap(connection => connection.withDevice(deviceConfig)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),

@@ -1,7 +1,7 @@
 import { Device, isScene, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Agent } from 'https';
-import fetch from 'node-fetch';
+import fetch, { Response } from 'node-fetch';
 import { BehaviorSubject, concat, merge, Observable, of, Subject, timer } from 'rxjs';
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
@@ -14,6 +14,7 @@ import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
     private db;
+    private userAgent;
     private agent = new Agent({
         keepAlive: true,
         keepAliveMsecs: 15000,
@@ -81,6 +82,8 @@ export class FirebaseSync {
         this.states = this.db.ref(`device_states/${this.uid}/${this.group}`);
         this.noraSpecific = this.db.ref(`device_nora/${this.uid}/${this.group}`);
         this.connected = this.db.ref('.info/connected');
+        const { name, version } = require('../../package.json');
+        this.userAgent = `${name}/${version}`;
     }
 
     withDevice<T extends SceneDevice>(device: T): Observable<FirebaseSceneDevice<T>>;
@@ -162,7 +165,7 @@ export class FirebaseSync {
                 if (previous.job.type !== 'report-state') {
                     throw new Error(`can't merge jobs with different types`);
                 }
-                previous.reject(new Error('update was merged with a new one'));
+                previous.resolve();
                 return {
                     job: {
                         type: current.job.type,
@@ -186,10 +189,8 @@ export class FirebaseSync {
             switch (job.type) {
                 case 'sync':
                     const devices = this.devices$.value;
-                    const version = require('../../package.json').version;
                     await this.doHttpCall({
                         path: 'sync',
-                        query: `version=${encodeURIComponent(version)}`,
                         body: devices.map(d => d.device),
                     });
                     break;
@@ -247,11 +248,13 @@ export class FirebaseSync {
                 headers: {
                     'authorization': `Bearer ${token}`,
                     'content-type': 'application/json',
+                    'user-agent': this.userAgent,
                 },
                 body: body ? JSON.stringify(body) : undefined,
             });
             if (response.status !== 200) {
-                if (!tries) {
+                const shouldRetry = this.shouldRetryRequest(response);
+                if (!shouldRetry || !tries) {
                     throw new Error(`HTTP response (${response.status} ${await response.text()})`);
                 }
                 await new Promise(resolve => setTimeout(resolve, delayBetweenRetries));
@@ -259,6 +262,10 @@ export class FirebaseSync {
             }
             return response;
         }
+    }
+
+    private shouldRetryRequest(response: Response) {
+        return response.status !== 200 && response.status !== 400;
     }
 }
 

@@ -15,34 +15,35 @@ module.exports = function (RED: any) {
         const close$ = new Subject();
         const stateString$ = new Subject<string>();
 
+        const deviceConfig = noraConfig.setCommon<VolumeDevice & OnOffDevice>({
+            id: getId(config),
+            type: 'action.devices.types.SPEAKER',
+            traits: ['action.devices.traits.Volume', 'action.devices.traits.OnOff'] as never,
+            name: {
+                name: config.devicename,
+            },
+            roomHint: config.roomhint,
+            willReportState: true,
+            state: {
+                on: false,
+                online: true,
+                currentVolume: 50,
+                isMuted: false,
+            },
+            noraSpecific: {
+            },
+            attributes: {
+                volumeCanMuteAndUnmute: false,
+                volumeMaxLevel: 100,
+                levelStepSize: parseInt(config.step, 10) || 1,
+            },
+        });
+
         const device$ = FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.withDevice<VolumeDevice & OnOffDevice>({
-                    id: getId(config),
-                    type: 'action.devices.types.SPEAKER',
-                    traits: ['action.devices.traits.Volume', 'action.devices.traits.OnOff'] as never,
-                    name: {
-                        name: config.devicename,
-                    },
-                    roomHint: config.roomhint,
-                    willReportState: true,
-                    state: {
-                        on: false,
-                        online: true,
-                        currentVolume: 50,
-                        isMuted: false,
-                    },
-                    noraSpecific: {
-                        twoFactor: noraConfig.twoFactor,
-                    },
-                    attributes: {
-                        volumeCanMuteAndUnmute: false,
-                        volumeMaxLevel: 100,
-                        levelStepSize: parseInt(config.step, 10) || 1,
-                    },
-                })),
+                switchMap(connection => connection.withDevice(deviceConfig)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
