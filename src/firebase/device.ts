@@ -107,15 +107,14 @@ export class FirebaseDevice<T extends Device = Device> {
                 ...this.device.state,
                 ...safeUpdate,
             };
-            if (!this.connectedAndSynced) {
-                throw new Error('device not connected/synced');
+            if (this.connectedAndSynced) {
+                await this.sync.updateState(this.device.id, safeUpdate);
             }
-            await this.sync.updateState(this.device.id, safeUpdate);
         }
         return true;
     }
 
-    executeCommand(command: string, params: any) {
+    executeCommand(command: string, params: any): T['state'] {
         const updates = executeCommand({ command, params, device: this.device });
         this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
 
