@@ -1,0 +1,101 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-config', {
+        category: 'config',
+        defaults: {
+            name: {
+                value: 'nora config'
+            },
+            group: {
+                value: '',
+            },
+            twofactor: {
+                value: 'off',
+            },
+            twofactorpin: {
+                value: ''
+            },
+            localexecution: {
+                value: true,
+            },
+            structure: {
+                value: ''
+            },
+        },
+        credentials: {
+            email: { type: 'text' },
+            password: { type: 'text' },
+        },
+        paletteLabel: 'nora config',
+        label: function () {
+            return this.name || 'nora config';
+        },
+        oneditprepare: function () {
+            $('#node-config-input-twofactor').change(function () {
+                if ($(this).val() === 'pin') {
+                    $('#node-config-twofactor-pin').show();
+                } else {
+                    $('#node-config-twofactor-pin').hide();
+                }
+            });
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-email"><i class="fa fa-envelope"></i> Email</label>
+        <input type="text" id="node-config-input-email">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-password"><i class="fa fa-key"></i> Password</label>
+        <input type="password" id="node-config-input-password">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-structure"><i class="fa fa-home"></i> Home name</label>
+        <input type="text" id="node-config-input-structure">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-group"><i class="fa fa-object-group"></i> Group</label>
+        <input type="text" id="node-config-input-group">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-config-input-twofactor">
+            <option value="off">Off</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-config-twofactor-pin" class="form-row">
+        <label for="node-config-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-config-input-twofactorpin">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-localexecution"><i class="fa fa-gear"></i> Local execution support: </label>
+        <input type="checkbox" checked id="node-input-localexecution" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-config">
+    <p>NORA configuration node. Create your user account by visiting 
+        <a href="https://nora-firebase.web.app/">https://nora-firebase.web.app/</a>.
+        <br>
+        <strong>Name</strong>: Unique name for this configuration.
+        <br>
+        <strong>Email</strong>: Email address associated with your Nora account.
+        <br>
+        <strong>Password</strong>: Password for your Nora account.
+        <br>
+        <strong>Home name</strong>: If more than one Home in Google Assistant, this provides the name of the user's home the device in to simplify setup.
+        <br>
+        <strong>Group</strong>: If you have multiple instances of Node-Red, use Group to identify each one.
+        <br>
+        <strong>Two Factor</strong>: Turn on/off Two Factor Authentication and set the type of TFA. If using a Pin, input the Pin.
+        <br>
+        <strong>Local execution support</strong>: Google Home or Google Nest devices can enable control of your devices locally. This offers performance improvements to including lower latency and higher reliability. Local fulfillment is supported for all device types and device traits, except those that use two-factor authentication.
+    </p>
+</script>
