@@ -1,4 +1,4 @@
-import { TwoFactor } from '@andrei-tatar/nora-firebase-common';
+import { Device } from '@andrei-tatar/nora-firebase-common';
 import { MonoTypeOperatorFunction, Observable, ReplaySubject, Subscription } from 'rxjs';
 import { multicast } from 'rxjs/operators';
 
@@ -29,8 +29,9 @@ export interface ConfigNode {
     password: string;
     group?: string;
     valid: boolean;
-    twoFactor?: TwoFactor;
     localExecution: boolean;
+
+    setCommon<T extends Device>(device: T): T;
 }
 
 export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperatorFunction<T> {

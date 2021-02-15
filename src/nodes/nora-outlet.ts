@@ -18,29 +18,30 @@ module.exports = function (RED: any) {
         const { value: onValue, type: onType } = convertValueType(RED, config.onvalue, config.onvalueType, { defaultValue: true });
         const { value: offValue, type: offType } = convertValueType(RED, config.offvalue, config.offvalueType, { defaultValue: false });
 
+        const deviceConfig = noraConfig.setCommon<OnOffDevice>({
+            id: getId(config),
+            type: 'action.devices.types.OUTLET',
+            traits: ['action.devices.traits.OnOff'],
+            name: {
+                name: config.devicename,
+            },
+            roomHint: config.roomhint,
+            willReportState: true,
+            state: {
+                online: true,
+                on: false,
+            },
+            attributes: {
+            },
+            noraSpecific: {
+            }
+        });
+
         const device$ = FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
             .pipe(
-                switchMap(connection => connection.withDevice<OnOffDevice>({
-                    id: getId(config),
-                    type: 'action.devices.types.OUTLET',
-                    traits: ['action.devices.traits.OnOff'],
-                    name: {
-                        name: config.devicename,
-                    },
-                    roomHint: config.roomhint,
-                    willReportState: true,
-                    state: {
-                        online: true,
-                        on: false,
-                    },
-                    attributes: {
-                    },
-                    noraSpecific: {
-                        twoFactor: noraConfig.twoFactor,
-                    }
-                })),
+                switchMap(connection => connection.withDevice(deviceConfig)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),

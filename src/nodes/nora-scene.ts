@@ -17,29 +17,30 @@ module.exports = function (RED: any) {
 
         const close$ = new Subject();
 
+        const deviceConfig = noraConfig.setCommon<SceneDevice>({
+            id: getId(config),
+            type: 'action.devices.types.SCENE',
+            traits: ['action.devices.traits.Scene'],
+            name: {
+                name: config.devicename,
+            },
+            willReportState: true,
+            roomHint: config.roomhint,
+            attributes: {
+                sceneReversible: !!config.scenereversible,
+            },
+            state: {
+                online: true
+            },
+            noraSpecific: {
+            },
+        });
+
         FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this)
             .pipe(
-                switchMap(connection => connection.withDevice<SceneDevice>({
-                    id: getId(config),
-                    type: 'action.devices.types.SCENE',
-                    traits: ['action.devices.traits.Scene'],
-                    name: {
-                        name: config.devicename,
-                    },
-                    willReportState: true,
-                    roomHint: config.roomhint,
-                    attributes: {
-                        sceneReversible: !!config.scenereversible,
-                    },
-                    state: {
-                        online: true
-                    },
-                    noraSpecific: {
-                        twoFactor: noraConfig.twoFactor,
-                    },
-                })),
+                switchMap(connection => connection.withDevice(deviceConfig)),
                 withLocalExecution(noraConfig),
                 switchMap(device => device.activateScene$),
                 takeUntil(close$),

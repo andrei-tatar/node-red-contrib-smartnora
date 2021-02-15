@@ -17,6 +17,9 @@
             localexecution: {
                 value: true,
             },
+            structure: {
+                value: ''
+            },
         },
         credentials: {
             email: { type: 'text' },
@@ -52,6 +55,10 @@
         <input type="password" id="node-config-input-password">
     </div>
     <div class="form-row">
+        <label for="node-config-input-structure"><i class="fa fa-home"></i> Home name</label>
+        <input type="text" id="node-config-input-structure">
+    </div>
+    <div class="form-row">
         <label for="node-config-input-group"><i class="fa fa-object-group"></i> Group</label>
         <input type="text" id="node-config-input-group">
     </div>
@@ -76,5 +83,19 @@
 <script type="text/x-red" data-help-name="noraf-config">
     <p>NORA configuration node. Create your user account by visiting 
         <a href="https://nora-firebase.web.app/">https://nora-firebase.web.app/</a>.
+        <br>
+        <strong>Name</strong>: Unique name for this configuration.
+        <br>
+        <strong>Email</strong>: Email address associated with your Nora account.
+        <br>
+        <strong>Password</strong>: Password for your Nora account.
+        <br>
+        <strong>Home name</strong>: If more than one Home in Google Assistant, this provides the name of the user's home the device in to simplify setup.
+        <br>
+        <strong>Group</strong>: If you have multiple instances of Node-Red, use Group to identify each one.
+        <br>
+        <strong>Two Factor</strong>: Turn on/off Two Factor Authentication and set the type of TFA. If using a Pin, input the Pin.
+        <br>
+        <strong>Local execution support</strong>: Google Home or Google Nest devices can enable control of your devices locally. This offers performance improvements to including lower latency and higher reliability. Local fulfillment is supported for all device types and device traits, except those that use two-factor authentication.
     </p>
 </script>

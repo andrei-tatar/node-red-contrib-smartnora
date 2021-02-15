@@ -14,6 +14,7 @@ import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
     private db;
+    private userAgent;
     private agent = new Agent({
         keepAlive: true,
         keepAliveMsecs: 15000,
@@ -81,6 +82,8 @@ export class FirebaseSync {
         this.states = this.db.ref(`device_states/${this.uid}/${this.group}`);
         this.noraSpecific = this.db.ref(`device_nora/${this.uid}/${this.group}`);
         this.connected = this.db.ref('.info/connected');
+        const { name, version } = require('../../package.json');
+        this.userAgent = `${name}/${version}`;
     }
 
     withDevice<T extends SceneDevice>(device: T): Observable<FirebaseSceneDevice<T>>;
@@ -186,10 +189,8 @@ export class FirebaseSync {
             switch (job.type) {
                 case 'sync':
                     const devices = this.devices$.value;
-                    const version = require('../../package.json').version;
                     await this.doHttpCall({
                         path: 'sync',
-                        query: `version=${encodeURIComponent(version)}`,
                         body: devices.map(d => d.device),
                     });
                     break;
@@ -247,6 +248,7 @@ export class FirebaseSync {
                 headers: {
                     'authorization': `Bearer ${token}`,
                     'content-type': 'application/json',
+                    'user-agent': this.userAgent,
                 },
                 body: body ? JSON.stringify(body) : undefined,
             });
