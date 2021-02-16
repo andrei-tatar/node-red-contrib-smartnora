@@ -1,4 +1,4 @@
-import { Device, OpenCloseDevice, OpenCloseDirection } from '@andrei-tatar/nora-firebase-common';
+import { Device, isLockUnlock, OpenCloseDevice, OpenCloseDirection } from '@andrei-tatar/nora-firebase-common';
 import { Schema } from '@andrei-tatar/nora-firebase-common/build/schema';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
@@ -63,6 +63,15 @@ module.exports = function (RED: any) {
                 queryOnlyOpenClose: config.queryonly ?? false,
             },
         });
+
+        if (config.lockunlock) {
+            deviceConfig.traits.push('action.devices.traits.LockUnlock');
+        }
+
+        if (isLockUnlock(deviceConfig)) {
+            deviceConfig.state.isLocked = false;
+            deviceConfig.state.isJammed = false;
+        }
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)

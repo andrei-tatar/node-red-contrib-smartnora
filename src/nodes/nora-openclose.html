@@ -27,6 +27,9 @@
             discrete: {
                 value: true,
             },
+            lockunlock: {
+                value: false,
+            },
             commandonly: {
                 value: false,
             },
@@ -124,7 +127,7 @@
         </select>
     </div>
     <div class="form-row d-flex flex-column">
-        <label style="width:100%"><i class="fa fa-cog"></i> Supported Open/Close directions (default: all unchecked)</label>
+        <label style="width:100%"><i class="fa fa-cog"></i> Supported <a style="text-decoration: underline;" target="_blank" href="https://developers.google.com/assistant/smarthome/traits/openclose#device-states">Open/Close directions</a> (default: all unchecked)</label>
         <div id="directions-container"></div>
     </div>
     <div class="form-row">
@@ -134,6 +137,10 @@
     <div class="form-row">
         <label style="width:auto" for="node-input-discrete"><i class="fa fa-arrow-right"></i> Discrete only open/close: </label>
         <input type="checkbox" id="node-input-discrete" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-lockunlock"><i class="fa fa-lock"></i> Support <a style="text-decoration: underline;" target="_blank" href="https://developers.google.com/assistant/smarthome/traits/lockunlock">Lock/Unlock</a>: </label>
+        <input type="checkbox" id="node-input-lockunlock" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-commandonly"><i class="fa fa-exchange"></i> Can only handle commands: </label>
@@ -159,14 +166,6 @@
 
 <script type="text/x-red" data-help-name="noraf-openclose">
     <p>
-    Represents a <a href="https://developers.google.com/assistant/smarthome/guides/garage.html">Google Home Garage Door</a>.
-    <br>
-    Outputs a message when Google Home changes the state of the garage door and updates the
-    state of the garage door in Google Home on input messages.
-    <br>
-    The Open/Close payload specifies what message should be sent for the different states of the garage door and how incoming
-    messages translate to the state of the garage door.
-    <br>
-    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
-</p>
+        Represents a generic Google Home Open/Close device (window/door/etc.)</a>.
+    </p>
 </script>
