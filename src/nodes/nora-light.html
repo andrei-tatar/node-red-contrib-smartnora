@@ -35,6 +35,9 @@
             name: {
                 value: ''
             },
+            colortype: {
+                value: 'hsv',
+            },
             nora: {
                 type: 'noraf-config',
                 required: true
@@ -47,8 +50,8 @@
                 required: true,
                 validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
                     'onvalueType') : function (v) {
-                    return true
-                })
+                        return true
+                    })
             },
             onvalueType: {
                 value: 'bool'
@@ -58,11 +61,19 @@
                 required: true,
                 validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
                     'offvalueType') : function (v) {
-                    return true
-                })
+                        return true
+                    })
             },
             offvalueType: {
                 value: 'bool'
+            },
+            temperaturemin: {
+                value: '2700',
+                validate: RED.validators.number(),
+            },
+            temperaturemax: {
+                value: '5500',
+                validate: RED.validators.number(),
             },
         },
         inputs: 1,
@@ -72,6 +83,28 @@
             return this.name || this.devicename || 'light';
         },
         oneditprepare: function () {
+            const updateDiscretePayloadVisible = () => {
+                if ($('#node-input-brightnesscontrol').is(':checked') ||
+                    $('#node-input-lightcolor').is(':checked')) {
+                    $('#light-on').hide();
+                    $('#light-off').hide();
+                    $('#light-brightnesschangeon').show();
+                } else {
+                    $('#light-on').show();
+                    $('#light-off').show();
+                    $('#light-brightnesschangeon').hide();
+                }
+            };
+            const updateTemperatureVisible = () => {
+                if ($('#node-input-colortype').val() === 'temperature' &&
+                    $('#node-input-lightcolor').is(':checked')) {
+                    $('#temp-min').show();
+                    $('#temp-max').show();
+                } else {
+                    $('#temp-min').hide();
+                    $('#temp-max').hide();
+                }
+            };
             $('#node-input-onvalue').typedInput({
                 default: 'str',
                 typeField: $("#node-input-onvalueType"),
@@ -84,25 +117,29 @@
             });
             $('#node-input-brightnesscontrol').change(function () {
                 if (this.checked) {
-                    $('#light-on').hide();
-                    $('#light-off').hide();
                     $('#light-full-state').show();
-                    $('#light-color').show();
-                    $('#light-brightnesschangeon').show();
-
                     if ($('#node-input-statepayload').is(':checked')) {
                         $('#light-brightnessoverride').hide();
                     } else {
                         $('#light-brightnessoverride').show();
                     }
                 } else {
-                    $('#light-on').show();
-                    $('#light-off').show();
                     $('#light-full-state').hide();
                     $('#light-brightnessoverride').hide();
-                    $('#light-color').hide();
-                    $('#light-brightnesschangeon').hide();
                 }
+                updateDiscretePayloadVisible();
+            });
+            $('#node-input-lightcolor').change(function () {
+                if (this.checked) {
+                    $('#color-type').show();
+                } else {
+                    $('#color-type').hide();
+                }
+                updateDiscretePayloadVisible();
+                updateTemperatureVisible();
+            });
+            $('#node-input-colortype').change(function () {
+                updateTemperatureVisible();
             });
             $('#node-input-statepayload').change(function () {
                 if (this.checked || !$('#node-input-brightnesscontrol').is(':checked')) {
@@ -111,6 +148,15 @@
                     $('#light-brightnessoverride').show();
                 }
             });
+            if (!$('#node-input-colortype').val()) {
+                $('#node-input-colortype').val('hsv');
+            }
+            if (!$('#node-input-temperaturemin').val()) {
+                $('#node-input-temperaturemin').val('2700');
+            }
+            if (!$('#node-input-temperaturemax').val()) {
+                $('#node-input-temperaturemax').val('5500');
+            }
         },
     });
 </script>
@@ -136,10 +182,6 @@
         <label style="width:auto" for="node-input-turnonwhenbrightnesschanges"><i class="fa fa-lightbulb-o"></i> Turn on when brightness/color changes: </label>
         <input type="checkbox" checked id="node-input-turnonwhenbrightnesschanges" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
-    <div class="form-row" id="light-color">
-        <label style="width:auto" for="node-input-lightcolor"><i class="fa fa-arrow-right"></i> Color support (RGB): </label>
-        <input type="checkbox" id="node-input-lightcolor" style="display:inline-block; width:auto; vertical-align:top;">
-    </div>
     <div class="form-row" id="light-full-state">
         <label style="width:auto" for="node-input-statepayload"><i class="fa fa-arrow-right"></i> Send/receive complete state as payload: </label>
         <input type="checkbox" checked id="node-input-statepayload" style="display:inline-block; width:auto; vertical-align:top;">
@@ -147,6 +189,26 @@
     <div class="form-row" id="light-brightnessoverride">
         <label for="node-input-brightnessoverride" style="width:auto"><i class="fa fa-lightbulb-o"></i> Override brightness when input is 0</label>
         <input type="text" id="node-input-brightnessoverride" style="width:100px">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-lightcolor"><i class="fa fa-gamepad"></i> Color support: </label>
+        <input type="checkbox" id="node-input-lightcolor" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row" id="color-type">
+        <label for="node-input-colortype"><i class="fa fa-question-sign"></i> Type</label>
+        <select id="node-input-colortype">
+            <option value="hsv">HSV</option>
+            <option value="rgb">RGB</option>
+            <option value="temperature">Temperature</option>
+        </select>
+    </div>
+    <div class="form-row" id="temp-min">
+        <label for="node-input-temperaturemin" style="width:auto"><i class="fa fa-lightbulb-o"></i> Min temperature (K)</label>
+        <input type="text" id="node-input-temperaturemin" style="width:100px">
+    </div>
+    <div class="form-row" id="temp-max">
+        <label for="node-input-temperaturemax" style="width:auto"><i class="fa fa-lightbulb-o"></i> Max temperature (K)</label>
+        <input type="text" id="node-input-temperaturemax" style="width:100px">
     </div>
     <div class="form-row" id="light-on">
         <label for="node-input-onvalue" style="padding-left:25px; margin-right:-25px">On Payload</label>
@@ -189,8 +251,6 @@
         complete state</strong> is unchecked and a value of 0 is received on the input. This is used so that the next
     time you ask Google Home to turn on a light, it uses this override brightness instead of the last value. You can
     leave the input empty to use the last brightness value.
-    <br>
-    <strong>Color HSV</strong>: represents colors as a (hue, saturation, value) triplet. Any color value in HSV may be converted to RGB. Hue has a range of [0, 360) degrees (exclusive of 360, since it wraps around to 0 degrees). Saturation and value are represented by floats in the range [0.0, 1.0].
     <br>
     <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
 </p>

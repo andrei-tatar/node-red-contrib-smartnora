@@ -58,3 +58,9 @@ export function withLocalExecution<T>(config: ConfigNode): MonoTypeOperatorFunct
         }),
     );
 }
+
+export function getNumberOrDefault(a: any, defaultValue = 0) {
+    const nr = +a;
+    if (isFinite(nr)) { return nr; }
+    return defaultValue;
+}

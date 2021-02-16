@@ -7,7 +7,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
-import { convertValueType, getId, getValue, R, withLocalExecution } from './util';
+import { convertValueType, getId, getNumberOrDefault, getValue, R, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-light', function (this: NodeInterface, config: any) {
@@ -52,23 +52,58 @@ module.exports = function (RED: any) {
                 deviceConfig.noraSpecific.turnOnWhenBrightnessChanges = turnOnWhenBrightnessChanges;
             }
         }
+
+        const colorType = config.colortype ?? 'hsv';
+        if (!['rgb', 'hsv', 'temperature'].includes(colorType)) {
+            this.warn(`Invalid color type ${colorType}`);
+            return;
+        }
+
         if (colorControl) {
             deviceConfig.traits.push('action.devices.traits.ColorSetting');
-            if (isColorSetting(deviceConfig)) {
-                deviceConfig.attributes = {
-                    colorModel: 'hsv',
-                };
-                deviceConfig.state.color = {
-                    spectrumHsv: {
-                        hue: 0,
-                        saturation: 0,
-                        value: 1,
-                    },
-                };
+            if (!isColorSetting(deviceConfig)) {
+                this.warn(`Unable to add ColorSetting trait`);
+                return;
+            }
+
+            switch (colorType) {
+                case 'hsv':
+                    deviceConfig.attributes = {
+                        colorModel: 'hsv',
+                    };
+                    deviceConfig.state.color = {
+                        spectrumHsv: {
+                            hue: 0,
+                            saturation: 0,
+                            value: 1,
+                        },
+                    };
+                    break;
+                case 'rgb':
+                    deviceConfig.attributes = {
+                        colorModel: 'rgb',
+                    };
+                    deviceConfig.state.color = {
+                        spectrumRgb: 0,
+                    };
+                    break;
+                case 'temperature':
+                    const tempMin = getNumberOrDefault(config.temperaturemin, 2700);
+                    const tempMax = getNumberOrDefault(config.temperaturemax, 5500);
+                    deviceConfig.attributes = {
+                        colorTemperatureRange: {
+                            temperatureMinK: tempMin,
+                            temperatureMaxK: tempMax,
+                        },
+                    };
+                    deviceConfig.state.color = {
+                        temperatureK: tempMin,
+                    };
+                    break;
             }
         }
-        const stateString$ = new Subject<string>();
 
+        const stateString$ = new Subject<string>();
         const device$ = FirebaseConnection
             .withLogger(RED.log)
             .fromConfig(noraConfig, this, stateString$)
@@ -90,14 +125,14 @@ module.exports = function (RED: any) {
             switchMap(d => d.stateUpdates$),
             takeUntil(close$),
         ).subscribe((state) => {
-            if (!brightnessControl) {
+            if (!brightnessControl && !colorControl) {
                 const value = state.on;
                 this.send({
                     payload: getValue(RED, this, value ? onValue : offValue, value ? onType : offType),
                     topic: config.topic
                 });
             } else {
-                if (statepayload) {
+                if (statepayload || colorControl) {
                     this.send({
                         payload: { ...state },
                         topic: config.topic
@@ -183,15 +218,23 @@ module.exports = function (RED: any) {
                 stateString += ` ${rgbColor}`;
             }
 
+            if (isTemperatureColor(deviceConfig, state) && 'temperatureK' in state?.color) {
+                stateString += ` ${state.color.temperatureK}K`;
+            }
+
             stateString$.next(`(${stateString})`);
         }
 
         function isHsvColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
-            return isColorSetting(device) && device.attributes.colorModel === 'hsv';
+            return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'hsv';
         }
 
         function isRgbColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
-            return isColorSetting(device) && device.attributes.colorModel === 'rgb';
+            return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'rgb';
+        }
+
+        function isTemperatureColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
+            return isColorSetting(device) && 'colorTemperatureRange' in device.attributes;
         }
     });
 };
