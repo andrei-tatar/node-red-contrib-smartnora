@@ -102,7 +102,7 @@ export class FirebaseDevice<T extends Device = Device> {
             mapping,
             warn: (msg) => this?.logger?.warn(`[${this.device.name.name}] ignoring property ${msg}`),
         });
-        if (safeUpdate && updateHasChanges(safeUpdate, this.device.state)) {
+        if (updateHasChanges(safeUpdate, this.device.state)) {
             this.device.state = {
                 ...this.device.state,
                 ...safeUpdate,

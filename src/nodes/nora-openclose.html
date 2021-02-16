@@ -1,0 +1,172 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-openclose', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Open/Close Device',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            directions: {
+                value: '',
+            },
+            openclosetype: {
+                required: true,
+                value: '',
+            },
+            passthru: {
+                value: false,
+            },
+            discrete: {
+                value: true,
+            },
+            commandonly: {
+                value: false,
+            },
+            queryonly: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'open/close',
+        label: function () {
+            return this.name || this.devicename || 'open/close';
+        },
+        oneditprepare: function () {
+            var availableDirections = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'IN', 'OUT'];
+            var row;
+            var directions = this.directions && this.directions.split(',') || [];
+            availableDirections.forEach(function (direction, index) {
+                var rowIndex = Math.floor(index / 3);
+                if (index % 3 === 0) {
+                    $('#directions-container').append(
+                        '<div class="directions-row" directions-row-index="' + rowIndex + '"></div>'
+                    );
+                }
+                $('[directions-row-index=' + rowIndex + ']').append(
+                    '<div class="directions-item">' +
+                    '<input type="checkbox" ' +
+                    (directions.indexOf(direction) >= 0 ? 'checked ' : '') +
+                    (direction === 'off' ? 'disabled ' : '') +
+                    'class="open-close-direction" data-direction="' + direction + '" id="direction-' + direction + '">' +
+                    '<label for="direction-' + direction + '">' + direction.substr(0, 1) + direction.substr(1).toLowerCase() + '</label>' +
+                    '</div>'
+                );
+            });
+            $('.open-close-direction, #node-input-discrete').on('change', function () {
+                var discrete
+                console.log(arguments);
+            });
+        },
+        oneditsave: function () {
+            var directions = [];
+            $('.open-close-direction:checked').each(function () {
+                directions.push($(this).attr('data-direction'));
+            });
+            this.directions = directions.join(',');
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-openclose">
+    <style>
+        .directions-row {
+            display: flex;
+            flex-direction:row;
+        }
+        .directions-item {
+            display:flex;
+            flex-direction:row;
+        }
+        #directions-container {
+            display:flex;
+            flex-direction:column;
+        }
+    </style>
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Device Name</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label for="node-input-openclosetype"><i class="fa fa-question-sign"></i> Type</label>
+        <select id="node-input-openclosetype">
+            <option value="CLOSET">Closet</option>
+            <option value="AWNING">Awning</option>
+            <option value="CURTAIN">Curtain</option>
+            <option value="DOOR">Door</option>
+            <option value="DRAWER">Drawer</option>
+            <option value="BLINDS">Blinds</option>
+            <option value="GARAGE">Garage</option>
+            <option value="GATE">Gate</option>
+            <option value="PERGOLA">Pergola</option>
+            <option value="SHUTTER">Shutter</option>
+            <option value="VALVE">Valve</option>
+            <option value="WINDOW">Window</option>
+        </select>
+    </div>
+    <div class="form-row d-flex flex-column">
+        <label style="width:100%"><i class="fa fa-cog"></i> Supported Open/Close directions (default: all unchecked)</label>
+        <div id="directions-container"></div>
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-discrete"><i class="fa fa-arrow-right"></i> Discrete only open/close: </label>
+        <input type="checkbox" id="node-input-discrete" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-commandonly"><i class="fa fa-exchange"></i> Can only handle commands: </label>
+        <input type="checkbox" id="node-input-commandonly" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-queryonly"><i class="fa fa-exchange"></i> Can only respond to queries (sensor): </label>
+        <input type="checkbox" id="node-input-queryonly" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint   </label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:15px; margin-right:-15px">Topic</label>
+        <input type="text" id="node-input-topic" style="width:70%">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-openclose">
+    <p>
+    Represents a <a href="https://developers.google.com/assistant/smarthome/guides/garage.html">Google Home Garage Door</a>.
+    <br>
+    Outputs a message when Google Home changes the state of the garage door and updates the
+    state of the garage door in Google Home on input messages.
+    <br>
+    The Open/Close payload specifies what message should be sent for the different states of the garage door and how incoming
+    messages translate to the state of the garage door.
+    <br>
+    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
+</p>
+</script>
