@@ -19,7 +19,7 @@
             },
             openclosetype: {
                 required: true,
-                value: '',
+                value: 'DOOR',
             },
             passthru: {
                 value: false,
@@ -42,6 +42,28 @@
             },
             topic: {
                 value: ''
+            },
+            openvalue: {
+                value: true,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'openvalueType') : function (v) {
+                        return true
+                    })
+            },
+            openvalueType: {
+                value: 'bool'
+            },
+            closevalue: {
+                value: false,
+                required: true,
+                validate: (RED.validators.hasOwnProperty('typedInput') ? RED.validators.typedInput(
+                    'closevalueType') : function (v) {
+                        return true
+                    })
+            },
+            closevalueType: {
+                value: 'bool'
             },
         },
         inputs: 1,
@@ -71,9 +93,25 @@
                     '</div>'
                 );
             });
-            $('.open-close-direction, #node-input-discrete').on('change', function () {
-                var discrete
-                console.log(arguments);
+            $('.open-close-direction, #node-input-discrete, #node-input-lockunlock').on('change', function () {
+                var showPredefinedValues = $('.open-close-direction:checked').length === 0 &&
+                    $('#node-input-discrete').is(':checked') &&
+                    !$('#node-input-lockunlock').is(':checked');
+                if (showPredefinedValues) {
+                    $('.openclose-value').show();
+                } else {
+                    $('.openclose-value').hide();
+                }
+            });
+            $('#node-input-openvalue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-openvalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
+            });
+            $('#node-input-closevalue').typedInput({
+                default: 'bool',
+                typeField: $("#node-input-closevalueType"),
+                types: ['str', 'num', 'bool', 'json', 'bin', 'date']
             });
         },
         oneditsave: function () {
@@ -139,16 +177,26 @@
         <input type="checkbox" id="node-input-discrete" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
-        <label style="width:auto" for="node-input-lockunlock"><i class="fa fa-lock"></i> Support <a style="text-decoration: underline;" target="_blank" href="https://developers.google.com/assistant/smarthome/traits/lockunlock">Lock/Unlock</a>: </label>
-        <input type="checkbox" id="node-input-lockunlock" style="display:inline-block; width:auto; vertical-align:top;">
-    </div>
-    <div class="form-row">
         <label style="width:auto" for="node-input-commandonly"><i class="fa fa-exchange"></i> Can only handle commands: </label>
         <input type="checkbox" id="node-input-commandonly" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-queryonly"><i class="fa fa-exchange"></i> Can only respond to queries (sensor): </label>
         <input type="checkbox" id="node-input-queryonly" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row openclose-value">
+        <label for="node-input-openvalue" style="padding-left:10px; margin-right:-10px">Open Payload</label>
+        <input type="text" id="node-input-openvalue" style="width:70%">
+        <input type="hidden" id="node-input-openvalueType">
+    </div>
+    <div class="form-row openclose-value">
+        <label for="node-input-closevalue" style="padding-left:10px; margin-right:-10px">Close Payload</label>
+        <input type="text" id="node-input-closevalue" style="width:70%">
+        <input type="hidden" id="node-input-closevalueType">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-lockunlock"><i class="fa fa-lock"></i> Support <a style="text-decoration: underline;" target="_blank" href="https://developers.google.com/assistant/smarthome/traits/lockunlock">Lock/Unlock</a>: </label>
+        <input type="checkbox" id="node-input-lockunlock" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
         <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint   </label>

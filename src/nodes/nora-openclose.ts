@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
-import { getId, withLocalExecution } from './util';
+import { convertValueType, getId, getValue, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-openclose', function (this: NodeInterface, config: any) {
@@ -32,6 +32,17 @@ module.exports = function (RED: any) {
             return;
         }
 
+        const useDiscreteValues: boolean = config.discrete ?? true;
+        const useOpenCloseDefinedValues = useDiscreteValues && !openCloseDirections && !config.lockunlock;
+        const {
+            value: openValue,
+            type: openType,
+        } = convertValueType(RED, config.openvalue, config.openvalueType, { defaultValue: true });
+        const {
+            value: closeValue,
+            type: closeType,
+        } = convertValueType(RED, config.closevalue, config.closevalueType, { defaultValue: false });
+
         const deviceConfig = noraConfig.setCommon<OpenCloseDevice>({
             id: getId(config),
             type: deviceType as Device['type'],
@@ -57,7 +68,7 @@ module.exports = function (RED: any) {
             noraSpecific: {
             },
             attributes: {
-                discreteOnlyOpenClose: config.discrete ?? true,
+                discreteOnlyOpenClose: useDiscreteValues,
                 openDirection: openCloseDirections,
                 commandOnlyOpenClose: config.commandonly ?? false,
                 queryOnlyOpenClose: config.queryonly ?? false,
@@ -94,10 +105,24 @@ module.exports = function (RED: any) {
             switchMap(d => d.stateUpdates$),
             takeUntil(close$),
         ).subscribe(state => {
-            this.send({
-                payload: state,
-                topic: config.topic,
-            });
+            if (useOpenCloseDefinedValues && 'openPercent' in state) {
+                if (state.openPercent === 0) {
+                    this.send({
+                        payload: getValue(RED, this, closeValue, closeType),
+                        topic: config.topic
+                    });
+                } else {
+                    this.send({
+                        payload: getValue(RED, this, openValue, openType),
+                        topic: config.topic
+                    });
+                }
+            } else {
+                this.send({
+                    payload: state,
+                    topic: config.topic,
+                });
+            }
         });
 
         this.on('input', async msg => {
@@ -106,7 +131,17 @@ module.exports = function (RED: any) {
             }
             try {
                 const device = await device$.pipe(first()).toPromise();
-                await device.updateState(msg.payload);
+                if (!useOpenCloseDefinedValues) {
+                    await device.updateState(msg.payload);
+                } else {
+                    const myOpenValue = getValue(RED, this, openValue, openType);
+                    const myCloseValue = getValue(RED, this, closeValue, closeType);
+                    if (RED.util.compareObjects(myOpenValue, msg.payload)) {
+                        await device.updateState({ openPercent: 100 });
+                    } else if (RED.util.compareObjects(myCloseValue, msg.payload)) {
+                        await device.updateState({ openPercent: 0 });
+                    }
+                }
             } catch (err) {
                 this.warn(`while updating state ${err.message}: ${err.stack}`);
             }
