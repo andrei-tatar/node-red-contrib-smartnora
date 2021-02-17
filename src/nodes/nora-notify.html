@@ -1,41 +1,142 @@
 <script type="text/javascript">
-    RED.nodes.registerType('noraf-notify', {
-        category: 'nora',
-        color: 'rgb(235, 227, 141)',
-        icon: 'assistant.png',
-        defaults: {
-            title: {
-                value: 'Sample Title',
-                required: true,
+    (function () {
+        function resizeDialog(size) {
+            size = size || { height: $(".red-ui-tray-content form").height() }
+            var rows = $("#dialog-form>div:not(.node-input-action-container-row):visible");
+            var height = size.height;
+            for (var i = 0; i < rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            var editorRow = $("#dialog-form>div.node-input-action-container-row");
+            height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+            $("#node-input-action-container").editableList('height', height);
+        }
+
+        RED.nodes.registerType('noraf-notify', {
+            category: 'nora',
+            color: 'rgb(235, 227, 141)',
+            icon: 'assistant.png',
+            defaults: {
+                tag: {
+                    value: '',
+                },
+                title: {
+                    value: 'Sample Title',
+                    required: true,
+                },
+                body: {
+                    value: '',
+                    required: true,
+                },
+                icon: {
+                    value: undefined,
+                },
+                name: {
+                    value: ''
+                },
+                nora: {
+                    type: 'noraf-config',
+                    required: true
+                },
+                topic: {
+                    value: ''
+                },
+                actions: {
+                    value: [{
+                        p: 'OK', v: 'ok', vt: 'str',
+                    }, {
+                        p: 'Cancel', v: 'cancel', vt: 'str',
+                    }]
+                },
             },
-            body: {
-                value: '',
-                required: true,
+            inputs: 1,
+            outputs: 1,
+            paletteLabel: 'notify',
+            label: function () {
+                return this.name || this.title || 'notify';
             },
-            icon: {
-                value: undefined,
+            oneditresize: resizeDialog,
+            oneditprepare: function () {
+                $('#node-input-action-container').css('min-height', '120px').css('min-width', '450px').editableList({
+                    addItem: function (container, i, opt) {
+                        var prop = opt;
+                        if (!prop.hasOwnProperty('p')) {
+                            prop = { p: "", v: "", vt: "str" };
+                        }
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        var propertyName = $('<input/>', { class: "node-input-action-action-name", type: "text" })
+                            .css("width", "30%")
+                            .val(prop.p)
+                            .appendTo(row);
+
+                        $('<div/>', { style: 'display:inline-block; padding:0px 6px;' })
+                            .text('=>')
+                            .appendTo(row);
+
+                        var propertyValue = $('<input/>', { class: "node-input-action-action-value", type: "text" })
+                            .css("width", "calc(70% - 30px)")
+                            .appendTo(row)
+                            .typedInput({ default: 'str', types: ['flow', 'global', 'str', 'num', 'bool', 'json', 'bin', 'date', 'jsonata', 'env'] });
+
+                        propertyValue.typedInput('value', prop.v);
+                        propertyValue.typedInput('type', prop.vt);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+                if (!this.actions) {
+                    this.actions = [];
+                }
+
+                for (var i = 0; i < this.actions.length; i++) {
+                    var action = this.actions[i];
+                    var newAction = { p: action.p, v: action.v, vt: action.vt };
+                    if (newAction.v === undefined) {
+                        if (action.p === 'payload') {
+                            newAction.v = this.payload ? this.payload : '';
+                            newAction.vt = this.payloadType ? this.payloadType : 'date';
+                        } else if (action.p === 'topic' && action.vt === "str") {
+                            newAction.v = this.topic ? this.topic : '';
+                        }
+                    }
+                    $("#node-input-action-container").editableList('addItem', newAction);
+                }
             },
-            name: {
-                value: ''
-            },
-            nora: {
-                type: 'noraf-config',
-                required: true
-            },
-        },
-        inputs: 1,
-        outputs: 1,
-        paletteLabel: 'notify',
-        label: function () {
-            return this.name || this.title || 'notify';
-        },
-    });
+            oneditsave: function () {
+                var actions = $("#node-input-action-container").editableList('items');
+                var node = this;
+                node.actions = [];
+                node.topic = "";
+                actions.each(function (i) {
+                    var action = $(this);
+                    var p = {
+                        p: action.find(".node-input-action-action-name").val()
+                    };
+                    if (p.p) {
+                        p.v = action.find(".node-input-action-action-value").typedInput('value');
+                        p.vt = action.find(".node-input-action-action-value").typedInput('type');
+                        node.actions.push(p);
+                    }
+                });
+            }
+        });
+    })();
 </script>
 
 <script type="text/x-red" data-template-name="noraf-notify">
     <div class="form-row">
         <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
         <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-tag"><i class="fa fa-i-cursor"></i> Tag</label>
+        <input type="text" id="node-input-tag">
     </div>
     <div class="form-row">
         <label for="node-input-title"><i class="fa fa-i-cursor"></i> Title</label>
@@ -48,6 +149,14 @@
     <div class="form-row">
         <label for="node-input-icon" style="padding-left:25px; margin-right:-25px">Icon</label>
         <input type="text" id="node-input-icon">
+    </div>
+    <label><i class="fa fa-tag"></i> <span>Actions:</span></label>
+    <div class="form-row node-input-action-container-row">
+        <ol id="node-input-action-container"></ol>
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:15px; margin-right:-15px">Topic</label>
+        <input type="text" id="node-input-topic" style="width:70%">
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
