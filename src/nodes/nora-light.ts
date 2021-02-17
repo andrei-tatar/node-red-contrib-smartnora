@@ -69,6 +69,7 @@ module.exports = function (RED: any) {
             switch (colorType) {
                 case 'hsv':
                     deviceConfig.attributes = {
+                        commandOnlyColorSetting: config.commandonlycolor ?? false,
                         colorModel: 'hsv',
                     };
                     deviceConfig.state.color = {
@@ -81,6 +82,7 @@ module.exports = function (RED: any) {
                     break;
                 case 'rgb':
                     deviceConfig.attributes = {
+                        commandOnlyColorSetting: config.commandonlycolor ?? false,
                         colorModel: 'rgb',
                     };
                     deviceConfig.state.color = {
@@ -91,6 +93,7 @@ module.exports = function (RED: any) {
                     const tempMin = getNumberOrDefault(config.temperaturemin, 2700);
                     const tempMax = getNumberOrDefault(config.temperaturemax, 5500);
                     deviceConfig.attributes = {
+                        commandOnlyColorSetting: config.commandonlycolor ?? false,
                         colorTemperatureRange: {
                             temperatureMinK: tempMin,
                             temperatureMaxK: tempMax,
@@ -226,15 +229,15 @@ module.exports = function (RED: any) {
         }
 
         function isHsvColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
-            return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'hsv';
+            return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'hsv' && state?.color;
         }
 
         function isRgbColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
-            return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'rgb';
+            return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'rgb' && state?.color;
         }
 
         function isTemperatureColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
-            return isColorSetting(device) && 'colorTemperatureRange' in device.attributes;
+            return isColorSetting(device) && 'colorTemperatureRange' in device.attributes && state?.color;
         }
     });
 };

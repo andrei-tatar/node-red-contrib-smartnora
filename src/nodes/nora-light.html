@@ -14,6 +14,9 @@
             brightnesscontrol: {
                 value: true,
             },
+            commandonlycolor: {
+                value: false,
+            },
             turnonwhenbrightnesschanges: {
                 value: false,
             },
@@ -131,8 +134,10 @@
             });
             $('#node-input-lightcolor').change(function () {
                 if (this.checked) {
+                    $('#color-commandonly').show();
                     $('#color-type').show();
                 } else {
+                    $('#color-commandonly').hide();
                     $('#color-type').hide();
                 }
                 updateDiscretePayloadVisible();
@@ -193,6 +198,10 @@
     <div class="form-row">
         <label style="width:auto" for="node-input-lightcolor"><i class="fa fa-gamepad"></i> Color support: </label>
         <input type="checkbox" id="node-input-lightcolor" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row" id="color-commandonly">
+        <label style="width:auto" for="node-input-commandonlycolor"><i class="fa fa-gamepad"></i> Command only color support: </label>
+        <input type="checkbox" id="node-input-commandonlycolor" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row" id="color-type">
         <label for="node-input-colortype"><i class="fa fa-question-sign"></i> Type</label>
