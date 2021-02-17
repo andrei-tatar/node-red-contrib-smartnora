@@ -1,4 +1,4 @@
-import { Device, isLockUnlock, OpenCloseDevice, OpenCloseDirection } from '@andrei-tatar/nora-firebase-common';
+import { Device, isLockUnlock, LockUnlockDevice, OpenCloseDevice, OpenCloseDirection } from '@andrei-tatar/nora-firebase-common';
 import { Schema } from '@andrei-tatar/nora-firebase-common/build/schema';
 import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
@@ -118,10 +118,18 @@ module.exports = function (RED: any) {
         });
 
         function notifyState(state: OpenCloseDevice['state']) {
-            const stateString = 'openPercent' in state
-                ? `(${openPercent(state.openPercent)})`
+            let stateString = 'openPercent' in state
+                ? openPercent(state.openPercent)
                 : state.openState.map(s => `${s.openDirection}:${openPercent(s.openPercent)}`).join(', ');
-            stateString$.next(stateString);
+
+            if (isLockUnlockState(deviceConfig, state)) {
+                if (state.isJammed) {
+                    stateString += ' jammed';
+                } else {
+                    stateString += ` ${state.isLocked ? 'locked' : 'unlocked'}`;
+                }
+            }
+            stateString$.next(`(${stateString})`);
         }
 
         function openPercent(percent: number) {
@@ -130,6 +138,10 @@ module.exports = function (RED: any) {
                 case 100: return 'open';
                 default: return `${percent}%`;
             }
+        }
+
+        function isLockUnlockState(device: Device, state: Device['state']): state is LockUnlockDevice['state'] {
+            return isLockUnlock(device);
         }
     });
 };
