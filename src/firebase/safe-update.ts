@@ -14,10 +14,15 @@ const skipRoundingStatePaths = new Set<string>([
     'color.spectrumHsv.saturation',
     'color.spectrumHsv.value',
 ]);
+
 const roundTo = new Map<string, number>([
     ['thermostatTemperatureAmbient', 2],
     ['thermostatHumidityAmbient', 1]
 ]);
+
+const keepPathsIfSameValue: RegExp[] = [
+    /^openState\.\d+\.openDirection$/
+];
 
 export function getSafeUpdate({
     update,
@@ -56,8 +61,9 @@ export function getSafeUpdate({
         }
 
         if (typeof updateValue === 'object' && typeof previousValue === 'object') {
-            const updateChild = {};
-            safeUpdateObject[updateKey] = updateChild; // set it for validation
+            const updateChild = Array.isArray(updateValue) ? [] : {};
+            // set it for validation
+            const remove = append(safeUpdateObject, updateKey, updateChild);
             getSafeUpdate({
                 update: updateValue,
                 currentState: previousValue,
@@ -65,18 +71,39 @@ export function getSafeUpdate({
                 isValid,
                 mapping,
                 path: `${path}${key}.`,
-                statePath: currentStatePath
+                statePath: currentStatePath,
+                warn,
             });
-            delete safeUpdateObject[updateKey];
+            remove();
             updateValue = updateChild;
         }
 
+        const skipRemove = keepPathsIfSameValue.some(t => t.test(currentStatePath));
+        if (!skipRemove && updateValue === previousValue) {
+            updateValue = undefined;
+        }
+
         if (updateValue !== undefined) {
-            safeUpdateObject[updateKey] = updateValue;
+            const remove = append(safeUpdateObject, updateKey, updateValue);
             if (!isValid()) {
-                delete safeUpdateObject[updateKey];
+                remove();
                 warn?.(`${path}${key}`);
             }
         }
+    }
+}
+
+function append(parent: any, key: string | number | symbol, child: any) {
+    if (Array.isArray(parent)) {
+        parent.push(child);
+        return () => {
+            const index = parent.indexOf(child);
+            parent.splice(index, 1);
+        };
+    } else {
+        parent[key] = child;
+        return () => {
+            delete parent[key];
+        };
     }
 }

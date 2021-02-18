@@ -118,10 +118,31 @@ module.exports = function (RED: any) {
                     });
                 }
             } else {
-                this.send({
-                    payload: state,
-                    topic: config.topic,
-                });
+                const payload: any = { online: state.online };
+
+                if (isLockUnlockState(deviceConfig, state)) {
+                    payload.locked = state.isLocked;
+                    payload.jammed = state.isJammed;
+                }
+
+                if ('openPercent' in state) {
+                    payload.open = state.openPercent;
+                    this.send({
+                        payload,
+                        topic: config.topic,
+                    });
+                } else {
+                    for (const directionState of state.openState) {
+                        this.send({
+                            payload: {
+                                ...payload,
+                                open: directionState.openPercent,
+                                direction: directionState.openDirection,
+                            },
+                            topic: config.topic,
+                        });
+                    }
+                }
             }
         });
 
@@ -132,7 +153,30 @@ module.exports = function (RED: any) {
             try {
                 const device = await device$.pipe(first()).toPromise();
                 if (!useOpenCloseDefinedValues) {
-                    await device.updateState(msg.payload);
+                    const state = await device.state$.pipe(first()).toPromise();
+                    const payload = { ...msg.payload };
+                    if (openCloseDirections?.length && 'openState' in state) {
+                        if (payload.open) {
+                            payload.openState = state.openState.map(st => ({
+                                openDirection: st.openDirection,
+                                openPercent: st.openDirection === msg.payload.direction || !msg.payload.direction
+                                    ? msg.payload.open
+                                    : st.openPercent,
+                            }));
+                            delete payload.open;
+                            delete payload.direction;
+                        }
+                    }
+                    await device.updateState(payload, [{
+                        from: 'open',
+                        to: 'openPercent',
+                    }, {
+                        from: 'locked',
+                        to: 'isLocked',
+                    }, {
+                        from: 'jammed',
+                        to: 'isJammed',
+                    }]);
                 } else {
                     const myOpenValue = getValue(RED, this, openValue, openType);
                     const myCloseValue = getValue(RED, this, closeValue, closeType);
@@ -140,6 +184,8 @@ module.exports = function (RED: any) {
                         await device.updateState({ openPercent: 100 });
                     } else if (RED.util.compareObjects(myCloseValue, msg.payload)) {
                         await device.updateState({ openPercent: 0 });
+                    } else {
+                        await device.updateState(msg.payload);
                     }
                 }
             } catch (err) {

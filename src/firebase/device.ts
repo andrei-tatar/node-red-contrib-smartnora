@@ -1,4 +1,4 @@
-import { Device, executeCommand, updateHasChanges, validate } from '@andrei-tatar/nora-firebase-common';
+import { Device, executeCommand, updateState, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
 import { filter, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
@@ -98,19 +98,25 @@ export class FirebaseDevice<T extends Device = Device> {
             update,
             currentState,
             safeUpdateObject: safeUpdate,
-            isValid: () => validate(this.device.traits, 'state', safeUpdate).valid,
+            isValid: () => validate(this.device.traits, 'state-update', safeUpdate).valid,
             mapping,
             warn: (msg) => this?.logger?.warn(`[${this.device.name.name}] ignoring property ${msg}`),
         });
-        if (updateHasChanges(safeUpdate, this.device.state)) {
-            this.device.state = {
-                ...this.device.state,
-                ...safeUpdate,
-            };
+
+        const { hasChanges, state } = updateState(safeUpdate, this.device.state);
+        if (hasChanges) {
+            const { valid } = validate(this.device.traits, 'state', state);
+            if (!valid) {
+                this?.logger?.warn(`[${this.device.name.name}] invalid state after update. aborting update. ${JSON.stringify(safeUpdate)} => ${JSON.stringify(state)}`);
+                return;
+            }
+
+            this.device.state = state;
             if (this.connectedAndSynced) {
                 await this.sync.updateState(this.device.id, safeUpdate);
             }
         }
+
         return true;
     }
 
@@ -119,15 +125,11 @@ export class FirebaseDevice<T extends Device = Device> {
         this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
 
         if (updates?.updateState) {
-            const currentState = {
-                ...this.device.state,
-                ...updates.updateState,
-            };
             this.updateState(updates.updateState).catch(err =>
                 this.logger?.warn(`error while executing local command, ${err.message}: ${err.stack}`)
             );
-            this._localStateUpdate$.next(currentState);
-            return currentState;
+            this._localStateUpdate$.next(this.device.state);
+            return this.device.state;
         }
 
         return this.device.state;

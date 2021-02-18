@@ -10,10 +10,10 @@ describe('getSafeUpdate', () => {
 
         getSafeUpdate({
             update: {
-                test: '123',
+                test: '45',
                 test2: '123',
                 child: {
-                    test: '123',
+                    test: '45',
                     test2: '123',
                 },
             },
@@ -30,12 +30,71 @@ describe('getSafeUpdate', () => {
         });
 
         expect(safeUpdate).to.deep.equal({
-            test: 123,
+            test: 45,
             test2: '123',
             child: {
-                test: 123,
+                test: 45,
                 test2: '123',
             }
+        });
+    });
+
+    it('should return only the changes', () => {
+        const safeUpdate = {};
+
+        getSafeUpdate({
+            update: {
+                willChange: 3,
+                child: {
+                    willChange: 4,
+                    wontChange: '2',
+                },
+            },
+            currentState: {
+                willChange: 1,
+                wontChange: 1,
+                child: {
+                    willChange: 2,
+                    wontChange: 2,
+                },
+            },
+            isValid: () => true,
+            safeUpdateObject: safeUpdate,
+        });
+
+        expect(safeUpdate).to.deep.equal({
+            willChange: 3,
+            child: {
+                willChange: 4,
+            },
+        });
+    });
+
+    it('should keep openState[$].openDirection properties even if they dont change', () => {
+        const safeUpdate = {};
+
+        getSafeUpdate({
+            update: {
+                openState: [
+                    { openDirection: 'LEFT', openPercent: 50 },
+                    { openDirection: 'RIGHT', openPercent: 50 }
+                ]
+            },
+            currentState: {
+                openState: [
+                    { openDirection: 'LEFT', openPercent: 0 },
+                    { openDirection: 'RIGHT', openPercent: 0 }
+                ]
+            },
+            isValid: () => true,
+            safeUpdateObject: safeUpdate,
+        });
+
+        expect(safeUpdate).to.deep.equal({
+            openState: [
+                { openDirection: 'LEFT', openPercent: 50 },
+                { openDirection: 'RIGHT', openPercent: 50 }
+            ]
         });
     });
 
@@ -118,7 +177,6 @@ describe('getSafeUpdate', () => {
 
 
     describe('with validation', () => {
-
         it('should remove invalid properties and warn', () => {
             const safeUpdate = {};
             const warnings: string[] = [];
@@ -130,6 +188,7 @@ describe('getSafeUpdate', () => {
                         missingProperty: 'this should not be copied',
                         spectrumHsv: {
                             missingProperty: 'this should not be copied',
+                            hue: 3,
                         },
                     },
                 },
@@ -143,15 +202,22 @@ describe('getSafeUpdate', () => {
                         },
                     },
                 },
-                isValid: () => validate(['action.devices.traits.ColorSetting'], 'state', safeUpdate).valid,
+                isValid: () => validate(['action.devices.traits.ColorSetting'], 'state-update', safeUpdate).valid,
                 warn: prop => warnings.push(prop),
                 safeUpdateObject: safeUpdate,
             });
 
-            expect(safeUpdate).to.deep.equal({});
+            expect(safeUpdate).to.deep.equal({
+                color: {
+                    spectrumHsv: {
+                        hue: 3,
+                    },
+                },
+            });
             expect(warnings).to.have.members([
                 'msg.payload.missingProperty',
-                'msg.payload.color',
+                'msg.payload.color.missingProperty',
+                'msg.payload.color.spectrumHsv.missingProperty',
             ]);
         });
     });
