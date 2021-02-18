@@ -156,7 +156,7 @@ module.exports = function (RED: any) {
                     const state = await device.state$.pipe(first()).toPromise();
                     const payload = { ...msg.payload };
                     if (openCloseDirections?.length && 'openState' in state) {
-                        if (payload.open) {
+                        if ('open' in payload) {
                             payload.openState = state.openState.map(st => ({
                                 openDirection: st.openDirection,
                                 openPercent: st.openDirection === msg.payload.direction || !msg.payload.direction
