@@ -31,6 +31,10 @@ module.exports = function (RED: any) {
                 bufferRangeCelsius: parseInt(config.bufferRangeCelsius, 10) || undefined,
                 commandOnlyTemperatureSetting: config.commandOnly ?? undefined,
                 queryOnlyTemperatureSetting: config.queryOnly ?? undefined,
+                thermostatTemperatureRange: {
+                    minThresholdCelsius: parseInt(config.rangeMin, 10) || 10,
+                    maxThresholdCelsius: parseInt(config.rangeMax, 10) || 32,
+                },
             },
             state: {
                 online: true,

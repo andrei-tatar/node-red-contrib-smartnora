@@ -19,7 +19,15 @@
             },
             unit: {
                 value: 'C',
-                validate: function (v) {return v === 'C' || v === 'F';},
+                validate: function (v) { return v === 'C' || v === 'F'; },
+            },
+            rangeMin: {
+                value: '',
+                validate: function (v) { return !v || RED.validators.number()(v) },
+            },
+            rangeMax: {
+                value: '',
+                validate: function (v) { return !v || RED.validators.number()(v) },
             },
             topic: {
                 value: ''
@@ -121,6 +129,15 @@
         <input style="width:auto;margin:0" id="unit-fahrenheit" type="radio" name="unit" value="F"><label  style="width:40px" for="unit-fahrenheit">&nbsp;F</label>
     </div>
     <div class="form-row d-flex flex-column">
+        <label for="node-input-devicename" style="width: 100%">Temperature Range (Celsius)</label>
+        <br>
+        <label for="node-input-rangeMin" style="text-align:right"><i class="fa fa-thermometer-empty"></i> Min</label>
+        <input style="margin-bottom:5px" type="text" id="node-input-rangeMin" placeholder="10">
+        <br>
+        <label for="node-input-rangeMax" style="text-align:right"><i class="fa fa-thermometer-full"></i> Max</label>
+        <input type="text" id="node-input-rangeMax" placeholder="32">
+    </div>
+    <div class="form-row d-flex flex-column">
         <label style="width:100%"><i class="fa fa-cog"></i> Supported modes</label>
         <div id="modes-container"></div>
     </div>
@@ -129,11 +146,11 @@
         <input type="text" id="node-input-bufferRangeCelsius" style="width:20%">
     </div>
     <div class="form-row">
-        <label style="width:auto" for="node-input-commandOnly"><i class="fa fa-exchange"></i>  Indicates if the device operates using one-way (checked) or two-way communication: </label>
+        <label style="width:auto" for="node-input-commandOnly"><i class="fa fa-exchange"></i>  Command only: </label>
         <input type="checkbox" id="node-input-commandOnly" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
-        <label style="width:auto" for="node-input-queryOnly"><i class="fa fa-question"></i>  Required if the device supports query-only execution: </label>
+        <label style="width:auto" for="node-input-queryOnly"><i class="fa fa-question"></i>  Query only (sensor): </label>
         <input type="checkbox" id="node-input-queryOnly" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
