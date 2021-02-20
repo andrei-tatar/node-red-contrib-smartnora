@@ -156,13 +156,19 @@ module.exports = function (RED: any) {
                     const state = await device.state$.pipe(first()).toPromise();
                     const payload = { ...msg.payload };
                     if (openCloseDirections?.length && 'openState' in state) {
-                        if ('open' in payload) {
+                        if (typeof payload === 'object' && 'open' in payload) {
+                            const payloadDirection = msg?.payload?.direction;
+                            const direction = typeof payloadDirection === 'string'
+                                ? payloadDirection.trim().toUpperCase()
+                                : null;
+
                             payload.openState = state.openState.map(st => ({
                                 openDirection: st.openDirection,
-                                openPercent: st.openDirection === msg.payload.direction || !msg.payload.direction
+                                openPercent: st.openDirection === direction || direction == null
                                     ? msg.payload.open
                                     : st.openPercent,
                             }));
+
                             delete payload.open;
                             delete payload.direction;
                         }
