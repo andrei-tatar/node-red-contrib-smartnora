@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
+import { getSafeUpdate } from '../firebase/safe-update';
 import { getId, getValue } from './util';
 
 module.exports = function (RED: any) {
@@ -47,29 +48,31 @@ module.exports = function (RED: any) {
                     body: config.body,
                     icon: config.icon,
                     tag: config.tag || undefined,
-                    ...msg.payload ?? {},
                     actions: undefined,
                 };
+
+                getSafeUpdate({
+                    update: msg.payload ?? {},
+                    safeUpdateObject: notification,
+                    currentState: notification,
+                    isValid: () => validateIndividual('notification', notification).valid,
+                    warn: (propName) => this.warn(`ignoring property ${propName}`),
+                });
 
                 if (configActions?.length) {
                     notification.actions = configActions.map(({ p }, index) => ({
                         title: p,
                         action: `${index}`,
                     }));
-                }
-
-                const result = validateIndividual('notification', notification);
-                if (result.valid) {
-                    if (notification.actions?.length) {
-                        notification.data ??= {};
-                        notification.data.sender = identifier;
-                    }
-
-                    const connection = await connection$.pipe(first()).toPromise();
-                    await connection.sendNotification(notification);
+                    notification.data ??= {};
+                    notification.data.sender = identifier;
                 } else {
-                    this.warn(`Not a valid notification object: ${JSON.stringify(result.errors)}`);
+                    delete notification.actions;
                 }
+
+                const connection = await connection$.pipe(first()).toPromise();
+                await connection.sendNotification(notification);
+
             } catch (err) {
                 this.warn(`while updating state ${err.message}: ${err.stack}`);
             }

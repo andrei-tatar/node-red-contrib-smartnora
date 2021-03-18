@@ -6,6 +6,7 @@ import { BehaviorSubject, EMPTY, merge, Observable } from 'rxjs';
 import { filter, ignoreElements, switchMap } from 'rxjs/operators';
 import { publishReplayRefCountWithDelay } from '..';
 import { FirebaseDevice } from '../firebase/device';
+import { deviceSupportsLocalExecution } from './exceptions';
 
 const DISCOVERY_PACKET = '021dfa122e51acb0b9ea5fbce02741ba69a37a203bd91027978cf29557cbb5b6';
 const DISCOVERY_PORT = 6988;
@@ -82,8 +83,7 @@ export class LocalExecution {
     }
 
     registerDeviceForLocalExecution(device: FirebaseDevice): Observable<never> {
-        if (device.device.noraSpecific?.twoFactor?.type?.length) {
-            // two - factor devices don't support local execution path;
+        if (!deviceSupportsLocalExecution(device.device)) {
             return EMPTY;
         }
 
