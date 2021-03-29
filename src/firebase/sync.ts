@@ -265,7 +265,8 @@ export class FirebaseSync {
     }
 
     private shouldRetryRequest(response: Response) {
-        return response.status !== 200 && response.status !== 400;
+        const status = Math.floor(response.status / 100);
+        return status !== 2 && status !== 4;
     }
 }
 
