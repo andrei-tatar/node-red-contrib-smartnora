@@ -87,6 +87,8 @@ module.exports = function (RED: any) {
                     await device.updateState({ openPercent: 100 });
                 } else if (RED.util.compareObjects(myCloseValue, msg.payload)) {
                     await device.updateState({ openPercent: 0 });
+                } else {
+                    await device.updateState(msg.payload);
                 }
             } catch (err) {
                 this.warn(`while updating state ${err.message}: ${err.stack}`);

@@ -94,12 +94,16 @@ module.exports = function (RED: any) {
                         await device.updateState({ isJammed: true });
                     } else if (RED.util.compareObjects(myUnjammedValue, msg.payload)) {
                         await device.updateState({ isJammed: false });
+                    } else {
+                        await device.updateState(msg.payload);
                     }
                 } else {
                     if (RED.util.compareObjects(myLockValue, msg.payload)) {
                         await device.updateState({ isLocked: true });
                     } else if (RED.util.compareObjects(myUnlockValue, msg.payload)) {
                         await device.updateState({ isLocked: false });
+                    } else {
+                        await device.updateState(msg.payload);
                     }
                 }
             } catch (err) {
