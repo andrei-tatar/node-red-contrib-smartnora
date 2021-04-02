@@ -14,6 +14,7 @@ module.exports = function (RED: any) {
 
         const close$ = new Subject();
         const stateString$ = new Subject<string>();
+        const error$ = new Subject<string | null>();
 
         const deviceConfig = noraConfig.setCommon<VolumeDevice & OnOffDevice>({
             id: getId(config),
@@ -41,9 +42,9 @@ module.exports = function (RED: any) {
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)
-            .fromConfig(noraConfig, this, stateString$)
+            .fromConfig(noraConfig, this, stateString$, error$)
             .pipe(
-                switchMap(connection => connection.withDevice(deviceConfig)),
+                switchMap(connection => connection.withDevice(deviceConfig, error$)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),

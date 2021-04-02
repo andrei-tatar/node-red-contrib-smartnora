@@ -73,6 +73,16 @@ export class FirebaseDevice<T extends Device = Device> {
         refCount(),
     );
 
+    error$ = new Observable<string | null>(observer => {
+        const handler = (snapshot: firebase.database.DataSnapshot) => {
+            const value: string | null = snapshot.val();
+            observer.next(value ?? null);
+        };
+        const ref = this.noraSpecific.child('error/msg');
+        ref.on('value', handler);
+        return () => ref.off('value', handler);
+    });
+
     protected readonly state = this.sync.states.child(this.device.id);
     protected readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
 
@@ -122,7 +132,7 @@ export class FirebaseDevice<T extends Device = Device> {
 
     executeCommand(command: string, params: any): T['state'] {
         const updates = executeCommand({ command, params, device: this.device });
-        this.logger?.log(`[nora][local-execution][${this.device.id}] executed ${command}`);
+        this.logger?.trace(`[nora][local-execution][${this.device.id}] executed ${command}`);
 
         if (updates?.updateState) {
             this.updateState(updates.updateState).catch(err =>

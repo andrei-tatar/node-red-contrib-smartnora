@@ -6,6 +6,7 @@ import { combineLatest, EMPTY, merge, Observable, of, timer } from 'rxjs';
 import { delayWhen, finalize, ignoreElements, map, retryWhen, startWith, switchMap, tap } from 'rxjs/operators';
 import { Logger, NodeInterface, publishReplayRefCountWithDelay } from '..';
 import { firebaseConfig, NoraConfig } from '../config';
+import { LocalExecution } from '../local-execution/local-execution';
 import { FirebaseSync } from './sync';
 
 export class FirebaseConnection {
@@ -21,10 +22,15 @@ export class FirebaseConnection {
 
     static withLogger(logger: Logger) {
         this.logger ??= logger;
+        LocalExecution.withLogger(logger);
         return this;
     }
 
-    static fromConfig(config: NoraConfig, node: NodeInterface, state$: Observable<string> = EMPTY) {
+    static fromConfig(
+        config: NoraConfig,
+        node: NodeInterface,
+        state$: Observable<string> = EMPTY,
+        error$: Observable<string | null> = EMPTY) {
         const key = this.getConfigKey(config);
         let cached = this.configs[key];
         if (!cached) {
@@ -47,22 +53,31 @@ export class FirebaseConnection {
 
         return cached.pipe(
             switchMap(connection => merge(
-                this.updateState(connection, node, state$),
+                this.updateState(connection, node, state$, error$),
                 of(connection),
             )),
         );
     }
 
-    private static updateState(connection: FirebaseSync, node: NodeInterface, state$: Observable<string>) {
-        return combineLatest([connection.connected$, state$.pipe(startWith(null))])
-            .pipe(
-                tap(([connected, state]) => {
-                    node.status(connected
-                        ? { fill: 'green', shape: 'dot', text: `${state || 'connected'}` }
-                        : { fill: 'red', shape: 'ring', text: 'disconnected' });
-                }),
-                ignoreElements(),
-            );
+    private static updateState(
+        connection: FirebaseSync,
+        node: NodeInterface,
+        state$: Observable<string>,
+        error$: Observable<string | null> = EMPTY) {
+        return combineLatest([
+            connection.connected$,
+            state$.pipe(startWith(null)),
+            error$.pipe(startWith(null)),
+        ]).pipe(
+            tap(([connected, state, error]) => {
+                node.status(connected
+                    ? (error
+                        ? { fill: 'yellow', shape: 'ring', text: error }
+                        : { fill: 'green', shape: 'dot', text: `${state || 'connected'}` })
+                    : { fill: 'red', shape: 'ring', text: 'disconnected' });
+            }),
+            ignoreElements(),
+        );
     }
 
     private static getConfigKey(config: NoraConfig) {

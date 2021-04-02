@@ -86,9 +86,9 @@ export class FirebaseSync {
         this.userAgent = `${name}/${version}`;
     }
 
-    withDevice<T extends SceneDevice>(device: T): Observable<FirebaseSceneDevice<T>>;
-    withDevice<T extends Device>(device: T): Observable<FirebaseDevice<T>>;
-    withDevice<T extends Device>(device: T): Observable<FirebaseDevice<T>> {
+    withDevice<T extends SceneDevice>(device: T, error$?: Subject<string | null>): Observable<FirebaseSceneDevice<T>>;
+    withDevice<T extends Device>(device: T, error$?: Subject<string | null>): Observable<FirebaseDevice<T>>;
+    withDevice<T extends Device>(device: T, error$?: Subject<string | null>): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
             const cloudId = `${this.group}|${device.id}`;
             const firebaseDevice = isScene(device)
@@ -96,8 +96,9 @@ export class FirebaseSync {
                 : new FirebaseDevice<T>(cloudId, this, device, this.logger);
             observer.next(firebaseDevice);
             this.devices$.next(this.devices$.value.concat(firebaseDevice));
-
+            const errorSubcription = error$ ? firebaseDevice.error$.subscribe(error$) : null;
             return () => {
+                errorSubcription?.unsubscribe();
                 this.devices$.next(this.devices$.value.filter(d => d !== firebaseDevice));
             };
         });

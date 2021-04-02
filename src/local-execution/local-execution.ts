@@ -1,12 +1,12 @@
+import { deviceSupportsLocalExecution } from '@andrei-tatar/nora-firebase-common';
 import { encodeAsync } from 'cbor';
 import { createSocket, Socket } from 'dgram';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { networkInterfaces } from 'os';
 import { BehaviorSubject, EMPTY, merge, Observable } from 'rxjs';
 import { filter, ignoreElements, switchMap } from 'rxjs/operators';
-import { publishReplayRefCountWithDelay } from '..';
+import { Logger, publishReplayRefCountWithDelay } from '..';
 import { FirebaseDevice } from '../firebase/device';
-import { deviceSupportsLocalExecution } from './exceptions';
 
 const DISCOVERY_PACKET = '021dfa122e51acb0b9ea5fbce02741ba69a37a203bd91027978cf29557cbb5b6';
 const DISCOVERY_PORT = 6988;
@@ -15,7 +15,7 @@ const HTTP_PORT = 6987;
 
 export class LocalExecution {
     private static readonly proxyId = LocalExecution.getUniqueId();
-
+    private static logger: Logger | null;
     static readonly instance = new LocalExecution();
 
     private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
@@ -28,6 +28,7 @@ export class LocalExecution {
     }).pipe(
         filter(msg => msg.data.compare(Buffer.from(DISCOVERY_PACKET, 'hex')) === 0),
         switchMap(async ({ socket, from }) => {
+            LocalExecution.logger?.trace('[nora][local-execution] Received discovery packet, sending reply');
             const responsePacket = await encodeAsync({
                 type: 'proxy',
                 proxyId: LocalExecution.proxyId,
@@ -48,6 +49,7 @@ export class LocalExecution {
                 }>(req);
                 switch (body.type) {
                     case 'EXECUTE':
+                        LocalExecution.logger?.trace(`[nora][local-execution] Executing ${body.command} - device: ${body.deviceId}`);
                         const device = this.devices$.value.find(d => d.cloudId === body.deviceId);
                         this.sendJson(res, device?.executeCommand(body.command, body.params) ?? { online: false });
                         return;
@@ -82,8 +84,14 @@ export class LocalExecution {
         return Buffer.from(random).toString('hex');
     }
 
+    static withLogger(logger: Logger) {
+        this.logger ??= logger;
+        return this;
+    }
+
     registerDeviceForLocalExecution(device: FirebaseDevice): Observable<never> {
         if (!deviceSupportsLocalExecution(device.device)) {
+            LocalExecution.logger?.trace(`[nora][local-execution] ${device.device.name}, doesn't support local execution, skipping`);
             return EMPTY;
         }
 
