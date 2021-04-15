@@ -73,7 +73,7 @@ export class LocalExecution {
 
         const interfaces = networkInterfaces();
         for (const [_, networks] of Object.entries(interfaces)) {
-            for (const net of networks) {
+            for (const net of (networks ?? [])) {
                 if (net.mac !== '00:00:00:00:00:00') {
                     return net.mac.replace(/:/gm, '');
                 }
