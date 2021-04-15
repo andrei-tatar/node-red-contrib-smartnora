@@ -88,11 +88,8 @@ export class FirebaseConnection {
         const key = `${config.email}:${config.password}`;
         let cached = this.apps[key];
         if (!cached) {
-            cached = this.apps[key] = new Observable<firebase.app.App>(observer => {
-                const app = firebase.initializeApp(firebaseConfig, `app-${new Date().getTime()}`);
-                observer.next(app);
-                return () => app.delete();
-            }).pipe(
+            cached = this.apps[key] = timer(5000).pipe(
+                switchMap(_ => this.createFirebaseApp()),
                 switchMap(async app => {
                     await firebase.auth(app)
                         .signInWithEmailAndPassword(config.email, config.password);
@@ -103,5 +100,13 @@ export class FirebaseConnection {
             );
         }
         return cached;
+    }
+
+    private static createFirebaseApp() {
+        return new Observable<firebase.app.App>(observer => {
+            const app = firebase.initializeApp(firebaseConfig, `app-${new Date().getTime()}`);
+            observer.next(app);
+            return () => app.delete();
+        });
     }
 }
