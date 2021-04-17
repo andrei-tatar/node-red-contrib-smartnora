@@ -76,7 +76,10 @@ module.exports = function (RED: any) {
             }
             try {
                 const device = await device$.pipe(first()).toPromise();
-                await device.updateState(msg?.payload);
+                await device.updateState(msg?.payload, [{
+                    from: 'volume',
+                    to: 'currentVolume',
+                }]);
             } catch (err) {
                 this.warn(`while updating state ${err.message}: ${err.stack}`);
             }
