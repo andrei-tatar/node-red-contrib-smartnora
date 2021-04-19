@@ -9,6 +9,8 @@ The widget that shows up for a device type in the Google Home application is not
 
 Also, devices that have secondary verification enabled can not be controlled via the touch interface of the Google Home application, only via voice.
 
+[Here is the official list of touch support for Google Home devices](https://developers.google.com/assistant/smarthome/develop/touch-controls)
+
 ## My Garage/Lock device is not showing up in Google Home
 Google requested all Garage/Lock devices should require pin secondary verification setup for security reasons. If you have the latest `node-red-contrib-smartnora` package, the error should be visible under the node.
 
