@@ -1,4 +1,4 @@
-node-red-contrib-smartnora
+Smart NORA integration plugin for Node RED
 =====================
 
 [![npm](https://img.shields.io/npm/v/node-red-contrib-smartnora.svg?style=flat-square&logo=npm)](https://www.npmjs.com/package/node-red-contrib-smartnora)
