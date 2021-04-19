@@ -5,7 +5,7 @@ All the nodes in Smart NORA are backwards compatible with the old NORA nodes so 
 The main difference in the new version is that the only accepted signin method is email + password and there is no more token copied from the main page.
 
 ## Some devices show no status in Google Home app and can only be controlled using voice
-The widget that shows up for a device type in the Google Home application is not under our control. Google Home application is developed and maintained by the team over at Google.
+The widget that shows up for a device type in the Google Home application is not under our control. The Google Home application is developed and maintained by the team over at Google and we have no way of changing its behaviour. 
 
 Also, devices that have secondary verification enabled can not be controlled via the touch interface of the Google Home application, only via voice.
 
