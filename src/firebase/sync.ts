@@ -146,9 +146,8 @@ export class FirebaseSync {
     }
 
     private async syncDevices() {
-        await this.queueJob({
-            type: 'sync',
-        });
+        await this.queueJob({ type: 'sync' });
+        this.logger?.info(`nora: synced ${this.devices$.value.length} device(s), group: ${this.group}`);
     }
 
     private getJobId(j: JobInQueue) {

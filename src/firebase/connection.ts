@@ -68,8 +68,9 @@ export class FirebaseConnection {
             cached = this.apps[key] = timer(5000).pipe(
                 switchMap(_ => this.createFirebaseApp()),
                 switchMap(async app => {
-                    await firebase.auth(app)
+                    const result = await firebase.auth(app)
                         .signInWithEmailAndPassword(config.email, config.password);
+                    this.logger?.info(`nora: connected, uid: ${result.user?.uid}`);
                     return app;
                 }),
                 finalize(() => delete this.apps[key]),
