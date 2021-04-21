@@ -15,7 +15,7 @@ export class DeviceContext {
 
     update(stop$: Observable<any>) {
         combineLatest([
-            this.connected$,
+            this.connected$.pipe(startWith(false)),
             this.state$.pipe(startWith(null)),
             this.error$.pipe(startWith(null)),
             this.local$.pipe(startWith(false)),
