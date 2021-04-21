@@ -47,7 +47,12 @@ export class FirebaseSync {
     private handleJobs$ = this.jobQueue$.pipe(
         groupBy(this.getJobId),
         mergeMap(jobsByType => jobsByType.pipe(
-            throttleAfterFirstEvent(5000, this.mergeJob)
+            throttleAfterFirstEvent(
+                m => m.job.type === 'report-state' && m.job.fromLocalExecution
+                    ? 500
+                    : 5000,
+                this.mergeJob
+            )
         )),
         mergeMap(job => this.handleJob(job), 1),
         ignoreElements(),
@@ -111,11 +116,12 @@ export class FirebaseSync {
         );
     }
 
-    async updateState(deviceId: string, state: Partial<Device['state']>) {
+    async updateState(deviceId: string, state: Partial<Device['state']>, fromLocalExecution = false) {
         await this.queueJob({
             type: 'report-state',
             deviceId,
             update: state,
+            fromLocalExecution,
         });
     }
 
@@ -177,6 +183,7 @@ export class FirebaseSync {
                     job: {
                         type: current.job.type,
                         deviceId: current.job.deviceId,
+                        fromLocalExecution: current.job.fromLocalExecution || previous.job.fromLocalExecution,
                         update: {
                             ...previous.job.update,
                             ...current.job.update,
@@ -293,6 +300,7 @@ interface ReportStateJob {
     type: 'report-state';
     deviceId: string;
     update: { [key: string]: any };
+    fromLocalExecution: boolean;
 }
 
 interface SendNotificationJob {

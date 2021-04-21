@@ -71,7 +71,7 @@ export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperat
 const NO_EVENT = Symbol('no-event');
 
 export function throttleAfterFirstEvent<T>(
-    time: number,
+    time: (event: T) => number,
     mergeEvents: (current: T, previous: T) => T): MonoTypeOperatorFunction<T> {
     return source => new Observable<T>(observer => {
         let timer: NodeJS.Timer | null = null;
@@ -89,14 +89,14 @@ export function throttleAfterFirstEvent<T>(
             event => {
                 if (!timer) {
                     observer.next(event);
-                    timer = setTimeout(timeoutHandler, time);
+                    timer = setTimeout(timeoutHandler, time(event));
                 } else {
                     if (lastEvent !== NO_EVENT) {
                         event = mergeEvents(event, <T>lastEvent);
                     }
                     lastEvent = event;
                     clearTimeout(timer);
-                    timer = setTimeout(timeoutHandler, time);
+                    timer = setTimeout(timeoutHandler, time(event));
                 }
             },
             error => {
