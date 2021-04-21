@@ -39,10 +39,14 @@ The ports used are:
 - 6987 - used to send commands from Google Home to Smart NORA
 
 ## How can I check if local execution is working
-Navigate, using a Chrome Browser, to `chrome://inspect/#devices`. Here you should be able to see all your local `Google Home` compatible devices and under each there will be the `Local Execution NORA` script.
+Devices that receive commands using the local execution path will have a blue status color (starting with version 1.0.3), like in the image below. Keep in mind not all devices support local execution (devices that require secondary verification, garage door, lock/unlock).
 
-Clicking `inspect` under any of them should reveal the debug messages used to discover local devices and send commands to them.
-
-It might take a few hours after linking until the Google Home devices start using the local execution path.
+It might take a few hours after linking until the Google Home devices start using the local execution scripts.
 
 <img src="./local_execution.png">
+
+Furthermore, you can enable `trace` level logging in node-red which will reveal extra information about local execution in the node red logs like:
+```
+21 Apr 10:25:10 - [trace] [nora][local-execution] Received discovery packet, sending reply
+21 Apr 10:44:53 - [trace] [nora][local-execution] Executing action.devices.commands.OnOff - device: group|id
+```
