@@ -7,6 +7,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
+import { DeviceContext } from '../firebase/device-context';
 import { convertValueType, getId, getNumberOrDefault, getValue, R, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
@@ -106,15 +107,15 @@ module.exports = function (RED: any) {
             }
         }
 
-        const stateString$ = new Subject<string>();
-        const error$ = new Subject<string | null>();
+        const ctx = new DeviceContext(this);
+        ctx.update(close$);
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)
-            .fromConfig(noraConfig, this, stateString$, error$)
+            .fromConfig(noraConfig, ctx)
             .pipe(
                 switchMap(connection =>
-                    connection.withDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any, error$)),
+                    connection.withDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any, ctx)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
@@ -228,7 +229,7 @@ module.exports = function (RED: any) {
                 stateString += ` ${state.color.temperatureK}K`;
             }
 
-            stateString$.next(`(${stateString})`);
+            ctx.state$.next(`(${stateString})`);
         }
 
         function isHsvColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {

@@ -5,11 +5,12 @@ import fetch, { Response } from 'node-fetch';
 import { BehaviorSubject, concat, merge, Observable, of, Subject, timer } from 'rxjs';
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
-    mergeMap, publish, publishReplay, refCount, retryWhen, switchMap,
+    mergeMap, publish, publishReplay, refCount, retryWhen, switchMap, tap,
 } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay, throttleAfterFirstEvent } from '..';
 import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
+import { DeviceContext } from './device-context';
 import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
@@ -86,9 +87,9 @@ export class FirebaseSync {
         this.userAgent = `${name}/${version}`;
     }
 
-    withDevice<T extends SceneDevice>(device: T, error$?: Subject<string | null>): Observable<FirebaseSceneDevice<T>>;
-    withDevice<T extends Device>(device: T, error$?: Subject<string | null>): Observable<FirebaseDevice<T>>;
-    withDevice<T extends Device>(device: T, error$?: Subject<string | null>): Observable<FirebaseDevice<T>> {
+    withDevice<T extends SceneDevice>(device: T, ctx?: DeviceContext): Observable<FirebaseSceneDevice<T>>;
+    withDevice<T extends Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>>;
+    withDevice<T extends Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
             const cloudId = `${this.group}|${device.id}`;
             const firebaseDevice = isScene(device)
@@ -96,12 +97,18 @@ export class FirebaseSync {
                 : new FirebaseDevice<T>(cloudId, this, device, this.logger);
             observer.next(firebaseDevice);
             this.devices$.next(this.devices$.value.concat(firebaseDevice));
-            const errorSubcription = error$ ? firebaseDevice.error$.subscribe(error$) : null;
-            return () => {
-                errorSubcription?.unsubscribe();
-                this.devices$.next(this.devices$.value.filter(d => d !== firebaseDevice));
-            };
-        });
+            return () => this.devices$.next(this.devices$.value.filter(d => d !== firebaseDevice));
+        }).pipe(
+            switchMap(d => {
+                return ctx
+                    ? merge(
+                        d.error$.pipe(tap(ctx?.error$), ignoreElements()),
+                        d.local$.pipe(tap(ctx?.local$), ignoreElements()),
+                        of(d)
+                    )
+                    : of(d);
+            })
+        );
     }
 
     async updateState(deviceId: string, state: Partial<Device['state']>) {
@@ -256,7 +263,7 @@ export class FirebaseSync {
             if (response.status !== 200) {
                 const shouldRetry = this.shouldRetryRequest(response);
                 if (!shouldRetry || !tries) {
-                    throw new Error(`HTTP response (${response.status} ${await response.text()})`);
+                    throw new HttpError(response.status, await response.text());
                 }
                 await new Promise(resolve => setTimeout(resolve, delayBetweenRetries));
                 continue;
@@ -268,6 +275,14 @@ export class FirebaseSync {
     private shouldRetryRequest(response: Response) {
         const status = Math.floor(response.status / 100);
         return status !== 2 && status !== 4;
+    }
+}
+
+export class HttpError extends Error {
+    constructor(
+        public readonly statusCode: number,
+        public readonly content: string) {
+        super(`HTTP response (${statusCode} ${content})`);
     }
 }
 

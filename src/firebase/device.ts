@@ -83,6 +83,8 @@ export class FirebaseDevice<T extends Device = Device> {
         return () => ref.off('value', handler);
     });
 
+    local$ = new Subject<true>();
+
     protected readonly state = this.sync.states.child(this.device.id);
     protected readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
 
@@ -131,6 +133,7 @@ export class FirebaseDevice<T extends Device = Device> {
     }
 
     executeCommand(command: string, params: any): T['state'] {
+        this.local$.next(true);
         const updates = executeCommand({ command, params, device: this.device });
         this.logger?.trace(`[nora][local-execution][${this.device.id}] executed ${command}`);
 

@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
+import { DeviceContext } from '../firebase/device-context';
 import { convertValueType, getId, getValue, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
@@ -14,8 +15,8 @@ module.exports = function (RED: any) {
         if (!noraConfig?.valid) { return; }
 
         const close$ = new Subject();
-        const stateString$ = new Subject<string>();
-        const error$ = new Subject<string | null>();
+        const ctx = new DeviceContext(this);
+        ctx.update(close$);
 
         const deviceType = `action.devices.types.${config.openclosetype}`;
         if (!Schema.device.openclose.properties.type.enum.includes(deviceType)) {
@@ -87,9 +88,9 @@ module.exports = function (RED: any) {
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)
-            .fromConfig(noraConfig, this, stateString$, error$)
+            .fromConfig(noraConfig, ctx)
             .pipe(
-                switchMap(connection => connection.withDevice(deviceConfig, error$)),
+                switchMap(connection => connection.withDevice(deviceConfig, ctx)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
@@ -217,7 +218,7 @@ module.exports = function (RED: any) {
                     stateString += ` ${state.isLocked ? 'locked' : 'unlocked'}`;
                 }
             }
-            stateString$.next(`(${stateString})`);
+            ctx.state$.next(`(${stateString})`);
         }
 
         function openPercent(percent: number) {

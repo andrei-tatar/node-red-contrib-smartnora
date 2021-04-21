@@ -3,7 +3,9 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
+import { DeviceContext } from '../firebase/device-context';
 import { getSafeUpdate } from '../firebase/safe-update';
+import { HttpError } from '../firebase/sync';
 import { getId, getValue } from './util';
 
 module.exports = function (RED: any) {
@@ -17,9 +19,12 @@ module.exports = function (RED: any) {
         const configActions: { p: string, v: string, vt: string }[] | undefined = config.actions;
 
         const close$ = new Subject();
+        const ctx = new DeviceContext(this);
+        ctx.update(close$);
+
         const connection$ = FirebaseConnection
             .withLogger(RED.log)
-            .fromConfig(noraConfig, this)
+            .fromConfig(noraConfig, ctx)
             .pipe(
                 publishReplay(1),
                 refCount(),
@@ -72,9 +77,13 @@ module.exports = function (RED: any) {
 
                 const connection = await connection$.pipe(first()).toPromise();
                 await connection.sendNotification(notification);
-
+                ctx.error$.next(null);
             } catch (err) {
-                this.warn(`while updating state ${err.message}: ${err.stack}`);
+                if (err instanceof HttpError && err.statusCode === 400) {
+                    ctx.error$.next(err.content);
+                } else {
+                    this.warn(`while sending notification ${err.message}: ${err.stack}`);
+                }
             }
         });
 

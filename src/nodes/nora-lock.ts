@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
+import { DeviceContext } from '../firebase/device-context';
 import { convertValueType, getId, getValue, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
@@ -13,8 +14,8 @@ module.exports = function (RED: any) {
         if (!noraConfig?.valid) { return; }
 
         const close$ = new Subject();
-        const stateString$ = new Subject<string>();
-        const error$ = new Subject<string | null>();
+        const ctx = new DeviceContext(this);
+        ctx.update(close$);
 
         const { value: lockValue, type: lockType } = convertValueType(RED, config.lockValue,
             config.lockValueType, { defaultValue: true });
@@ -48,9 +49,9 @@ module.exports = function (RED: any) {
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)
-            .fromConfig(noraConfig, this, stateString$, error$)
+            .fromConfig(noraConfig, ctx)
             .pipe(
-                switchMap(connection => connection.withDevice(deviceConfig, error$)),
+                switchMap(connection => connection.withDevice(deviceConfig, ctx)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
@@ -119,9 +120,9 @@ module.exports = function (RED: any) {
 
         function notifyState(state: LockUnlockDevice['state']) {
             if (state.isJammed) {
-                stateString$.next(`(jammed)`);
+                ctx.state$.next(`(jammed)`);
             } else {
-                stateString$.next(`(${state.isLocked ? 'locked' : 'unlocked'})`);
+                ctx.state$.next(`(${state.isLocked ? 'locked' : 'unlocked'})`);
             }
         }
     });

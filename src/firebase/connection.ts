@@ -2,11 +2,12 @@ import firebase from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/database';
 
-import { combineLatest, EMPTY, merge, Observable, of, timer } from 'rxjs';
-import { delayWhen, finalize, ignoreElements, map, retryWhen, startWith, switchMap, tap } from 'rxjs/operators';
-import { Logger, NodeInterface, publishReplayRefCountWithDelay } from '..';
+import { merge, Observable, of, timer } from 'rxjs';
+import { delayWhen, finalize, ignoreElements, map, retryWhen, switchMap, tap } from 'rxjs/operators';
+import { Logger, publishReplayRefCountWithDelay } from '..';
 import { firebaseConfig, NoraConfig } from '../config';
 import { LocalExecution } from '../local-execution/local-execution';
+import { DeviceContext } from './device-context';
 import { FirebaseSync } from './sync';
 
 export class FirebaseConnection {
@@ -28,9 +29,7 @@ export class FirebaseConnection {
 
     static fromConfig(
         config: NoraConfig,
-        node: NodeInterface,
-        state$: Observable<string> = EMPTY,
-        error$: Observable<string | null> = EMPTY) {
+        ctx: DeviceContext) {
         const key = this.getConfigKey(config);
         let cached = this.configs[key];
         if (!cached) {
@@ -40,12 +39,11 @@ export class FirebaseConnection {
                     finalize(() => delete this.configs[key]),
                     retryWhen(err$ => err$.pipe(
                         delayWhen(err => {
-                            node.status({ fill: 'red', shape: 'ring', text: 'error connecting' });
                             const seconds = Math.round(Math.random() * 120) / 2 + 30;
                             this.logger?.error(`nora: ${err}`);
                             this.logger?.warn(`nora: trying again in ${seconds} sec`);
                             return timer(seconds * 1000);
-                        })
+                        }),
                     )),
                     publishReplayRefCountWithDelay(5000),
                 );
@@ -53,30 +51,9 @@ export class FirebaseConnection {
 
         return cached.pipe(
             switchMap(connection => merge(
-                this.updateState(connection, node, state$, error$),
+                connection.connected$.pipe(tap(ctx.connected$), ignoreElements()),
                 of(connection),
             )),
-        );
-    }
-
-    private static updateState(
-        connection: FirebaseSync,
-        node: NodeInterface,
-        state$: Observable<string>,
-        error$: Observable<string | null> = EMPTY) {
-        return combineLatest([
-            connection.connected$,
-            state$.pipe(startWith(null)),
-            error$.pipe(startWith(null)),
-        ]).pipe(
-            tap(([connected, state, error]) => {
-                node.status(connected
-                    ? (error
-                        ? { fill: 'yellow', shape: 'ring', text: error }
-                        : { fill: 'green', shape: 'dot', text: `${state || 'connected'}` })
-                    : { fill: 'red', shape: 'ring', text: 'disconnected' });
-            }),
-            ignoreElements(),
         );
     }
 

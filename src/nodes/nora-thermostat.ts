@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseConnection } from '../firebase/connection';
+import { DeviceContext } from '../firebase/device-context';
 import { getId, R, withLocalExecution } from './util';
 
 module.exports = function (RED: any) {
@@ -13,8 +14,9 @@ module.exports = function (RED: any) {
         if (!noraConfig?.valid) { return; }
 
         const close$ = new Subject();
-        const stateString$ = new Subject<string>();
-        const error$ = new Subject<string | null>();
+        const ctx = new DeviceContext(this);
+        ctx.update(close$);
+
         const availableModes = config.modes.split(',');
 
         const deviceConfig = noraConfig.setCommon<TemperatureSettingDevice>({
@@ -49,9 +51,9 @@ module.exports = function (RED: any) {
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)
-            .fromConfig(noraConfig, this, stateString$, error$)
+            .fromConfig(noraConfig, ctx)
             .pipe(
-                switchMap(connection => connection.withDevice(deviceConfig, error$)),
+                switchMap(connection => connection.withDevice(deviceConfig, ctx)),
                 withLocalExecution(noraConfig),
                 publishReplay(1),
                 refCount(),
@@ -128,7 +130,7 @@ module.exports = function (RED: any) {
                 R`${state.thermostatTemperatureSetpointLow}-${state.thermostatTemperatureSetpointHigh}` :
                 R`${state.thermostatTemperatureSetpoint}`;
 
-            stateString$.next(
+            ctx.state$.next(
                 R`(${state.thermostatMode}/T:${state.thermostatTemperatureAmbient}/S:${setpoint})`
             );
         }

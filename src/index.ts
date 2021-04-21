@@ -14,7 +14,11 @@ export interface NodeInterface {
     warn(msg: string): void;
     error(msg: string): void;
 
-    status(params: { fill: string, text: string, shape: string }): void;
+    status(params: {
+        fill: 'red' | 'green' | 'yellow' | 'blue' | 'grey',
+        text: string,
+        shape: 'ring' | 'dot',
+    } | {}): void;
 }
 
 export interface Logger {
