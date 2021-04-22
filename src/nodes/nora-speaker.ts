@@ -39,7 +39,7 @@ module.exports = function (RED: any) {
                 volumeMaxLevel: 100,
                 levelStepSize: parseInt(config.step, 10) || 1,
             },
-        });
+        }, config);
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)

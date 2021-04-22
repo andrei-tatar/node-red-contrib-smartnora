@@ -11,22 +11,14 @@ module.exports = function (RED: any) {
             this.valid = !!this.email?.length && !!this.password?.length;
             this.localExecution = config.localexecution ?? true;
 
-            let twoFactor: TwoFactor | undefined;
-            if (config.twofactor === 'pin' || config.twofactor === 'ack') {
-                twoFactor = {
-                    type: config.twofactor,
-                    pin: config.twofactor === 'pin' ? config.twofactorpin?.trim() : undefined,
-                };
-            }
-
             let structureHint: string | undefined;
             if (typeof config.structure === 'string') {
                 structureHint = config.structure.trim() || undefined;
             }
 
-            this.setCommon = (device) => {
+            this.setCommon = (device, deviceConfig?: any) => {
                 device.structureHint = structureHint;
-                device.noraSpecific.twoFactor = twoFactor;
+                device.noraSpecific.twoFactor = getTwoFactor(config) ?? getTwoFactor(deviceConfig);
                 return device;
             };
         },
@@ -37,4 +29,13 @@ module.exports = function (RED: any) {
             },
         });
 };
+
+function getTwoFactor(config: any): TwoFactor | undefined {
+    if (config.twofactor === 'pin' || config.twofactor === 'ack') {
+        return {
+            type: config.twofactor,
+            pin: config.twofactor === 'pin' ? config.twofactorpin?.trim() : undefined,
+        };
+    }
+}
 

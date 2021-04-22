@@ -36,7 +36,7 @@ export interface ConfigNode {
     valid: boolean;
     localExecution: boolean;
 
-    setCommon<T extends Device>(device: T): T;
+    setCommon<T extends Device>(device: T, deviceConfig?: any): T;
 }
 
 export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperatorFunction<T> {

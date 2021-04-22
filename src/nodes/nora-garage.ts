@@ -39,7 +39,7 @@ module.exports = function (RED: any) {
             },
             attributes: {
             },
-        });
+        }, config);
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)

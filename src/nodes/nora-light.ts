@@ -44,7 +44,7 @@ module.exports = function (RED: any) {
             },
             attributes: {
             },
-        });
+        }, config);
 
         if (brightnessControl) {
             deviceConfig.traits.push('action.devices.traits.Brightness');

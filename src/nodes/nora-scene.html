@@ -46,6 +46,12 @@
             offvalueType: {
                 value: 'bool'
             },
+            twofactor: {
+                value: 'off',
+            },
+            twofactorpin: {
+                value: ''
+            },
         },
         inputs: 0,
         outputs: 1,
@@ -69,6 +75,13 @@
                     $('#deactivate-payload').show();
                 } else {
                     $('#deactivate-payload').hide();
+                }
+            });
+            $('#node-input-twofactor').change(function () {
+                if ($(this).val() === 'pin') {
+                    $('#node-twofactor-pin').show();
+                } else {
+                    $('#node-twofactor-pin').hide();
                 }
             });
         },
@@ -101,6 +114,18 @@
     <div class="form-row">
         <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
         <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-input-twofactor">
+            <option value="off">None</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-twofactor-pin" class="form-row">
+        <label for="node-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-input-twofactorpin">
     </div>
     <div class="form-row">
         <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>

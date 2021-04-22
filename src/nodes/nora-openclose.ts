@@ -75,7 +75,7 @@ module.exports = function (RED: any) {
                 commandOnlyOpenClose: config.commandonly ?? false,
                 queryOnlyOpenClose: config.queryonly ?? false,
             },
-        });
+        }, config);
 
         if (config.lockunlock) {
             deviceConfig.traits.push('action.devices.traits.LockUnlock');

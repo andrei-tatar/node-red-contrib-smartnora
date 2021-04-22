@@ -47,7 +47,7 @@ module.exports = function (RED: any) {
             },
             noraSpecific: {
             },
-        });
+        }, config);
 
         const device$ = FirebaseConnection
             .withLogger(RED.log)

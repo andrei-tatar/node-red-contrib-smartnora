@@ -37,7 +37,7 @@ module.exports = function (RED: any) {
             },
             noraSpecific: {
             },
-        });
+        }, config);
 
         FirebaseConnection
             .withLogger(RED.log)
