@@ -31,7 +31,7 @@ In order to delete the unused groups, just head over to [Smart NORA](https://sma
 Not sure exactly why this happens but it seems to happen when there are no devices to sync in node-red. Please make sure you define at least one device before trying to link with Google Home.
 
 ## How does local execution work
-In order for local execution work you need to have a `Google Home` [compatible device](https://developers.google.com/assistant/smarthome/concepts/local#supported-devices) in the same network as the `node-red` instance you're running Smart NORA. The `Google Home` device(s) will load a local execution application that broadcasts UDP messages in order to discover any Smart NORA instances running locally and send commands to them.
+In order for local execution to work you need to have a Google Home [compatible device](https://developers.google.com/assistant/smarthome/concepts/local#supported-devices) in the same network as the node-red instance you're running Smart NORA. The Google Home device(s) will load a local execution application that broadcasts UDP messages in order to discover any Smart NORA instances running locally and send commands to them.
 
 The ports used are:
 - 6988 - used to broadcast the discovery packet from Google Home

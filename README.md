@@ -19,6 +19,11 @@ This module provides a set of nodes in Node-RED for Google smart home Action int
 
 [Here's a short guide](./doc/setup/README.md) on how to get started with Smart NORA.
 
+## Supported nodes
+
+[Here's a list](./doc/nodes) and documentation on the supported nodes. 
+If a device that you want is not on the list, you can [open a new issue](https://github.com/andrei-tatar/node-red-contrib-smartnora/issues/new/choose) to discuss it. Contributions are appreciated, especially around the node-red configuration node code (html file) and documentation.
+
 ## I'm having an issue
 
 For any issues you might encounter, please check the [FAQ section](./doc/faq/README.md), check [the existing issues](https://github.com/andrei-tatar/node-red-contrib-smartnora/issues) or [open a new issue](https://github.com/andrei-tatar/node-red-contrib-smartnora/issues/new/choose) on this repository.
