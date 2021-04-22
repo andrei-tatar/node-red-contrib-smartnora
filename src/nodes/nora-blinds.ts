@@ -73,6 +73,9 @@ module.exports = function (RED: any) {
             }
             try {
                 const device = await device$.pipe(first()).toPromise();
+                if (typeof msg?.payload?.openPercent === 'number') {
+                    msg.payload.openPercent = adjustPercent(msg.payload.openPercent);
+                }
                 await device.updateState(msg?.payload);
             } catch (err) {
                 this.warn(`while updating state ${err.message}: ${err.stack}`);
