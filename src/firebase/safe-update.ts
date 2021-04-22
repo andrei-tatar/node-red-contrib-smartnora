@@ -16,8 +16,13 @@ const skipRoundingStatePaths = new Set<string>([
 ]);
 
 const roundTo = new Map<string, number>([
+    ['thermostatTemperatureSetpointLow', 2],
+    ['thermostatTemperatureSetpointHigh', 2],
+    ['thermostatTemperatureSetpoint', 2],
     ['thermostatTemperatureAmbient', 2],
-    ['thermostatHumidityAmbient', 1]
+    ['thermostatHumidityAmbient', 1],
+    ['humidityAmbientPercent', 1],
+    ['currentFanSpeedPercent', 1],
 ]);
 
 const keepPathsIfSameValue: RegExp[] = [
