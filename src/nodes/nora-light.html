@@ -269,23 +269,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="noraf-light">
-    <p>
-    Represents a <a href="https://developers.google.com/actions/smarthome/guides/light">Google Home light</a>. Outputs
-    a message when Google Home changes the state of the light and updates the
-    state of the light in Google Home on input messages.
-    <br>
-    If <strong>allow brightness control</strong> is unchecked, the node will work like a switch
-    outputing the On payload when the light is turned on or the off payload when turned off.
-    <br>
-    In brightnesss control mode, if <strong>Send/receive complete state</strong> is checked, the input/output payload
-    is in the following format <code>{on: boolean, brightness: number (0-100), color: { spectrumHsv: { hue: number (0-360), saturation: number (0-1), value: number (0-1) } } }</code>, otherwise the payload is only a
-    number (0-100) representing the brightness (0 meaning the light is off, 1-100 on with the specificed brightness).
-    <br>
-    <strong>Override brightness when input is 0</strong> is the value the brightness is set when <strong>Send/receive
-        complete state</strong> is unchecked and a value of 0 is received on the input. This is used so that the next
-    time you ask Google Home to turn on a light, it uses this override brightness instead of the last value. You can
-    leave the input empty to use the last brightness value.
-    <br>
-    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
+<p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/light/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/light/README.md</a>
 </p>
 </script>

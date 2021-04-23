@@ -67,6 +67,7 @@ module.exports = function (RED: any) {
                 return;
             }
 
+            deviceConfig.noraSpecific.turnOnWhenColorChanges = turnOnWhenBrightnessChanges;
             switch (colorType) {
                 case 'hsv':
                     deviceConfig.attributes = {
@@ -159,13 +160,15 @@ module.exports = function (RED: any) {
             }
             try {
                 const device = await device$.pipe(first()).toPromise();
-                if (!brightnessControl) {
+                if (!brightnessControl && !colorControl) {
                     const myOnValue = getValue(RED, this, onValue, onType);
                     const myOffValue = getValue(RED, this, offValue, offType);
                     if (RED.util.compareObjects(myOnValue, msg.payload)) {
                         await device.updateState({ on: true });
                     } else if (RED.util.compareObjects(myOffValue, msg.payload)) {
                         await device.updateState({ on: false });
+                    } else {
+                        await device.updateState(msg?.payload);
                     }
                     return;
                 }
