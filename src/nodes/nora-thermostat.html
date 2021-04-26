@@ -193,26 +193,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="noraf-thermostat">
-    <p>
-    Represents a <a href="https://developers.google.com/actions/smarthome/guides/thermostat">Google Home Thermostat</a>.
-    <br>
-    Input payload can have one or more be of the following properties
-    <code>
-        <strong>mode</strong> - string. Thermostat mode, one from the selected available modes;<br>
-        <strong>setpoint</strong> - number. Setpoint temperature in degrees celsius; (if mode is not 'heatcool')<br>
-        <strong>setpointLow</strong> - number. Setpoint low temperature in degrees celsius; (if mode is 'heatcool')<br>
-        <strong>setpointHigh</strong> - number. Setpoint high temperature in degrees celsius; (if mode is 'heatcool')<br>
-        <strong>temperature</strong> - number. Ambient temperature in degrees celsius;<br>
-        <strong>humidity</strong> - number. Ambient relative humidity (0 - 100);<br>
-    </code>
-    Output payload has the properties that can be changed from Google Home:
-    <code>
-        <strong>mode</strong> - string. Thermostat mode. 'on' should set the thermostat to one of the previous working modes (heat/cool).<br>
-        <strong>setpoint</strong> - number. Setpoint temperature in degrees celsius; (if mode is not 'heatcool')<br>
-        <strong>setpointLow</strong> - number. Setpoint temperature in degrees celsius; (if mode is 'heatcool')<br>
-        <strong>setpointHigh</strong> - number. Setpoint temperature in degrees celsius; (if mode is 'heatcool')<br>
-    </code>
-    <br>
-    <strong>Room Hint</strong>: Provides the current room of the device in the user's home to simplify setup.
+<p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/thermostat/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/thermostat/README.md</a>
 </p>
 </script>
