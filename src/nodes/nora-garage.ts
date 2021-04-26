@@ -38,6 +38,7 @@ module.exports = function (RED: any) {
             noraSpecific: {
             },
             attributes: {
+                discreteOnlyOpenClose: true,
             },
         }, config);
 
