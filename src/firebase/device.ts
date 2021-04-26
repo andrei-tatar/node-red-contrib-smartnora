@@ -3,7 +3,6 @@ import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
 import { filter, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
 import { Logger } from '..';
-import { DisconnectRules } from './disconnect';
 import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
 
@@ -46,29 +45,15 @@ export class FirebaseDevice<T extends Device = Device> {
         this._state$.pipe(
             filter(({ update }) => update.by !== 'client' && this.connectedAndSynced),
             map(({ state }) => state),
-            tap(state => {
-                this.device.state = {
-                    ...state,
-                    online: this.device.state.online,
-                };
-            }),
+            tap(state => this.device.state = { ...state }),
         ),
         this._localStateUpdate$,
     );
 
-    connectedAndSynced$ = merge(
-        DisconnectRules.getDisconnectRule(this.cloudId, () => {
-            const rule = this.state.child('state/online').onDisconnect();
-            rule.set(false);
-            return rule;
-        }),
-        new Observable<never>(_ => {
-            this.connectedAndSynced = true;
-            return () => {
-                this.connectedAndSynced = false;
-            };
-        }),
-    ).pipe(
+    connectedAndSynced$ = new Observable<never>(_ => {
+        this.connectedAndSynced = true;
+        return () => this.connectedAndSynced = false;
+    }).pipe(
         publish(),
         refCount(),
     );

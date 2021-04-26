@@ -2,7 +2,7 @@ import { Device, isScene, SceneDevice, WebpushNotification } from '@andrei-tatar
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch, { Response } from 'node-fetch';
-import { BehaviorSubject, concat, merge, Observable, of, Subject, timer } from 'rxjs';
+import { BehaviorSubject, concat, defer, merge, Observable, of, Subject, timer } from 'rxjs';
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
     mergeMap, publish, publishReplay, refCount, retryWhen, switchMap, tap,
@@ -11,6 +11,7 @@ import { Logger, publishReplayRefCountWithDelay, throttleAfterFirstEvent } from 
 import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
+import { DisconnectRules } from './disconnect';
 import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
@@ -59,13 +60,22 @@ export class FirebaseSync {
         publishReplayRefCountWithDelay(1000),
     );
 
+    private groupConnected$ = concat(
+        defer(() => this.groupConnected.set(true)),
+        DisconnectRules.getDisconnectRule(this.group, () => {
+            const rule = this.groupConnected.onDisconnect();
+            rule.set(false);
+            return rule;
+        }),
+    ).pipe(ignoreElements());
+
     readonly connected$ = new Observable<boolean>(observer => {
         const handler = (s: firebase.database.DataSnapshot) => observer.next(s.val());
         this.connected.on('value', handler);
         return () => this.connected.off('value', handler);
     }).pipe(
         switchMap(connected => connected
-            ? merge(this.handleJobs$, this.sync$, of(connected))
+            ? merge(this.handleJobs$, this.sync$, this.groupConnected$, of(connected))
             : of(connected)
         ),
         distinctUntilChanged(),
@@ -76,6 +86,7 @@ export class FirebaseSync {
     readonly uid: string | undefined;
     readonly states: firebase.database.Reference;
     readonly noraSpecific: firebase.database.Reference;
+    readonly groupConnected: firebase.database.Reference;
     private readonly connected: firebase.database.Reference;
 
     constructor(
@@ -87,6 +98,7 @@ export class FirebaseSync {
         this.db = firebase.database(app);
         this.states = this.db.ref(`device_states/${this.uid}/${this.group}`);
         this.noraSpecific = this.db.ref(`device_nora/${this.uid}/${this.group}`);
+        this.groupConnected = this.db.ref(`user/${this.uid}/version/${this.group}/online`);
         this.connected = this.db.ref('.info/connected');
         const { name, version } = require('../../package.json');
         this.userAgent = `${name}/${version}`;
