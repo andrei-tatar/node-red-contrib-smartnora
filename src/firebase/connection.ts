@@ -65,8 +65,7 @@ export class FirebaseConnection {
         const key = `${config.email}:${config.password}`;
         let cached = this.apps[key];
         if (!cached) {
-            cached = this.apps[key] = timer(5000).pipe(
-                switchMap(_ => this.createFirebaseApp()),
+            cached = this.apps[key] = this.createFirebaseApp().pipe(
                 switchMap(async app => {
                     const result = await firebase.auth(app)
                         .signInWithEmailAndPassword(config.email, config.password);

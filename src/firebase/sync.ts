@@ -26,23 +26,28 @@ export class FirebaseSync {
     private jobQueue$ = new Subject<JobInQueue>();
 
     private sync$ = this.devices$.pipe(
-        debounceTime(1000),
+        debounceTime(500),
+        delayWhen(() => {
+            // spread out the sync calls
+            const miliseconds = Math.round(Math.random() * 200) * 50;
+            return timer(miliseconds);
+        }),
         switchMap(devices =>
             concat(
-                this.syncDevices(),
+                defer(() => this.syncDevices()),
                 merge(...devices.map(d => d.connectedAndSynced$)),
-            ),
+            )
         ),
-        ignoreElements(),
-        publish(),
-        refCount(),
         retryWhen(err$ => err$.pipe(
             delayWhen(err => {
-                const seconds = Math.round(Math.random() * 120) / 2 + 30;
+                const seconds = Math.round(Math.random() * 1200) / 20 + 30;
                 this.logger?.warn(`unhandled error (trying again in ${seconds} sec): ${err.message}\n${err.stack}`);
                 return timer(seconds * 1000);
             })
         )),
+        ignoreElements(),
+        publish(),
+        refCount(),
     );
 
     private handleJobs$ = this.jobQueue$.pipe(
@@ -256,14 +261,12 @@ export class FirebaseSync {
         method = 'POST',
         body,
         tries = 3,
-        delayBetweenRetries = 500,
     }: {
         path: string,
         query?: string,
         method?: string,
         body: any,
         tries?: number,
-        delayBetweenRetries?: number,
     }) {
         while (tries--) {
             const token = await this.app.auth().currentUser?.getIdToken();
@@ -283,7 +286,8 @@ export class FirebaseSync {
                 if (!shouldRetry || !tries) {
                     throw new HttpError(response.status, await response.text());
                 }
-                await new Promise(resolve => setTimeout(resolve, delayBetweenRetries));
+                const delay = Math.round(Math.random() * 20) * 50 + 300;
+                await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
             }
             return response;
@@ -291,6 +295,10 @@ export class FirebaseSync {
     }
 
     private shouldRetryRequest(response: Response) {
+        if (response.status === 429) {
+            return true;
+        }
+
         const status = Math.floor(response.status / 100);
         return status !== 2 && status !== 4;
     }
