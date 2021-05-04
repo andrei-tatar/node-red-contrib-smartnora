@@ -39,6 +39,7 @@
     "version": ">=1.0.0",
     "nodes": {
       "noraf-blinds": "build/nodes/nora-blinds.js",
+      "noraf-fan": "build/nodes/nora-fan.js",
       "noraf-config": "build/nodes/nora-config.js",
       "noraf-scene": "build/nodes/nora-scene.js",
       "noraf-speaker": "build/nodes/nora-speaker.js",
