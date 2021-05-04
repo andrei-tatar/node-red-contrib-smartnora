@@ -1,7 +1,7 @@
 import { validateIndividual, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
-import { Subject } from 'rxjs';
-import { first, publishReplay, refCount, switchMap, takeUntil } from 'rxjs/operators';
-import { ConfigNode, NodeInterface } from '..';
+import { firstValueFrom, Subject } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
+import { ConfigNode, NodeInterface, singleton } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { DeviceContext } from '../firebase/device-context';
 import { getSafeUpdate } from '../firebase/safe-update';
@@ -18,7 +18,7 @@ module.exports = function (RED: any) {
         const identifier = `${getId(config)}|${noraConfig.group}`;
         const configActions: { p: string, v: string, vt: string }[] | undefined = config.actions;
 
-        const close$ = new Subject();
+        const close$ = new Subject<void>();
         const ctx = new DeviceContext(this);
         ctx.update(close$);
 
@@ -26,8 +26,7 @@ module.exports = function (RED: any) {
             .withLogger(RED.log)
             .fromConfig(noraConfig, ctx)
             .pipe(
-                publishReplay(1),
-                refCount(),
+                singleton(),
                 takeUntil(close$),
             );
 
@@ -75,7 +74,7 @@ module.exports = function (RED: any) {
                     delete notification.actions;
                 }
 
-                const connection = await connection$.pipe(first()).toPromise();
+                const connection = await firstValueFrom(connection$);
                 await connection.sendNotification(notification);
                 ctx.error$.next(null);
             } catch (err) {

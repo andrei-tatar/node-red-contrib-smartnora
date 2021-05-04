@@ -1,8 +1,8 @@
 import { SceneDevice } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
-import { publish, refCount, switchMap } from 'rxjs/operators';
-import { Logger } from '..';
+import { switchMap } from 'rxjs/operators';
+import { Logger, singleton } from '..';
 import { FirebaseDevice } from './device';
 import { FirebaseSync } from './sync';
 
@@ -36,8 +36,7 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
             }),
         ),
         this.activateSceneLocal$).pipe(
-            publish(),
-            refCount(),
+            singleton(),
         );
 
     executeCommand(command: string, params: any) {

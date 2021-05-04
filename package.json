@@ -11,14 +11,14 @@
     "url": "git+https://github.com/andrei-tatar/node-red-contrib-smartnora.git"
   },
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.0.49",
-    "cbor": "^6.0.1",
-    "firebase": "^8.4.1",
+    "@andrei-tatar/nora-firebase-common": "^1.0.50",
+    "cbor": "^7.0.5",
+    "firebase": "^8.4.3",
     "node-fetch": "^2.6.1",
-    "rxjs": "^6.6.7"
+    "rxjs": "^7.0.0"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.16",
+    "@types/chai": "^4.2.17",
     "@types/mocha": "^8.2.2",
     "@types/node-fetch": "^2.5.10",
     "chai": "^4.3.4",

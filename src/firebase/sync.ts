@@ -5,9 +5,9 @@ import fetch, { Response } from 'node-fetch';
 import { BehaviorSubject, concat, defer, merge, Observable, of, Subject, timer } from 'rxjs';
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
-    mergeMap, publish, publishReplay, refCount, retryWhen, switchMap, tap,
+    mergeMap, retryWhen, switchMap, tap,
 } from 'rxjs/operators';
-import { Logger, publishReplayRefCountWithDelay, throttleAfterFirstEvent } from '..';
+import { Logger, publishReplayRefCountWithDelay, singleton, throttleAfterFirstEvent } from '..';
 import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
@@ -46,8 +46,7 @@ export class FirebaseSync {
             })
         )),
         ignoreElements(),
-        publish(),
-        refCount(),
+        singleton(),
     );
 
     private handleJobs$ = this.jobQueue$.pipe(
@@ -84,8 +83,7 @@ export class FirebaseSync {
             : of(connected)
         ),
         distinctUntilChanged(),
-        publishReplay(1),
-        refCount(),
+        singleton(),
     );
 
     readonly uid: string | undefined;

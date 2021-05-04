@@ -1,7 +1,7 @@
 import { OpenCloseDevice } from '@andrei-tatar/nora-firebase-common';
-import { Subject } from 'rxjs';
-import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { ConfigNode, NodeInterface } from '..';
+import { firstValueFrom, Subject } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { ConfigNode, NodeInterface, singleton } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { DeviceContext } from '../firebase/device-context';
 import { getId, withLocalExecution } from './util';
@@ -13,7 +13,7 @@ module.exports = function (RED: any) {
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
-        const close$ = new Subject();
+        const close$ = new Subject<void>();
         const ctx = new DeviceContext(this);
         ctx.update(close$);
 
@@ -42,8 +42,7 @@ module.exports = function (RED: any) {
             .pipe(
                 switchMap(connection => connection.withDevice(deviceConfig, ctx)),
                 withLocalExecution(noraConfig),
-                publishReplay(1),
-                refCount(),
+                singleton(),
                 takeUntil(close$),
             );
 
@@ -72,7 +71,7 @@ module.exports = function (RED: any) {
                 this.send(msg);
             }
             try {
-                const device = await device$.pipe(first()).toPromise();
+                const device = await firstValueFrom(device$);
                 if (typeof msg?.payload?.openPercent === 'number') {
                     msg.payload.openPercent = adjustPercent(msg.payload.openPercent);
                 }

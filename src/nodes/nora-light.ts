@@ -3,9 +3,9 @@ import {
     Device,
     isBrightness, isColorSetting, OnOffDevice
 } from '@andrei-tatar/nora-firebase-common';
-import { Subject } from 'rxjs';
-import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { ConfigNode, NodeInterface } from '..';
+import { firstValueFrom, Subject } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { ConfigNode, NodeInterface, singleton } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { DeviceContext } from '../firebase/device-context';
 import { convertValueType, getId, getNumberOrDefault, getValue, R, withLocalExecution } from './util';
@@ -25,7 +25,7 @@ module.exports = function (RED: any) {
         const { value: offValue, type: offType } = convertValueType(RED, config.offvalue, config.offvalueType, { defaultValue: false });
         const brightnessOverride = Math.max(0, Math.min(100, Math.round(config.brightnessoverride))) || 0;
 
-        const close$ = new Subject();
+        const close$ = new Subject<void>();
 
         const deviceConfig = noraConfig.setCommon<OnOffDevice>({
             id: getId(config),
@@ -118,8 +118,7 @@ module.exports = function (RED: any) {
                 switchMap(connection =>
                     connection.withDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any, ctx)),
                 withLocalExecution(noraConfig),
-                publishReplay(1),
-                refCount(),
+                singleton(),
                 takeUntil(close$),
             );
 
@@ -159,7 +158,7 @@ module.exports = function (RED: any) {
                 this.send(msg);
             }
             try {
-                const device = await device$.pipe(first()).toPromise();
+                const device = await firstValueFrom(device$);
                 if (!brightnessControl && !colorControl) {
                     const myOnValue = getValue(RED, this, onValue, onType);
                     const myOffValue = getValue(RED, this, offValue, offType);

@@ -1,8 +1,8 @@
 import { Device, isLockUnlock, LockUnlockDevice, OpenCloseDevice, OpenCloseDirection } from '@andrei-tatar/nora-firebase-common';
 import { Schema } from '@andrei-tatar/nora-firebase-common/build/schema';
-import { Subject } from 'rxjs';
-import { first, publishReplay, refCount, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { ConfigNode, NodeInterface } from '..';
+import { firstValueFrom, Subject } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { ConfigNode, NodeInterface, singleton } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { DeviceContext } from '../firebase/device-context';
 import { convertValueType, getId, getValue, withLocalExecution } from './util';
@@ -14,7 +14,7 @@ module.exports = function (RED: any) {
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
-        const close$ = new Subject();
+        const close$ = new Subject<void>();
         const ctx = new DeviceContext(this);
         ctx.update(close$);
 
@@ -92,8 +92,7 @@ module.exports = function (RED: any) {
             .pipe(
                 switchMap(connection => connection.withDevice(deviceConfig, ctx)),
                 withLocalExecution(noraConfig),
-                publishReplay(1),
-                refCount(),
+                singleton(),
                 takeUntil(close$),
             );
 
@@ -153,9 +152,9 @@ module.exports = function (RED: any) {
                 this.send(msg);
             }
             try {
-                const device = await device$.pipe(first()).toPromise();
+                const device = await firstValueFrom(device$);
                 if (!useOpenCloseDefinedValues) {
-                    const state = await device.state$.pipe(first()).toPromise();
+                    const state = await firstValueFrom(device.state$);
                     const payload = { ...msg.payload };
                     if (openCloseDirections?.length && 'openState' in state) {
                         if (typeof payload === 'object' && 'open' in payload) {

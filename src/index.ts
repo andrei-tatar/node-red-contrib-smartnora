@@ -1,6 +1,6 @@
 import { Device } from '@andrei-tatar/nora-firebase-common';
-import { MonoTypeOperatorFunction, Observable, ReplaySubject, Subscription } from 'rxjs';
-import { multicast } from 'rxjs/operators';
+import { connectable, MonoTypeOperatorFunction, Observable, ReplaySubject, Subscription } from 'rxjs';
+import { share } from 'rxjs/operators';
 
 export interface NodeInterface {
     credentials: { [key: string]: string };
@@ -41,18 +41,18 @@ export interface ConfigNode {
 
 export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperatorFunction<T> {
     return source => {
-        const connectable = multicast(new ReplaySubject<T>(1))(source);
+        const connectable$ = connectable(source, { connector: () => new ReplaySubject<T>(1) });
 
         let refCount = 0;
         let timeout: any;
         let subscription: Subscription | null = null;
 
         return new Observable(observer => {
-            connectable.subscribe(observer);
+            connectable$.subscribe(observer);
             refCount++;
             clearTimeout(timeout);
             if (refCount === 1 && subscription === null) {
-                subscription = connectable.connect();
+                subscription = connectable$.connect();
             }
 
             return () => {
@@ -85,8 +85,8 @@ export function throttleAfterFirstEvent<T>(
             }
         };
 
-        return source.subscribe(
-            event => {
+        return source.subscribe({
+            next: event => {
                 if (!timer) {
                     observer.next(event);
                     timer = setTimeout(timeoutHandler, time(event));
@@ -99,14 +99,23 @@ export function throttleAfterFirstEvent<T>(
                     timer = setTimeout(timeoutHandler, time(event));
                 }
             },
-            error => {
+            error: error => {
                 timer && clearTimeout(timer);
                 observer.error(error);
             },
-            () => {
+            complete: () => {
                 timer && clearTimeout(timer);
                 observer.complete();
-            }
-        );
+            },
+        });
     });
+}
+
+export function singleton<T>(): MonoTypeOperatorFunction<T> {
+    return source => source.pipe(
+        share({
+            connector: () => new ReplaySubject(1),
+            resetOnRefCountZero: true,
+        })
+    );
 }

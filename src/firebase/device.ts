@@ -1,8 +1,8 @@
 import { Device, executeCommand, updateState, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
-import { filter, map, publish, publishReplay, refCount, tap } from 'rxjs/operators';
-import { Logger } from '..';
+import { filter, map, tap } from 'rxjs/operators';
+import { Logger, singleton } from '..';
 import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
 
@@ -31,8 +31,7 @@ export class FirebaseDevice<T extends Device = Device> {
         };
     }).pipe(
         filter(v => !!v && typeof v === 'object'),
-        publishReplay(1),
-        refCount(),
+        singleton(),
     );
 
     private readonly _localStateUpdate$ = new Subject<T['state']>();
@@ -54,8 +53,7 @@ export class FirebaseDevice<T extends Device = Device> {
         this.connectedAndSynced = true;
         return () => this.connectedAndSynced = false;
     }).pipe(
-        publish(),
-        refCount(),
+        singleton(),
     );
 
     error$ = new Observable<string | null>(observer => {

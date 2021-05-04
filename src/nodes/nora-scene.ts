@@ -16,7 +16,7 @@ module.exports = function (RED: any) {
         const { value: onValue, type: onType } = convertValueType(RED, config.onvalue, config.onvalueType, { defaultValue: true });
         const { value: offValue, type: offType } = convertValueType(RED, config.offvalue, config.offvalueType, { defaultValue: false });
 
-        const close$ = new Subject();
+        const close$ = new Subject<void>();
         const ctx = new DeviceContext(this);
         ctx.update(close$);
 
