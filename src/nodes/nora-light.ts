@@ -41,6 +41,7 @@ module.exports = function (RED: any) {
                 on: false,
             },
             noraSpecific: {
+                returnOnOffErrorCodeIfStateAlreadySet: !!config.errorifstateunchaged,
             },
             attributes: {
             },

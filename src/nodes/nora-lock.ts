@@ -44,6 +44,7 @@ module.exports = function (RED: any) {
                 isJammed: false,
             },
             noraSpecific: {
+                returnLockUnlockErrorCodeIfStateAlreadySet: !!config.errorifstateunchaged,
             },
         }, config);
 

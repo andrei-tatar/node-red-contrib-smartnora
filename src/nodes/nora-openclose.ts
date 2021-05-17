@@ -68,6 +68,7 @@ module.exports = function (RED: any) {
                     })
             },
             noraSpecific: {
+                returnOpenCloseErrorCodeIfStateAlreadySet: !!config.errorifstateunchaged,
             },
             attributes: {
                 discreteOnlyOpenClose: useDiscreteValues,

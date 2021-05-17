@@ -1,4 +1,4 @@
-import { deviceSupportsLocalExecution } from '@andrei-tatar/nora-firebase-common';
+import { deviceSupportsLocalExecution, ExecuteCommandError } from '@andrei-tatar/nora-firebase-common';
 import { encodeAsync } from 'cbor';
 import { createSocket, Socket } from 'dgram';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
@@ -51,7 +51,19 @@ export class LocalExecution {
                     case 'EXECUTE':
                         LocalExecution.logger?.trace(`[nora][local-execution] Executing ${body.command} - device: ${body.deviceId}`);
                         const device = this.devices$.value.find(d => d.cloudId === body.deviceId);
-                        this.sendJson(res, device?.executeCommand(body.command, body.params) ?? { online: false });
+                        try {
+                            if (device) {
+                                this.sendJson(res, device.executeCommand(body.command, body.params));
+                            } else {
+                                this.sendJson(res, { errorCode: 'deviceNotFound' });
+                            }
+                        } catch (err) {
+                            if (err instanceof ExecuteCommandError) {
+                                this.sendJson(res, { errorCode: err.errorCode });
+                            } else {
+                                this.sendJson(res, { errorCode: 'deviceNotReady' });
+                            }
+                        }
                         return;
                 }
             }
@@ -129,7 +141,7 @@ export class LocalExecution {
         });
     }
 
-    private sendJson(res: ServerResponse, body: any) {
+    private sendJson(res: ServerResponse, body: object) {
         res.writeHead(200, {
             'content-type': 'application/json'
         });

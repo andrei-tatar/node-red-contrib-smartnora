@@ -24,6 +24,9 @@
             passthru: {
                 value: false,
             },
+            errorifstateunchaged: {
+                value: false,
+            },
             discrete: {
                 value: true,
             },
@@ -184,6 +187,10 @@
     <div class="form-row">
         <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
         <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-errorifstateunchaged"><i class="fa fa-exclamation-triangle"></i> Warn user if already open/closed: </label>
+        <input type="checkbox" id="node-input-errorifstateunchaged" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-discrete"><i class="fa fa-arrow-right"></i> Discrete only open/close: </label>

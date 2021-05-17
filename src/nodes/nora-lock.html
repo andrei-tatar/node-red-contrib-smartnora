@@ -17,6 +17,9 @@
             passthru: {
                 value: false,
             },
+            errorifstateunchaged: {
+                value: false,
+            },
             nora: {
                 type: 'noraf-config',
                 required: true
@@ -133,9 +136,13 @@
         <label  style="width:auto; font-weight: bold" >Message Payloads:</label>
     </div>
     <div class="form-row">
-            <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
-            <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
-    </div> 
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-errorifstateunchaged"><i class="fa fa-exclamation-triangle"></i> If state doesn't change via voice, warn user: </label>
+        <input type="checkbox" id="node-input-errorifstateunchaged" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
     <div class="form-row">
         <label for="node-input-lockValue" style="padding-left:20px; margin-right:-20px">Lock</label>
         <input type="text" id="node-input-lockValue" style="width:70%">
