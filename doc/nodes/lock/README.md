@@ -4,6 +4,7 @@ Represents a [Google Home Garage lock](https://developers.google.com/assistant/s
 
 Node attributes:
 - [Common](../common.md)
+- `If state doesn't change via voice, warn user` - if checked, the assistant will warn if the device is already locked/unlocked
 - `Lock` - message type and value used when the lock is locked
 - `Unlock` - message type and value used when the lock is unlocked
 - `Jammed` - message type and value used to detect when the lock is jammed

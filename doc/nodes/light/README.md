@@ -4,6 +4,7 @@ Represents a [Google Home Light](https://developers.google.com/assistant/smartho
 
 ### Node attributes:
 - [Common](../common.md)
+- `If state doesn't change via voice, warn user` - if checked, the assistant will warn if the device is already on/off
 - `Allow brightness control` - if checked, the device will support the brightness trait, allowing brightness control (0-100)
 - `Turn on when brightness/color changes` - if checked will also turn on the device when there is any change to the color/brightness level
 - `Send/receive complete state as payload` - if **unchecked**, it will send/receive as payload, only the brightness. Meaning a brightness of 0 will turn off the device, otherwise will turn it on to the set brightness.

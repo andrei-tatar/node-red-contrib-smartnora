@@ -4,6 +4,7 @@ Represents a [Google Home Garage door](https://developers.google.com/assistant/s
 
 Node attributes:
 - [Common](../common.md)
+- `Warn user if already open/closed` - if checked, the assistant will warn if the device is already opened/closed
 - `Open Payload` - message type and value used when the garage door is opened
 - `Close Payload` - message type and value used when the garage door is closed
 

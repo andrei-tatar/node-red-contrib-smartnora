@@ -4,6 +4,7 @@ Represents a generic Open/Close device type.
 
 Node attributes:
 - [Common](../common.md)
+- `Warn user if already open/closed` - if checked, the assistant will warn if the device is already opened/closed
 - `Type` can be one of the following:
   - [Closet](https://developers.google.com/assistant/smarthome/guides/closet)
   - [Awning](https://developers.google.com/assistant/smarthome/guides/awning)

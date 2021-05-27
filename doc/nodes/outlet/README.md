@@ -4,6 +4,7 @@ Represents a [Google Home Outlet](https://developers.google.com/assistant/smarth
 
 Node attributes:
 - [Common](../common.md)
+- `If state doesn't change via voice, warn user` - if checked, the assistant will warn if the device is already on/off
 - `On Payload` - message type and value used when the outlet is on
 - `Off Payload` - message type and value used when the outlet is off
 
