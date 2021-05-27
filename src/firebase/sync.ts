@@ -16,7 +16,7 @@ import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
     private db;
-    private userAgent;
+    private userAgent: string;
     private agent = new Agent({
         keepAlive: true,
         keepAliveMsecs: 15000,
