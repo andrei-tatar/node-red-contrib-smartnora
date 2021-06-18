@@ -80,6 +80,8 @@ module.exports = function (RED: any) {
                     await device.updateState({ on: true });
                 } else if (RED.util.compareObjects(myOffValue, msg.payload)) {
                     await device.updateState({ on: false });
+                } else {
+                    await device.updateState(msg.payload);
                 }
             } catch (err) {
                 this.warn(`while updating state ${err.message}: ${err.stack}`);
