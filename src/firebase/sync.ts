@@ -144,10 +144,12 @@ export class FirebaseSync {
     }
 
     async sendNotification(notification: WebpushNotification) {
-        await this.queueJob({
-            type: 'notify',
-            notification,
-        });
+        if (await this.hasDeviceTokens()) {
+            await this.queueJob({
+                type: 'notify',
+                notification,
+            });
+        }
     }
 
     watchForActions(identifier: string): Observable<string> {
@@ -167,6 +169,11 @@ export class FirebaseSync {
                 return v;
             }),
         );
+    }
+
+    private async hasDeviceTokens() {
+        const tokens: string[] | null = await this.db.ref(`user/${this.uid}/device_tokens`).get().then(s => s.val());
+        return !!tokens?.length;
     }
 
     private async syncDevices() {
