@@ -73,19 +73,16 @@ export class FirebaseSync {
     ).pipe(ignoreElements());
 
     readonly connected$ = new Observable<boolean>(observer => {
-        const handler = (s: firebase.database.DataSnapshot) => {
-            const connected = s.val();
-            this.logger?.info(`nora: connection - is connected: ${connected}`);
-            observer.next(connected);
-        };
+        const handler = (s: firebase.database.DataSnapshot) => observer.next(!!s.val());
         this.connected.on('value', handler);
         return () => this.connected.off('value', handler);
     }).pipe(
+        distinctUntilChanged(),
+        tap(connected => this.logger?.info(`nora: ${connected ? 'connected' : 'disconnected'}`)),
         switchMap(connected => connected
             ? merge(this.handleJobs$, this.sync$, this.groupUpdateHeartbeat$, of(connected))
             : of(connected)
         ),
-        distinctUntilChanged(),
         singleton(),
     );
 
@@ -217,6 +214,7 @@ export class FirebaseSync {
                     resolve: current.resolve,
                     reject: current.reject,
                 };
+
             case 'notify':
                 current.reject(new Error('too many notifications per sec'));
                 return previous;
@@ -233,6 +231,7 @@ export class FirebaseSync {
                         body: devices.map(d => d.device),
                     });
                     break;
+
                 case 'report-state':
                     await this.doHttpCall({
                         path: 'update-state',
@@ -240,6 +239,7 @@ export class FirebaseSync {
                         body: job.update,
                     });
                     break;
+
                 case 'notify':
                     await this.doHttpCall({
                         path: 'notify',
@@ -247,6 +247,7 @@ export class FirebaseSync {
                     });
                     break;
             }
+
             resolve();
         } catch (err) {
             reject(err);

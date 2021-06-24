@@ -69,7 +69,7 @@ export class FirebaseConnection {
                 switchMap(async app => {
                     const result = await firebase.auth(app)
                         .signInWithEmailAndPassword(config.email, config.password);
-                    this.logger?.info(`nora: connected, uid: ${result.user?.uid}`);
+                    this.logger?.info(`nora: authenticated, uid: ${result.user?.uid}`);
                     return app;
                 }),
                 finalize(() => delete this.apps[key]),

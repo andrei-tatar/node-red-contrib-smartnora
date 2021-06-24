@@ -1,7 +1,7 @@
 import { Device, executeCommand, updateState, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
-import { filter, map, tap } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
 import { Logger, singleton } from '..';
 import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
@@ -43,6 +43,7 @@ export class FirebaseDevice<T extends Device = Device> {
     readonly stateUpdates$ = merge(
         this._state$.pipe(
             filter(({ update }) => update.by !== 'client' && this.connectedAndSynced),
+            distinctUntilChanged((a, b) => a.update.timestamp === b.update.timestamp),
             map(({ state }) => state),
             tap(state => this.device.state = { ...state }),
         ),
