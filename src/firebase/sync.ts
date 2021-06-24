@@ -1,4 +1,4 @@
-import { Device, isScene, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
+import { Device, HEARTBEAT_TIMEOUT_SEC, isScene, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch, { Response } from 'node-fetch';
@@ -11,7 +11,6 @@ import { Logger, publishReplayRefCountWithDelay, singleton, throttleAfterFirstEv
 import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
-import { DisconnectRules } from './disconnect';
 import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
@@ -64,22 +63,26 @@ export class FirebaseSync {
         publishReplayRefCountWithDelay(1000),
     );
 
-    private groupConnected$ = concat(
-        defer(() => this.groupConnected.set(true)),
-        DisconnectRules.getDisconnectRule(this.group, () => {
-            const rule = this.groupConnected.onDisconnect();
-            rule.set(false);
-            return rule;
-        }),
+    private groupUpdateHeartbeat$ = timer(0, HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
+        switchMap(_ => this.groupHeartbeat.set(new Date().getTime())),
+        retryWhen(err$ =>
+            err$.pipe(tap(err => {
+                this.logger?.warn(`nora: while sending heartbeat: ${err.message}\n${err.stack}`);
+            }))
+        ),
     ).pipe(ignoreElements());
 
     readonly connected$ = new Observable<boolean>(observer => {
-        const handler = (s: firebase.database.DataSnapshot) => observer.next(s.val());
+        const handler = (s: firebase.database.DataSnapshot) => {
+            const connected = s.val();
+            this.logger?.info(`nora: connection - is connected: ${connected}`);
+            observer.next(connected);
+        };
         this.connected.on('value', handler);
         return () => this.connected.off('value', handler);
     }).pipe(
         switchMap(connected => connected
-            ? merge(this.handleJobs$, this.sync$, this.groupConnected$, of(connected))
+            ? merge(this.handleJobs$, this.sync$, this.groupUpdateHeartbeat$, of(connected))
             : of(connected)
         ),
         distinctUntilChanged(),
@@ -89,7 +92,7 @@ export class FirebaseSync {
     readonly uid: string | undefined;
     readonly states: firebase.database.Reference;
     readonly noraSpecific: firebase.database.Reference;
-    readonly groupConnected: firebase.database.Reference;
+    readonly groupHeartbeat: firebase.database.Reference;
     private readonly connected: firebase.database.Reference;
 
     constructor(
@@ -101,7 +104,7 @@ export class FirebaseSync {
         this.db = firebase.database(app);
         this.states = this.db.ref(`device_states/${this.uid}/${this.group}`);
         this.noraSpecific = this.db.ref(`device_nora/${this.uid}/${this.group}`);
-        this.groupConnected = this.db.ref(`user/${this.uid}/version/${this.group}/online`);
+        this.groupHeartbeat = this.db.ref(`user/${this.uid}/version/${this.group}/heartbeat`);
         this.connected = this.db.ref('.info/connected');
         const { name, version } = require('../../package.json');
         this.userAgent = `${name}/${version}`;
