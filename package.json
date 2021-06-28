@@ -39,18 +39,19 @@
     "version": ">=1.0.0",
     "nodes": {
       "noraf-blinds": "build/nodes/nora-blinds.js",
-      "noraf-fan": "build/nodes/nora-fan.js",
       "noraf-config": "build/nodes/nora-config.js",
-      "noraf-scene": "build/nodes/nora-scene.js",
-      "noraf-speaker": "build/nodes/nora-speaker.js",
-      "noraf-switch": "build/nodes/nora-switch.js",
-      "noraf-thermostat": "build/nodes/nora-thermostat.js",
-      "noraf-outlet": "build/nodes/nora-outlet.js",
-      "noraf-light": "build/nodes/nora-light.js",
+      "noraf-fan": "build/nodes/nora-fan.js",
       "noraf-garage": "build/nodes/nora-garage.js",
+      "noraf-light": "build/nodes/nora-light.js",
       "noraf-lock": "build/nodes/nora-lock.js",
       "noraf-notify": "build/nodes/nora-notify.js",
-      "noraf-openclose": "build/nodes/nora-openclose.js"
+      "noraf-openclose": "build/nodes/nora-openclose.js",
+      "noraf-outlet": "build/nodes/nora-outlet.js",
+      "noraf-scene": "build/nodes/nora-scene.js",
+      "noraf-sensor": "build/nodes/nora-sensor.js",
+      "noraf-speaker": "build/nodes/nora-speaker.js",
+      "noraf-switch": "build/nodes/nora-switch.js",
+      "noraf-thermostat": "build/nodes/nora-thermostat.js"
     }
   }
 }

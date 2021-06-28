@@ -1,0 +1,104 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-sensor', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Sensor',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            temperature: {
+                value: false,
+            },
+            unit: {
+                value: 'C',
+                validate: function (v) { return v === 'C' || v === 'F'; },
+            },
+            humidity: {
+                value: false,
+            },
+            passthru: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+        },
+        inputs: 1,
+        outputs: 0,
+        paletteLabel: 'sensor',
+        label: function () {
+            return this.name || this.devicename || 'sensor';
+        },
+        oneditprepare: function () {
+            if ((this.unit || 'C') === 'C') {
+                $('#unit-celsius').prop('checked', true);
+            } else {
+                $('#unit-fahrenheit').prop('checked', true);
+            }
+
+            $('#node-input-temperature').change(function () {
+                if ($(this).is(':checked')) {
+                    $('.temperature-unit-row').show();
+                } else {
+                    $('.temperature-unit-row').hide();
+                }
+            });
+        },
+        oneditsave: function () {
+            this.unit = $('#unit-celsius').prop('checked') ? 'C' : 'F';
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-sensor">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Sensor</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    
+    <div class="form-row">
+        <label style="width:auto" for="node-input-temperature"><i class="fa fa-thermometer-half"></i> Temperature </label>
+        <input type="checkbox" id="node-input-temperature" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row temperature-unit-row">
+        <label style="width:auto"><i class="fa fa-thermometer-half"></i> Temperature Unit: </label>
+        <input style="width:auto;margin:0" id="unit-celsius" type="radio" name="unit" value="C"><label style="width:40px" for="unit-celsius">&nbsp;C</label>
+        <input style="width:auto;margin:0" id="unit-fahrenheit" type="radio" name="unit" value="F"><label  style="width:40px" for="unit-fahrenheit">&nbsp;F</label>
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-humidity"><i class="fa fa-percent"></i> Humidity </label>
+        <input type="checkbox" id="node-input-humidity" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-sensor">
+    <p>
+    
+</p>
+</script>

@@ -22,6 +22,7 @@ const roundTo = new Map<string, number>([
     ['thermostatTemperatureAmbient', 2],
     ['thermostatHumidityAmbient', 1],
     ['humidityAmbientPercent', 1],
+    ['temperatureAmbientCelsius', 2],
     ['currentFanSpeedPercent', 1],
 ]);
 
