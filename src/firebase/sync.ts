@@ -40,7 +40,7 @@ export class FirebaseSync {
         retryWhen(err$ => err$.pipe(
             delayWhen(err => {
                 const seconds = Math.round(Math.random() * 1200) / 20 + 30;
-                this.logger?.warn(`unhandled error (trying again in ${seconds} sec): ${err.message}\n${err.stack}`);
+                this.logger?.warn(`nora: ${this.group} - unhandled error (trying again in ${seconds} sec): ${err.message}\n${err.stack}`);
                 return timer(seconds * 1000);
             })
         )),
@@ -78,7 +78,7 @@ export class FirebaseSync {
         return () => this.connected.off('value', handler);
     }).pipe(
         distinctUntilChanged(),
-        tap(connected => this.logger?.info(`nora: ${connected ? 'connected' : 'disconnected'}`)),
+        tap(connected => this.logger?.info(`nora: ${this.group} - ${connected ? 'connected' : 'disconnected'}`)),
         switchMap(connected => connected
             ? merge(this.handleJobs$, this.sync$, this.groupUpdateHeartbeat$, of(connected))
             : of(connected)
@@ -175,7 +175,7 @@ export class FirebaseSync {
 
     private async syncDevices() {
         await this.queueJob({ type: 'sync' });
-        this.logger?.info(`nora: synced ${this.devices$.value.length} device(s), group: ${this.group}`);
+        this.logger?.info(`nora: ${this.group} - synced ${this.devices$.value.length} device(s)`);
     }
 
     private getJobId(j: JobInQueue) {
