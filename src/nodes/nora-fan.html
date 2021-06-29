@@ -1,7 +1,9 @@
 <script type="text/javascript">
-    (function() {
+    (function () {
         function resizeDialog(size) {
-            size = size || { height: $(".red-ui-tray-content form").height() }
+            size = size || {
+                height: $(".red-ui-tray-content form").height()
+            }
             var rows = $("#dialog-form>div:not(.node-input-speeds-container-row):visible");
             var height = size.height;
             for (var i = 0; i < rows.length; i++) {
@@ -50,10 +52,18 @@
                     value: 'en',
                 },
                 speeds: {
-                    value: [
-                        { v: 'low', n: 'Low' }, 
-                        { v: 'medium', n: 'Medium'},
-                        { v: 'high', n: 'High'},
+                    value: [{
+                            v: 'low',
+                            n: 'Low'
+                        },
+                        {
+                            v: 'medium',
+                            n: 'Medium'
+                        },
+                        {
+                            v: 'high',
+                            n: 'High'
+                        },
                     ]
                 }
             },
@@ -82,11 +92,15 @@
                     }
                 });
 
-                $('#node-input-speeds-container').css('min-height', '120px').css('min-width', '450px').editableList({
+                $('#node-input-speeds-container').css('min-height', '120px').css('min-width', '450px')
+                    .editableList({
                         addItem: function (container, i, opt) {
                             var prop = opt;
                             if (!prop.hasOwnProperty('v')) {
-                                prop = { v:'', n:'' };
+                                prop = {
+                                    v: '',
+                                    n: ''
+                                };
                             }
                             container.css({
                                 overflow: 'hidden',
@@ -94,16 +108,24 @@
                             });
                             var row = $('<div/>').appendTo(container);
 
-                            $('<input/>', { class: "node-input-speeds-speed-value", type: "text" })
+                            $('<input/>', {
+                                    class: "node-input-speeds-speed-value",
+                                    type: "text"
+                                })
                                 .css("width", "30%")
                                 .val(prop.v)
                                 .appendTo(row);
 
-                            $('<div/>', { style: 'display:inline-block; padding:0px 6px;' })
+                            $('<div/>', {
+                                    style: 'display:inline-block; padding:0px 6px;'
+                                })
                                 .text('=>')
                                 .appendTo(row);
 
-                            $('<input/>', { class: "node-input-speeds-speed-name", type: "text" })
+                            $('<input/>', {
+                                    class: "node-input-speeds-speed-name",
+                                    type: "text"
+                                })
                                 .css("width", "calc(70% - 30px)")
                                 .val(prop.n)
                                 .appendTo(row);
@@ -112,16 +134,34 @@
                         sortable: true
                     });
 
-                    if (!this.speeds) {
-                        this.speeds = [];
-                    }
+                if (!this.speeds) {
+                    this.speeds = [];
+                }
 
-                    for (var i = 0; i < this.speeds.length; i++) {
-                        var speed = this.speeds[i];
-                        var newSpeed = { v: speed.v, n: speed.n };
-                        $("#node-input-speeds-container").editableList('addItem', newSpeed);
-                    }
+                for (var i = 0; i < this.speeds.length; i++) {
+                    var speed = this.speeds[i];
+                    var newSpeed = {
+                        v: speed.v,
+                        n: speed.n
+                    };
+                    $("#node-input-speeds-container").editableList('addItem', newSpeed);
+                }
             },
+            oneditsave: function () {
+                var speeds = $("#node-input-speeds-container").editableList('items');
+                var node = this;
+                node.speeds = [];
+                speeds.each(function (i) {
+                    var speed = $(this);
+                    var p = {
+                        n: speed.find(".node-input-speeds-speed-name").val().trim(),
+                        v: speed.find(".node-input-speeds-speed-value").val().trim(),
+                    };
+                    if (p.n && p.v) {
+                        node.speeds.push(p);
+                    }
+                });
+            }
         });
     })();
 </script>
@@ -194,7 +234,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="noraf-fan">
-<p>
+    <p>
     <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/fan/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/fan/README.md</a>
 </p>
 </script>
