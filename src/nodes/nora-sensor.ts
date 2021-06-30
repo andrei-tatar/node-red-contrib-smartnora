@@ -42,22 +42,13 @@ module.exports = function (RED: any) {
                     queryOnlyTemperatureControl: true,
                     temperatureUnitForUX: config.unit,
                     temperatureRange: {
-                        minThresholdCelsius: 0,
-                        maxThresholdCelsius: 50,
+                        minThresholdCelsius: -100,
+                        maxThresholdCelsius: 100,
                     },
                 };
                 deviceConfig.attributes = {
                     ...deviceConfig.attributes,
                     ...temperatureControlAttributes,
-                };
-
-                const temperatureControlState: Omit<TemperatureControlDevice['state'], 'online'> = {
-                    temperatureAmbientCelsius: 21,
-                    temperatureSetpointCelsius: 21,
-                };
-                deviceConfig.state = {
-                    ...deviceConfig.state,
-                    ...temperatureControlState,
                 };
             }
         }
@@ -71,15 +62,6 @@ module.exports = function (RED: any) {
                 deviceConfig.attributes = {
                     ...deviceConfig.attributes,
                     ...humiditySettingAttributes,
-                };
-
-                const humiditySettingState: Omit<HumiditySettingDevice['state'], 'online'> = {
-                    humidityAmbientPercent: 40,
-                    humiditySetpointPercent: 40,
-                };
-                deviceConfig.state = {
-                    ...deviceConfig.state,
-                    ...humiditySettingState,
                 };
             }
         }

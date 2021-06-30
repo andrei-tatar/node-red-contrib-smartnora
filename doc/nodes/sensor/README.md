@@ -12,8 +12,8 @@ Input payload will be an object that follow the payload defined in the attribute
 
 **Note:** you can also send messages with the state properties to the input of the node:
 - `online` - boolean, default: true
-- `temperature` - number, default: 21 - the temperature to report (in Celsius)
-- `humidity` - number, default: 40 - the relative humidity to report (in %)
+- `temperature` - number - the temperature to report (in Celsius)
+- `humidity` - number - the relative humidity to report (in %)
 
 Example flow:
 ```
