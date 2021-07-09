@@ -22,7 +22,7 @@ This module provides a set of nodes in Node-RED for Google smart home Action int
 ## Supported nodes
 
 [Here's a list](./doc/nodes) and documentation on the supported nodes. 
-If a device that you want is not on the list, you can [create a new discussion]https://github.com/andrei-tatar/node-red-contrib-smartnora/discussions/new) to discuss it. Contributions are appreciated, especially around the node-red configuration node code (html file) and documentation.
+If a device that you want is not on the list, you can [create a new discussion](https://github.com/andrei-tatar/node-red-contrib-smartnora/discussions/new) to discuss it. Contributions are appreciated, especially around the node-red configuration node code (html file) and documentation.
 
 ## Changelog
 
