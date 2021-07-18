@@ -5,6 +5,7 @@ import fetch, { Response } from 'node-fetch';
 import { BehaviorSubject, concat, defer, merge, Observable, of, Subject, timer } from 'rxjs';
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
+    map,
     mergeMap, retryWhen, switchMap, tap,
 } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay, singleton, throttleAfterFirstEvent } from '..';
@@ -124,6 +125,7 @@ export class FirebaseSync {
                     ? merge(
                         d.error$.pipe(tap(ctx?.error$), ignoreElements()),
                         d.local$.pipe(tap(ctx?.local$), ignoreElements()),
+                        d.state$.pipe(map(s => s.online), tap(ctx?.online$), ignoreElements()),
                         of(d)
                     )
                     : of(d);

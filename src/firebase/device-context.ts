@@ -7,6 +7,7 @@ export class DeviceContext {
     public readonly state$ = new Subject<string>();
     public readonly local$ = new Subject<true>();
     public readonly connected$ = new Subject<boolean>();
+    public readonly online$ = new Subject<boolean>();
 
     constructor(
         private node: NodeInterface,
@@ -19,12 +20,15 @@ export class DeviceContext {
             this.state$.pipe(startWith(null)),
             this.error$.pipe(startWith(null)),
             this.local$.pipe(startWith(false)),
+            this.online$.pipe(startWith(true)),
         ]).pipe(
-            tap(([connected, state, error, local]) => {
+            tap(([connected, state, error, local, online]) => {
                 this.node.status(connected
-                    ? (error
-                        ? { fill: 'yellow', shape: 'ring', text: error }
-                        : { fill: local ? 'blue' : 'green', shape: 'dot', text: `${state || 'connected'}` })
+                    ? (online ?
+                        (error
+                            ? { fill: 'yellow', shape: 'ring', text: error }
+                            : { fill: local ? 'blue' : 'green', shape: 'dot', text: `${state || 'connected'}` })
+                        : { fill: 'red', shape: 'ring', text: 'offline' })
                     : { fill: 'red', shape: 'ring', text: 'disconnected' });
             }),
             ignoreElements(),
