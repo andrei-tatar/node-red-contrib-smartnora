@@ -1,12 +1,11 @@
 import { validateIndividual, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
-import { firstValueFrom, Subject } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { ConfigNode, NodeInterface, singleton } from '..';
 import { FirebaseConnection } from '../firebase/connection';
 import { DeviceContext } from '../firebase/device-context';
 import { getSafeUpdate } from '../firebase/safe-update';
-import { HttpError } from '../firebase/sync';
-import { getId, getValue } from './util';
+import { getClose, getId, getValue, handleNodeInput } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-notify', function (this: NodeInterface, config: any) {
@@ -18,9 +17,9 @@ module.exports = function (RED: any) {
         const identifier = `${getId(config)}|${noraConfig.group}`;
         const configActions: { p: string, v: string, vt: string }[] | undefined = config.actions;
 
-        const close$ = new Subject<void>();
+        const close$ = getClose(this);
         const ctx = new DeviceContext(this);
-        ctx.update(close$);
+        ctx.startUpdating(close$);
 
         const connection$ = FirebaseConnection
             .withLogger(RED.log)
@@ -45,8 +44,9 @@ module.exports = function (RED: any) {
             }
         });
 
-        this.on('input', async msg => {
-            try {
+        handleNodeInput({
+            node: this,
+            handler: async msg => {
                 const notification: WebpushNotification = {
                     title: config.title,
                     body: config.body,
@@ -77,18 +77,7 @@ module.exports = function (RED: any) {
                 const connection = await firstValueFrom(connection$);
                 await connection.sendNotification(notification);
                 ctx.error$.next(null);
-            } catch (err) {
-                if (err instanceof HttpError && err.statusCode === 400) {
-                    ctx.error$.next(err.content);
-                } else {
-                    this.warn(`while sending notification ${err.message}: ${err.stack}`);
-                }
-            }
-        });
-
-        this.on('close', () => {
-            close$.next();
-            close$.complete();
+            },
         });
     });
 };

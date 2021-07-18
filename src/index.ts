@@ -2,10 +2,15 @@ import { Device } from '@andrei-tatar/nora-firebase-common';
 import { connectable, MonoTypeOperatorFunction, Observable, ReplaySubject, Subscription } from 'rxjs';
 import { share } from 'rxjs/operators';
 
+export interface NodeMessage {
+    payload: any;
+    topic?: string;
+}
+
 export interface NodeInterface {
     credentials: { [key: string]: string };
 
-    on(type: 'input', callback: (msg: { payload: any, topic?: string }) => void): void;
+    on(type: 'input', callback: (msg: NodeMessage, send?: (msg: NodeMessage) => void, done?: (err?: any) => void) => void): void;
     on(type: 'close', callback: () => void): void;
 
     send(msg: any): void;

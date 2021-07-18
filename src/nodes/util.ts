@@ -1,7 +1,10 @@
-import { EMPTY, merge, MonoTypeOperatorFunction, of } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { ConfigNode } from '..';
+import { Device } from '@andrei-tatar/nora-firebase-common';
+import { EMPTY, firstValueFrom, merge, MonoTypeOperatorFunction, Observable, of, Subject } from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { ConfigNode, NodeInterface, NodeMessage, singleton } from '..';
+import { FirebaseConnection } from '../firebase/connection';
 import { FirebaseDevice } from '../firebase/device';
+import { DeviceContext } from '../firebase/device-context';
 import { LocalExecution } from '../local-execution/local-execution';
 
 export function convertValueType(RED: any, value: any, type: any,
@@ -42,7 +45,118 @@ export function R(parts: TemplateStringsArray, ...substitutions: any[]) {
     return String.raw(parts, ...rounded);
 }
 
-export function withLocalExecution<T>(config: ConfigNode): MonoTypeOperatorFunction<T> {
+export function getNumberOrDefault(a: any, defaultValue = 0) {
+    const nr = +a;
+    if (isFinite(nr)) { return nr; }
+    return defaultValue;
+}
+
+export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: any, nodeConfig: any, options: {
+    deviceConfig: Omit<T, 'id'>,
+    updateStatus?: (opts: {
+        state: T['state'],
+        update: (state: string) => void,
+    }) => void,
+    stateChanged?: (state: T['state']) => void,
+    handleNodeInput?: (opts: {
+        msg: NodeMessage,
+        updateState: FirebaseDevice<T>['updateState'],
+        state$: Observable<T['state']>,
+    }) => Promise<void> | void,
+    customRegistration?: (device$: Observable<FirebaseDevice<T>>) => void,
+}) {
+    const noraConfig: ConfigNode = RED.nodes.getNode(nodeConfig.nora);
+    if (!noraConfig?.valid) { return; }
+
+    const close$ = getClose(node);
+    const ctx = new DeviceContext(node);
+    ctx.startUpdating(close$);
+
+    const deviceConfig = noraConfig.setCommon<T>({
+        id: getId(nodeConfig),
+        ...options.deviceConfig,
+    } as T, nodeConfig);
+
+    const device$ = FirebaseConnection
+        .withLogger(RED.log)
+        .fromConfig(noraConfig, ctx)
+        .pipe(
+            switchMap(connection => connection.withDevice(deviceConfig, ctx)),
+            withLocalExecution(noraConfig),
+            singleton(),
+            takeUntil(close$),
+        );
+
+    if (options.updateStatus) {
+        device$.pipe(
+            switchMap(d => d.state$),
+            tap(state => options.updateStatus?.({
+                state,
+                update: msg => ctx.state$.next(msg),
+            })),
+            takeUntil(close$),
+        ).subscribe();
+    }
+
+    if (options.stateChanged) {
+        device$.pipe(
+            switchMap(d => d.stateUpdates$),
+            takeUntil(close$),
+        ).subscribe(state => options?.stateChanged?.(state));
+    }
+
+    if (options.handleNodeInput) {
+        handleNodeInput({
+            node,
+            nodeConfig,
+            handler: msg => options?.handleNodeInput?.({
+                msg,
+                updateState: async (...args) => {
+                    const device = await firstValueFrom(device$);
+                    return await device.updateState(...args);
+                },
+                state$: device$.pipe(switchMap(d => d.state$)),
+            }),
+        });
+    }
+
+    options?.customRegistration?.(device$);
+}
+
+export function getClose(node: NodeInterface) {
+    const close$ = new Subject<void>();
+    node.on('close', () => {
+        close$.next();
+        close$.complete();
+    });
+    return close$.asObservable();
+}
+
+export function handleNodeInput(opts: {
+    node: NodeInterface,
+    nodeConfig?: any,
+    handler: (msg: NodeMessage) => void | Promise<void>,
+}) {
+    opts.node.on('input', async (msg, send, done) => {
+        if (opts.nodeConfig?.passthru) {
+            const sendMessage = send ?? opts.node.send.bind(opts.node);
+            sendMessage(msg);
+        }
+
+        try {
+            await opts.handler(msg);
+            done?.();
+        } catch (err) {
+            if (done) {
+                done(err);
+            } else {
+                opts.node.error(err);
+            }
+        }
+    });
+}
+
+function withLocalExecution<T>(config: ConfigNode): MonoTypeOperatorFunction<T> {
     return source => source.pipe(
         switchMap(device => {
             if (!(device instanceof FirebaseDevice)) {
@@ -57,10 +171,4 @@ export function withLocalExecution<T>(config: ConfigNode): MonoTypeOperatorFunct
             );
         }),
     );
-}
-
-export function getNumberOrDefault(a: any, defaultValue = 0) {
-    const nr = +a;
-    if (isFinite(nr)) { return nr; }
-    return defaultValue;
 }

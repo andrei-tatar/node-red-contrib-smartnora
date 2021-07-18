@@ -1,10 +1,6 @@
 import { OpenCloseDevice } from '@andrei-tatar/nora-firebase-common';
-import { firstValueFrom, Subject } from 'rxjs';
-import { switchMap, takeUntil, tap } from 'rxjs/operators';
-import { ConfigNode, NodeInterface, singleton } from '..';
-import { FirebaseConnection } from '../firebase/connection';
-import { DeviceContext } from '../firebase/device-context';
-import { convertValueType, getId, getValue, withLocalExecution } from './util';
+import { ConfigNode, NodeInterface } from '..';
+import { convertValueType, getValue, registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-garage', function (this: NodeInterface, config: any) {
@@ -13,104 +9,66 @@ module.exports = function (RED: any) {
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
-        const close$ = new Subject<void>();
-        const ctx = new DeviceContext(this);
-        ctx.update(close$);
-
         const { value: openValue, type: openType } =
             convertValueType(RED, config.openvalue, config.openvalueType, { defaultValue: true });
         const { value: closeValue, type: closeType } =
             convertValueType(RED, config.closevalue, config.closevalueType, { defaultValue: false });
 
-        const deviceConfig = noraConfig.setCommon<OpenCloseDevice>({
-            id: getId(config),
-            type: 'action.devices.types.GARAGE',
-            traits: ['action.devices.traits.OpenClose'],
-            name: {
-                name: config.devicename,
+        registerNoraDevice<OpenCloseDevice>(this, RED, config, {
+            deviceConfig: {
+                type: 'action.devices.types.GARAGE',
+                traits: ['action.devices.traits.OpenClose'],
+                name: {
+                    name: config.devicename,
+                },
+                roomHint: config.roomhint,
+                willReportState: true,
+                state: {
+                    online: true,
+                    openPercent: 0,
+                },
+                noraSpecific: {
+                    returnOpenCloseErrorCodeIfStateAlreadySet: !!config.errorifstateunchaged,
+                },
+                attributes: {
+                    discreteOnlyOpenClose: true,
+                },
             },
-            roomHint: config.roomhint,
-            willReportState: true,
-            state: {
-                online: true,
-                openPercent: 0,
-            },
-            noraSpecific: {
-                returnOpenCloseErrorCodeIfStateAlreadySet: !!config.errorifstateunchaged,
-            },
-            attributes: {
-                discreteOnlyOpenClose: true,
-            },
-        }, config);
-
-        const device$ = FirebaseConnection
-            .withLogger(RED.log)
-            .fromConfig(noraConfig, ctx)
-            .pipe(
-                switchMap(connection => connection.withDevice(deviceConfig, ctx)),
-                withLocalExecution(noraConfig),
-                singleton(),
-                takeUntil(close$),
-            );
-
-        device$.pipe(
-            switchMap(d => d.state$),
-            tap(state => notifyState(state)),
-            takeUntil(close$),
-        ).subscribe();
-
-        device$.pipe(
-            switchMap(d => d.stateUpdates$),
-            takeUntil(close$),
-        ).subscribe(state => {
-            if ('openPercent' in state) {
-                if (state.openPercent === 0) {
-                    this.send({
-                        payload: getValue(RED, this, closeValue, closeType),
-                        topic: config.topic
-                    });
-                } else {
-                    this.send({
-                        payload: getValue(RED, this, openValue, openType),
-                        topic: config.topic
-                    });
+            updateStatus: ({ state, update }) => {
+                if ('openPercent' in state) {
+                    if (state.openPercent === 0) {
+                        update(`(closed)`);
+                    } else {
+                        update(`(open)`);
+                    }
                 }
-            }
-        });
-
-        this.on('input', async msg => {
-            if (config.passthru) {
-                this.send(msg);
-            }
-            try {
+            },
+            stateChanged: state => {
+                if ('openPercent' in state) {
+                    if (state.openPercent === 0) {
+                        this.send({
+                            payload: getValue(RED, this, closeValue, closeType),
+                            topic: config.topic
+                        });
+                    } else {
+                        this.send({
+                            payload: getValue(RED, this, openValue, openType),
+                            topic: config.topic
+                        });
+                    }
+                }
+            },
+            handleNodeInput: async ({ msg, updateState }) => {
                 const myOpenValue = getValue(RED, this, openValue, openType);
                 const myCloseValue = getValue(RED, this, closeValue, closeType);
-                const device = await firstValueFrom(device$);
                 if (RED.util.compareObjects(myOpenValue, msg.payload)) {
-                    await device.updateState({ openPercent: 100 });
+                    await updateState({ openPercent: 100 });
                 } else if (RED.util.compareObjects(myCloseValue, msg.payload)) {
-                    await device.updateState({ openPercent: 0 });
+                    await updateState({ openPercent: 0 });
                 } else {
-                    await device.updateState(msg.payload);
+                    await updateState(msg.payload);
                 }
-            } catch (err) {
-                this.warn(`while updating state ${err.message}: ${err.stack}`);
-            }
+            },
         });
-
-        this.on('close', () => {
-            close$.next();
-            close$.complete();
-        });
-
-        function notifyState(state: OpenCloseDevice['state']) {
-            if ('openPercent' in state) {
-                if (state.openPercent === 0) {
-                    ctx.state$.next(`(closed)`);
-                } else {
-                    ctx.state$.next(`(open)`);
-                }
-            }
-        }
     });
 };

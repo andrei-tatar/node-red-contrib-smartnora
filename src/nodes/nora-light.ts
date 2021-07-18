@@ -3,12 +3,8 @@ import {
     Device,
     isBrightness, isColorSetting, OnOffDevice
 } from '@andrei-tatar/nora-firebase-common';
-import { firstValueFrom, Subject } from 'rxjs';
-import { switchMap, takeUntil, tap } from 'rxjs/operators';
-import { ConfigNode, NodeInterface, singleton } from '..';
-import { FirebaseConnection } from '../firebase/connection';
-import { DeviceContext } from '../firebase/device-context';
-import { convertValueType, getId, getNumberOrDefault, getValue, R, withLocalExecution } from './util';
+import { ConfigNode, NodeInterface } from '..';
+import { convertValueType, getNumberOrDefault, getValue, R, registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-light', function (this: NodeInterface, config: any) {
@@ -25,10 +21,7 @@ module.exports = function (RED: any) {
         const { value: offValue, type: offType } = convertValueType(RED, config.offvalue, config.offvalueType, { defaultValue: false });
         const brightnessOverride = Math.max(0, Math.min(100, Math.round(config.brightnessoverride))) || 0;
 
-        const close$ = new Subject<void>();
-
-        const deviceConfig = noraConfig.setCommon<OnOffDevice>({
-            id: getId(config),
+        const deviceConfig: Omit<OnOffDevice, 'id'> = {
             type: 'action.devices.types.LIGHT',
             traits: ['action.devices.traits.OnOff'],
             name: {
@@ -45,7 +38,7 @@ module.exports = function (RED: any) {
             },
             attributes: {
             },
-        }, config);
+        };
 
         if (brightnessControl) {
             deviceConfig.traits.push('action.devices.traits.Brightness');
@@ -109,71 +102,68 @@ module.exports = function (RED: any) {
             }
         }
 
-        const ctx = new DeviceContext(this);
-        ctx.update(close$);
+        registerNoraDevice(this, RED, config, {
+            deviceConfig,
+            updateStatus: ({ state, update }) => {
+                let stateString = state.on ? 'on' : 'off';
 
-        const device$ = FirebaseConnection
-            .withLogger(RED.log)
-            .fromConfig(noraConfig, ctx)
-            .pipe(
-                switchMap(connection =>
-                    connection.withDevice<OnOffDevice & ColorSettingDevice & BrightnessDevice>(deviceConfig as any, ctx)),
-                withLocalExecution(noraConfig),
-                singleton(),
-                takeUntil(close$),
-            );
+                if (isBrightnessState(deviceConfig, state)) {
+                    stateString += ` ${state.brightness}`;
+                }
 
-        device$.pipe(
-            switchMap(d => d.state$),
-            tap(state => notifyState(state)),
-            takeUntil(close$),
-        ).subscribe();
+                if (isHsvColor(deviceConfig, state) && 'spectrumHsv' in state?.color) {
+                    stateString += R` hue: ${state.color.spectrumHsv.hue}°`;
+                    stateString += R` sat: ${(state.color.spectrumHsv.saturation ?? 0) * 100}%`;
+                    stateString += R` val: ${(state.color.spectrumHsv.value ?? 0) * 100}%`;
+                }
 
-        device$.pipe(
-            switchMap(d => d.stateUpdates$),
-            takeUntil(close$),
-        ).subscribe((state) => {
-            if (!brightnessControl && !colorControl) {
-                const value = state.on;
-                this.send({
-                    payload: getValue(RED, this, value ? onValue : offValue, value ? onType : offType),
-                    topic: config.topic
-                });
-            } else {
-                if (statepayload || colorControl) {
+                if (isRgbColor(deviceConfig, state) && 'spectrumRgb' in state?.color) {
+                    const rgbColor = `#${state.color.spectrumRgb.toString(16).padStart(6, '0')}`;
+                    stateString += ` ${rgbColor}`;
+                }
+
+                if (isTemperatureColor(deviceConfig, state) && 'temperatureK' in state?.color) {
+                    stateString += ` ${state.color.temperatureK}K`;
+                }
+
+                update(`(${stateString})`);
+            },
+            stateChanged: state => {
+                if (!brightnessControl && !colorControl) {
+                    const value = state.on;
                     this.send({
-                        payload: { ...state },
+                        payload: getValue(RED, this, value ? onValue : offValue, value ? onType : offType),
                         topic: config.topic
                     });
                 } else {
-                    this.send({
-                        payload: state.on && 'brightness' in state ? state.brightness : 0,
-                        topic: config.topic
-                    });
+                    if (statepayload || colorControl) {
+                        this.send({
+                            payload: { ...state },
+                            topic: config.topic
+                        });
+                    } else {
+                        this.send({
+                            payload: state.on && isBrightnessState(deviceConfig, state) ? state.brightness : 0,
+                            topic: config.topic
+                        });
+                    }
                 }
-            }
-        });
-
-        this.on('input', async msg => {
-            if (config.passthru) {
-                this.send(msg);
-            }
-            try {
-                const device = await firstValueFrom(device$);
+            },
+            handleNodeInput: async ({ msg, updateState }) => {
                 if (!brightnessControl && !colorControl) {
                     const myOnValue = getValue(RED, this, onValue, onType);
                     const myOffValue = getValue(RED, this, offValue, offType);
                     if (RED.util.compareObjects(myOnValue, msg.payload)) {
-                        await device.updateState({ on: true });
+                        await updateState({ on: true });
                     } else if (RED.util.compareObjects(myOffValue, msg.payload)) {
-                        await device.updateState({ on: false });
+                        await updateState({ on: false });
                     } else {
-                        await device.updateState(msg?.payload);
+                        await updateState(msg?.payload);
                     }
                     return;
                 }
 
-                if (await device.updateState(msg?.payload)) {
+                if (await updateState(msg?.payload)) {
                     return;
                 }
 
@@ -185,65 +175,37 @@ module.exports = function (RED: any) {
 
                 if (brightness === 0) {
                     if (brightnessOverride !== 0) {
-                        await device.updateState({
+                        await updateState({
                             on: false,
                             brightness: brightnessOverride,
                         });
                     } else {
-                        await device.updateState({
+                        await updateState({
                             on: false,
                         });
                     }
                 } else {
-                    await device.updateState({
+                    await updateState({
                         on: true,
                         brightness: brightness,
                     });
                 }
-            } catch (err) {
-                this.warn(`while updating state ${err.message}: ${err.stack}`);
-            }
+            },
         });
 
-        this.on('close', () => {
-            close$.next();
-            close$.complete();
-        });
-
-        function notifyState(state: OnOffDevice['state'] & BrightnessDevice['state'] & ColorSettingDevice['state']) {
-            let stateString = state.on ? 'on' : 'off';
-
-            if (brightnessControl && 'brightness' in state) {
-                stateString += ` ${state.brightness}`;
-            }
-
-            if (isHsvColor(deviceConfig, state) && 'spectrumHsv' in state?.color) {
-                stateString += R` hue: ${state.color.spectrumHsv.hue}°`;
-                stateString += R` sat: ${(state.color.spectrumHsv.saturation ?? 0) * 100}%`;
-                stateString += R` val: ${(state.color.spectrumHsv.value ?? 0) * 100}%`;
-            }
-
-            if (isRgbColor(deviceConfig, state) && 'spectrumRgb' in state?.color) {
-                const rgbColor = `#${state.color.spectrumRgb.toString(16).padStart(6, '0')}`;
-                stateString += ` ${rgbColor}`;
-            }
-
-            if (isTemperatureColor(deviceConfig, state) && 'temperatureK' in state?.color) {
-                stateString += ` ${state.color.temperatureK}K`;
-            }
-
-            ctx.state$.next(`(${stateString})`);
+        function isBrightnessState<T extends Device>(device: Pick<T, 'traits'>, state: any): state is BrightnessDevice['state'] {
+            return isBrightness(device) && 'brightness' in state;
         }
 
-        function isHsvColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
+        function isHsvColor<T extends Device>(device: Pick<T, 'traits'>, state: any): state is ColorSettingDevice['state'] {
             return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'hsv' && state?.color;
         }
 
-        function isRgbColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
+        function isRgbColor<T extends Device>(device: Pick<T, 'traits'>, state: any): state is ColorSettingDevice['state'] {
             return isColorSetting(device) && 'colorModel' in device.attributes && device.attributes.colorModel === 'rgb' && state?.color;
         }
 
-        function isTemperatureColor<T extends Device>(device: T, state: any): state is ColorSettingDevice['state'] {
+        function isTemperatureColor<T extends Device>(device: Pick<T, 'traits'>, state: any): state is ColorSettingDevice['state'] {
             return isColorSetting(device) && 'colorTemperatureRange' in device.attributes && state?.color;
         }
     });
