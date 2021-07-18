@@ -31,6 +31,12 @@
                 type: 'noraf-config',
                 required: true
             },
+            topic: {
+                value: '',
+            },
+            filter: {
+                value: false,
+            },
         },
         inputs: 1,
         outputs: 0,
@@ -68,7 +74,10 @@
         <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Sensor</label>
         <input type="text" id="node-input-devicename">
     </div>
-    
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-temperature"><i class="fa fa-thermometer-half"></i> Temperature </label>
         <input type="checkbox" id="node-input-temperature" style="display:inline-block; width:auto; vertical-align:top;">
@@ -90,6 +99,10 @@
     <div class="form-row">
         <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
         <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
     </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>

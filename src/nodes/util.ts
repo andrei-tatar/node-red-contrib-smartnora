@@ -143,6 +143,11 @@ export function handleNodeInput(opts: {
             sendMessage(msg);
         }
 
+        if (opts.nodeConfig?.filter && opts.nodeConfig?.topic !== msg.topic) {
+            done?.();
+            return;
+        }
+
         try {
             await opts.handler(msg);
             done?.();
