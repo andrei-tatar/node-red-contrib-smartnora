@@ -138,14 +138,14 @@ export function handleNodeInput(opts: {
     handler: (msg: NodeMessage) => void | Promise<void>,
 }) {
     opts.node.on('input', async (msg, send, done) => {
-        if (opts.nodeConfig?.passthru) {
-            const sendMessage = send ?? opts.node.send.bind(opts.node);
-            sendMessage(msg);
-        }
-
         if (opts.nodeConfig?.filter && opts.nodeConfig?.topic !== msg.topic) {
             done?.();
             return;
+        }
+
+        if (opts.nodeConfig?.passthru) {
+            const sendMessage = send ?? opts.node.send.bind(opts.node);
+            sendMessage(msg);
         }
 
         try {
