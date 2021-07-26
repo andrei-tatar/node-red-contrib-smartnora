@@ -4,7 +4,7 @@ import {
     isBrightness, isColorSetting, OnOffDevice
 } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
-import { convertValueType, getNumberOrDefault, getValue, R, registerNoraDevice } from './util';
+import { convertValueType, getNumberOrDefault, getValue, registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-light', function (this: NodeInterface, config: any) {
@@ -105,28 +105,30 @@ module.exports = function (RED: any) {
         registerNoraDevice(this, RED, config, {
             deviceConfig,
             updateStatus: ({ state, update }) => {
-                let stateString = state.on ? 'on' : 'off';
+                const statuses: string[] = [
+                    state.on ? 'on' : 'off'
+                ];
 
                 if (isBrightnessState(deviceConfig, state)) {
-                    stateString += ` ${state.brightness}`;
+                    statuses.push(`${state.brightness}`);
                 }
 
                 if (isHsvColor(deviceConfig, state) && 'spectrumHsv' in state?.color) {
-                    stateString += R` hue: ${state.color.spectrumHsv.hue}°`;
-                    stateString += R` sat: ${(state.color.spectrumHsv.saturation ?? 0) * 100}%`;
-                    stateString += R` val: ${(state.color.spectrumHsv.value ?? 0) * 100}%`;
+                    statuses.push(`hue: ${state.color.spectrumHsv.hue}°`);
+                    statuses.push(`sat: ${(state.color.spectrumHsv.saturation ?? 0) * 100}%`);
+                    statuses.push(`val: ${(state.color.spectrumHsv.value ?? 0) * 100}%`);
                 }
 
                 if (isRgbColor(deviceConfig, state) && 'spectrumRgb' in state?.color) {
                     const rgbColor = `#${state.color.spectrumRgb.toString(16).padStart(6, '0')}`;
-                    stateString += ` ${rgbColor}`;
+                    statuses.push(`${rgbColor}`);
                 }
 
                 if (isTemperatureColor(deviceConfig, state) && 'temperatureK' in state?.color) {
-                    stateString += ` ${state.color.temperatureK}K`;
+                    statuses.push(`${state.color.temperatureK}K`);
                 }
 
-                update(`(${stateString})`);
+                update(`(${statuses.join(' ')})`);
             },
             stateChanged: state => {
                 if (!brightnessControl && !colorControl) {

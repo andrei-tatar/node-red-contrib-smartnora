@@ -11,7 +11,7 @@
     "url": "git+https://github.com/andrei-tatar/node-red-contrib-smartnora.git"
   },
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.0.54",
+    "@andrei-tatar/nora-firebase-common": "^1.0.58",
     "cbor": "^7.0.5",
     "firebase": "^8.6.8",
     "node-fetch": "^2.6.1",
@@ -38,6 +38,7 @@
   "node-red": {
     "version": ">=1.0.0",
     "nodes": {
+      "noraf-ac": "build/nodes/nora-ac.js",
       "noraf-blinds": "build/nodes/nora-blinds.js",
       "noraf-config": "build/nodes/nora-config.js",
       "noraf-fan": "build/nodes/nora-fan.js",

@@ -113,7 +113,9 @@
 
                             $('<input/>', {
                                     class: "node-input-speeds-speed-value",
-                                    type: "text"
+                                    type: "text",
+                                    placeholder: 'Value',
+                                    required: true,
                                 })
                                 .css("width", "30%")
                                 .val(prop.v)
@@ -127,7 +129,9 @@
 
                             $('<input/>', {
                                     class: "node-input-speeds-speed-name",
-                                    type: "text"
+                                    type: "text",
+                                    placeholder: 'Name in language',
+                                    required: true,
                                 })
                                 .css("width", "calc(70% - 30px)")
                                 .val(prop.n)

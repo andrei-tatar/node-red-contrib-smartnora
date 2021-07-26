@@ -1,6 +1,6 @@
 import { Device, HumiditySettingDevice, isHumiditySetting, isTemperatureControl, TemperatureControlDevice } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
-import { R, registerNoraDevice } from './util';
+import { registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-sensor', function (this: NodeInterface, config: any) {
@@ -60,14 +60,14 @@ module.exports = function (RED: any) {
         registerNoraDevice(this, RED, config, {
             deviceConfig,
             updateStatus: ({ state, update }) => {
-                const states: string[] = [];
+                const statuses: string[] = [];
                 if (isHumidityState(state)) {
-                    states.push(R`H:${state.humidityAmbientPercent}%`);
+                    statuses.push(`H:${state.humidityAmbientPercent}%`);
                 }
                 if (isTemperatureState(state)) {
-                    states.push(R`T:${state.temperatureAmbientCelsius}C`);
+                    statuses.push(`T:${state.temperatureAmbientCelsius}C`);
                 }
-                update(states.join(' '));
+                update(statuses.join(' '));
             },
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg?.payload, [{

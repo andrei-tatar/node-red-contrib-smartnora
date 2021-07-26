@@ -35,16 +35,6 @@ export function getId({ id }: { id: string }) {
     return id.replace('.', ':');
 }
 
-export function R(parts: TemplateStringsArray, ...substitutions: any[]) {
-    const rounded = substitutions.map(sub => {
-        if (typeof sub === 'number') {
-            return Math.round(sub * 10) / 10;
-        }
-        return sub;
-    });
-    return String.raw(parts, ...rounded);
-}
-
 export function getNumberOrDefault(a: any, defaultValue = 0) {
     const nr = +a;
     if (isFinite(nr)) { return nr; }

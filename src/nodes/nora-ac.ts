@@ -1,20 +1,24 @@
-import { TemperatureSettingDevice } from '@andrei-tatar/nora-firebase-common';
+import { FanSpeedDevice, TemperatureSettingDevice, Trait } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
-    RED.nodes.registerType('noraf-thermostat', function (this: NodeInterface, config: any) {
+    RED.nodes.registerType('noraf-ac', function (this: NodeInterface, config: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
         const availableModes = config.modes.split(',');
+        const speeds: { n: string, v: string }[] = config.speeds;
 
-        registerNoraDevice<TemperatureSettingDevice>(this, RED, config, {
+        registerNoraDevice<TemperatureSettingDevice & FanSpeedDevice>(this, RED, config, {
             deviceConfig: {
                 type: 'action.devices.types.THERMOSTAT',
-                traits: ['action.devices.traits.TemperatureSetting'],
+                traits: [
+                    'action.devices.traits.TemperatureSetting',
+                    'action.devices.traits.FanSpeed',
+                ] as Trait[] as never,
                 name: {
                     name: config.devicename,
                 },
@@ -24,18 +28,36 @@ module.exports = function (RED: any) {
                     availableThermostatModes: availableModes,
                     thermostatTemperatureUnit: config.unit,
                     bufferRangeCelsius: parseInt(config.bufferRangeCelsius, 10) || undefined,
-                    commandOnlyTemperatureSetting: config.commandOnly ?? undefined,
-                    queryOnlyTemperatureSetting: config.queryOnly ?? undefined,
                     thermostatTemperatureRange: {
                         minThresholdCelsius: parseInt(config.rangeMin, 10) || 10,
                         maxThresholdCelsius: parseInt(config.rangeMax, 10) || 32,
                     },
+                    ...(config.percentcontrol
+                        ? {
+                            supportsFanSpeedPercent: true,
+                        }
+                        : {
+                            supportsFanSpeedPercent: false,
+                            availableFanSpeeds: {
+                                speeds: speeds.map(s => ({
+                                    speed_name: s.v.trim(),
+                                    speed_values: [{
+                                        speed_synonym: s.n.split(',').map(v => v.trim()),
+                                        lang: config.language,
+                                    }],
+                                })),
+                                ordered: true,
+                            },
+                        }),
                 },
                 state: {
                     online: true,
                     thermostatMode: 'off',
                     thermostatTemperatureAmbient: 25,
                     thermostatTemperatureSetpoint: 20,
+                    ...(config.percentcontrol
+                        ? { currentFanSpeedPercent: 100 }
+                        : { currentFanSpeedSetting: speeds[0].v }),
                 },
                 noraSpecific: {
                 },
@@ -45,9 +67,18 @@ module.exports = function (RED: any) {
                     `${state.thermostatTemperatureSetpointLow}-${state.thermostatTemperatureSetpointHigh}` :
                     `${state.thermostatTemperatureSetpoint}`;
 
-                update(
-                    `(${state.thermostatMode}/T:${state.thermostatTemperatureAmbient}/S:${setpoint})`
-                );
+                const speed = 'currentFanSpeedPercent' in state
+                    ? `${state.currentFanSpeedPercent}%`
+                    : state.currentFanSpeedSetting;
+
+                const statuses: string[] = [
+                    `${state.thermostatMode}`,
+                    `T:${state.thermostatTemperatureAmbient}`,
+                    `S:${setpoint}`,
+                    `F:${speed}`,
+                ];
+
+                update(`(${statuses.join('/')})`);
             },
             stateChanged: state => {
                 this.send({
@@ -57,11 +88,21 @@ module.exports = function (RED: any) {
                         setpoint: state.thermostatTemperatureSetpoint,
                         setpointLow: state.thermostatTemperatureSetpointLow,
                         setpointHigh: state.thermostatTemperatureSetpointHigh,
+                        speed: 'currentFanSpeedPercent' in state
+                            ? state.currentFanSpeedPercent
+                            : state.currentFanSpeedSetting,
                     },
                     topic: config.topic,
                 });
             },
             handleNodeInput: async ({ msg, updateState }) => {
+                if (!config.percentcontrol &&
+                    (msg?.payload?.speed ?? undefined) !== undefined &&
+                    !speeds.find(s => s.v === msg.payload.speed)) {
+                    this.warn(`invalid fan speed: ${msg.payload.speed}`);
+                    return;
+                }
+
                 await updateState(msg?.payload, [
                     {
                         from: 'mode',
@@ -91,6 +132,12 @@ module.exports = function (RED: any) {
                         from: 'humidity',
                         to: 'thermostatHumidityAmbient',
                     },
+                    {
+                        from: 'speed',
+                        to: config.percentcontrol
+                            ? 'currentFanSpeedPercent'
+                            : 'currentFanSpeedSetting',
+                    }
                 ]);
             },
         });
