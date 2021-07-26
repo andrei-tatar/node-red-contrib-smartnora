@@ -142,6 +142,8 @@ describe('getSafeUpdate', () => {
                 thermostatTemperatureAmbient: 22.4,
                 thermostatHumidityAmbient: 33.123,
                 shouldRound: 33.345,
+                temperatureAmbientCelsius: 22.3,
+                humidityAmbientPercent: 50.1,
             },
             currentState: {
                 color: {
@@ -172,6 +174,8 @@ describe('getSafeUpdate', () => {
             thermostatTemperatureAmbient: 22.5,
             thermostatHumidityAmbient: 33,
             shouldRound: 33.3,
+            temperatureAmbientCelsius: 22.5,
+            humidityAmbientPercent: 50,
         });
     });
 

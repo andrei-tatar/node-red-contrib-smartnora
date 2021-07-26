@@ -58,7 +58,7 @@ export function getSafeUpdate({
             }
         }
 
-        if (typeof previousValue === 'number') {
+        if (typeof updateValue === 'number') {
             const skipRoundingNumbers = skipRoundingStatePaths.has(currentStatePath);
             if (!skipRoundingNumbers) {
                 const roundToDigits = roundTo.get(currentStatePath) ?? 10;
