@@ -2,7 +2,7 @@ import { SceneDevice } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
-import { FirebaseSceneDevice } from '../firebase/scene-device';
+import { FirebaseSceneDevice } from '../nora/scene-device';
 import { convertValueType, getValue, registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {

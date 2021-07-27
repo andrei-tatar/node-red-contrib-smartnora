@@ -2,9 +2,9 @@ import { validateIndividual, WebpushNotification } from '@andrei-tatar/nora-fire
 import { firstValueFrom } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { ConfigNode, NodeInterface, singleton } from '..';
-import { FirebaseConnection } from '../firebase/connection';
-import { DeviceContext } from '../firebase/device-context';
-import { getSafeUpdate } from '../firebase/safe-update';
+import { FirebaseConnection } from '../nora/connection';
+import { DeviceContext } from '../nora/device-context';
+import { getSafeUpdate } from '../nora/safe-update';
 import { getClose, getId, getValue, handleNodeInput } from './util';
 
 module.exports = function (RED: any) {

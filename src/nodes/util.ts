@@ -2,10 +2,10 @@ import { Device } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY, firstValueFrom, merge, MonoTypeOperatorFunction, Observable, of, Subject } from 'rxjs';
 import { switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface, NodeMessage, singleton } from '..';
-import { FirebaseConnection } from '../firebase/connection';
-import { FirebaseDevice } from '../firebase/device';
-import { DeviceContext } from '../firebase/device-context';
-import { LocalExecution } from '../local-execution/local-execution';
+import { FirebaseConnection } from '../nora/connection';
+import { FirebaseDevice } from '../nora/device';
+import { DeviceContext } from '../nora/device-context';
+import { LocalExecution } from '../nora/local-execution';
 
 export function convertValueType(RED: any, value: any, type: any,
     { defaultType = 'bool', defaultValue = false }: { defaultType?: string, defaultValue?: any } = {}) {

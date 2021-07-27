@@ -6,8 +6,8 @@ import { merge, Observable, of, timer } from 'rxjs';
 import { delayWhen, finalize, ignoreElements, map, retryWhen, switchMap, tap } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
 import { firebaseConfig, NoraConfig } from '../config';
-import { LocalExecution } from '../local-execution/local-execution';
 import { DeviceContext } from './device-context';
+import { LocalExecution } from './local-execution';
 import { FirebaseSync } from './sync';
 
 export class FirebaseConnection {

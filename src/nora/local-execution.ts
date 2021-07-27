@@ -6,7 +6,7 @@ import { networkInterfaces } from 'os';
 import { BehaviorSubject, EMPTY, merge, Observable } from 'rxjs';
 import { filter, ignoreElements, switchMap } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
-import { FirebaseDevice } from '../firebase/device';
+import { FirebaseDevice } from './device';
 
 const DISCOVERY_PACKET = '021dfa122e51acb0b9ea5fbce02741ba69a37a203bd91027978cf29557cbb5b6';
 const DISCOVERY_PORT = 6988;
