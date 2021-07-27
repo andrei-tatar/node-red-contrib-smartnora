@@ -1,5 +1,6 @@
 import { TemperatureSettingDevice } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
+import { TEMPERATURE_SETTING_STATE_MAPPING } from './mapping';
 import { registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
@@ -63,34 +64,7 @@ module.exports = function (RED: any) {
             },
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg?.payload, [
-                    {
-                        from: 'mode',
-                        to: 'thermostatMode',
-                    },
-                    {
-                        from: 'activeMode',
-                        to: 'activeThermostatMode',
-                    },
-                    {
-                        from: 'setpoint',
-                        to: 'thermostatTemperatureSetpoint',
-                    },
-                    {
-                        from: 'setpointHigh',
-                        to: 'thermostatTemperatureSetpointHigh',
-                    },
-                    {
-                        from: 'setpointLow',
-                        to: 'thermostatTemperatureSetpointLow',
-                    },
-                    {
-                        from: 'temperature',
-                        to: 'thermostatTemperatureAmbient',
-                    },
-                    {
-                        from: 'humidity',
-                        to: 'thermostatHumidityAmbient',
-                    },
+                    ...TEMPERATURE_SETTING_STATE_MAPPING,
                 ]);
             },
         });

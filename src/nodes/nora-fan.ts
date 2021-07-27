@@ -1,5 +1,6 @@
 import { FanSpeedDevice, OnOffDevice } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
+import { FAN_STATE_MAPPING } from './mapping';
 import { registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
@@ -74,10 +75,9 @@ module.exports = function (RED: any) {
                     return;
                 }
 
-                await updateState(msg?.payload, [{
-                    from: 'speed',
-                    to: config.percentcontrol ? 'currentFanSpeedPercent' : 'currentFanSpeedSetting'
-                }]);
+                await updateState(msg?.payload, [
+                    ...FAN_STATE_MAPPING(config.percentcontrol),
+                ]);
             },
         });
     });

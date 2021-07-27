@@ -1,5 +1,6 @@
 import { FanSpeedDevice, TemperatureSettingDevice, Trait } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
+import { FAN_STATE_MAPPING, TEMPERATURE_SETTING_STATE_MAPPING } from './mapping';
 import { registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
@@ -104,40 +105,8 @@ module.exports = function (RED: any) {
                 }
 
                 await updateState(msg?.payload, [
-                    {
-                        from: 'mode',
-                        to: 'thermostatMode',
-                    },
-                    {
-                        from: 'activeMode',
-                        to: 'activeThermostatMode',
-                    },
-                    {
-                        from: 'setpoint',
-                        to: 'thermostatTemperatureSetpoint',
-                    },
-                    {
-                        from: 'setpointHigh',
-                        to: 'thermostatTemperatureSetpointHigh',
-                    },
-                    {
-                        from: 'setpointLow',
-                        to: 'thermostatTemperatureSetpointLow',
-                    },
-                    {
-                        from: 'temperature',
-                        to: 'thermostatTemperatureAmbient',
-                    },
-                    {
-                        from: 'humidity',
-                        to: 'thermostatHumidityAmbient',
-                    },
-                    {
-                        from: 'speed',
-                        to: config.percentcontrol
-                            ? 'currentFanSpeedPercent'
-                            : 'currentFanSpeedSetting',
-                    }
+                    ...TEMPERATURE_SETTING_STATE_MAPPING,
+                    ...FAN_STATE_MAPPING(config.percentcontrol),
                 ]);
             },
         });
