@@ -8,7 +8,7 @@ import {
     map,
     mergeMap, retryWhen, switchMap, tap,
 } from 'rxjs/operators';
-import { Logger, publishReplayRefCountWithDelay, singleton, throttleAfterFirstEvent } from '..';
+import { Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
@@ -52,10 +52,9 @@ export class FirebaseSync {
     private handleJobs$ = this.jobQueue$.pipe(
         groupBy(this.getJobId),
         mergeMap(jobsByType => jobsByType.pipe(
-            throttleAfterFirstEvent(
-                m => m.job.type === 'report-state' && m.job.fromLocalExecution
-                    ? 500
-                    : 5000,
+            rateLimitSlidingWindow(
+                60000,
+                12,
                 this.mergeJob
             )
         )),
@@ -133,12 +132,11 @@ export class FirebaseSync {
         );
     }
 
-    async updateState(deviceId: string, state: Partial<Device['state']>, fromLocalExecution = false) {
+    async updateState(deviceId: string, state: Partial<Device['state']>) {
         await this.queueJob({
             type: 'report-state',
             deviceId,
             update: state,
-            fromLocalExecution,
         });
     }
 
@@ -207,7 +205,6 @@ export class FirebaseSync {
                     job: {
                         type: current.job.type,
                         deviceId: current.job.deviceId,
-                        fromLocalExecution: current.job.fromLocalExecution || previous.job.fromLocalExecution,
                         update: {
                             ...previous.job.update,
                             ...current.job.update,
@@ -218,8 +215,8 @@ export class FirebaseSync {
                 };
 
             case 'notify':
-                current.reject(new Error('too many notifications per sec'));
-                return previous;
+                previous.reject(new Error('too many notifications per sec'));
+                return current;
         }
     }
 
@@ -331,7 +328,6 @@ interface ReportStateJob {
     type: 'report-state';
     deviceId: string;
     update: { [key: string]: any };
-    fromLocalExecution: boolean;
 }
 
 interface SendNotificationJob {

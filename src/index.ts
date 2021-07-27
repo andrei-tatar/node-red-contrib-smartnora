@@ -1,6 +1,9 @@
 import { Device } from '@andrei-tatar/nora-firebase-common';
-import { connectable, MonoTypeOperatorFunction, Observable, ReplaySubject, Subscription } from 'rxjs';
-import { share } from 'rxjs/operators';
+import {
+    concat, connectable, EMPTY, MonoTypeOperatorFunction,
+    Observable, of, ReplaySubject, Subscription, timer
+} from 'rxjs';
+import { filter, map, scan, share, switchMap } from 'rxjs/operators';
 
 export interface NodeMessage {
     payload: any;
@@ -73,47 +76,58 @@ export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperat
     };
 }
 
-const NO_EVENT = Symbol('no-event');
+const NO_EVENT: unknown = Symbol('no-event');
 
-export function throttleAfterFirstEvent<T>(
-    time: (event: T) => number,
+export function rateLimitSlidingWindow<T>(
+    windowSizeMiliseconds: number,
+    numberOfEvents: number,
     mergeEvents: (current: T, previous: T) => T): MonoTypeOperatorFunction<T> {
-    return source => new Observable<T>(observer => {
-        let timer: NodeJS.Timer | null = null;
-        let lastEvent: T | Symbol = NO_EVENT;
-
-        const timeoutHandler = () => {
-            timer = null;
-            if (lastEvent !== NO_EVENT) {
-                observer.next(lastEvent as T);
-                lastEvent = NO_EVENT;
+    return source => source.pipe(
+        scan<T, {
+            overflow: T;
+            fwdMessage: T,
+            ticks: number[];
+            getNextFree(): Date;
+        }>((ctx, msg) => {
+            const now = new Date().getTime();
+            ctx.ticks = ctx.ticks.filter(t => t > now - windowSizeMiliseconds);
+            if (ctx.ticks.length === numberOfEvents) {
+                ctx.overflow = ctx.overflow !== NO_EVENT ? mergeEvents(msg, ctx.overflow) : msg;
+                ctx.fwdMessage = NO_EVENT as T;
+            } else {
+                ctx.fwdMessage = ctx.overflow !== NO_EVENT ? mergeEvents(msg, ctx.overflow) : msg;
+                ctx.overflow = NO_EVENT as T;
+                ctx.ticks.push(now);
             }
-        };
+            return ctx;
+        }, {
+            overflow: NO_EVENT as T,
+            fwdMessage: NO_EVENT as T,
+            ticks: [],
+            getNextFree() {
+                const eventsThatWereSentInTheWindow = this.ticks.slice(-numberOfEvents - 1);
+                const nextFreeEvent = new Date(eventsThatWereSentInTheWindow[0] + windowSizeMiliseconds + 500);
+                return nextFreeEvent;
+            },
+        }),
+        switchMap(ctx => {
+            const forward$ = ctx.fwdMessage === NO_EVENT ? EMPTY : of(ctx.fwdMessage);
+            const overflow$ = ctx.overflow === NO_EVENT ? EMPTY :
+                timer(ctx.getNextFree()).pipe(
+                    map(_ => {
+                        const value = ctx.overflow;
+                        if (value !== NO_EVENT) {
+                            ctx.overflow = NO_EVENT as T;
+                            ctx.ticks.push(new Date().getTime());
+                        }
+                        return value;
+                    }),
+                    filter(c => c !== NO_EVENT),
+                );
 
-        return source.subscribe({
-            next: event => {
-                if (!timer) {
-                    observer.next(event);
-                    timer = setTimeout(timeoutHandler, time(event));
-                } else {
-                    if (lastEvent !== NO_EVENT) {
-                        event = mergeEvents(event, <T>lastEvent);
-                    }
-                    lastEvent = event;
-                    clearTimeout(timer);
-                    timer = setTimeout(timeoutHandler, time(event));
-                }
-            },
-            error: error => {
-                timer && clearTimeout(timer);
-                observer.error(error);
-            },
-            complete: () => {
-                timer && clearTimeout(timer);
-                observer.complete();
-            },
-        });
-    });
+            return concat(forward$, overflow$);
+        }),
+    );
 }
 
 export function singleton<T>(): MonoTypeOperatorFunction<T> {

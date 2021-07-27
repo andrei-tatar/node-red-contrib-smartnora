@@ -92,7 +92,7 @@ export class FirebaseDevice<T extends Device = Device> {
         this.logger?.trace(`[nora][local-execution][${this.device.id}] executed ${command}`);
 
         if (updates?.updateState) {
-            this.updateStateInternal(updates.updateState, { fromLocalExecution: true }).catch(err =>
+            this.updateStateInternal(updates.updateState).catch(err =>
                 this.logger?.warn(`error while executing local command, ${err.message}: ${err.stack}`)
             );
             this._localStateUpdate$.next(this.device.state);
@@ -104,10 +104,9 @@ export class FirebaseDevice<T extends Device = Device> {
 
     private async updateStateInternal<TState = Partial<T['state']>, TPayload = TState>(
         update: TPayload,
-        { mapping, fromLocalExecution = false }: {
+        { mapping }: {
             mapping?: { from: keyof TPayload, to: keyof TState }[],
-            fromLocalExecution?: boolean,
-        }) {
+        } = {}) {
 
         if (typeof update !== 'object') {
             return false;
@@ -134,7 +133,7 @@ export class FirebaseDevice<T extends Device = Device> {
 
             this.device.state = state;
             if (this.connectedAndSynced) {
-                await this.sync.updateState(this.device.id, safeUpdate, fromLocalExecution);
+                await this.sync.updateState(this.device.id, safeUpdate);
             }
         }
 
