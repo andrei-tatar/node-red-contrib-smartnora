@@ -1,4 +1,7 @@
-import { Device, isLockUnlock, LockUnlockDevice, OpenCloseDevice, OpenCloseDirection } from '@andrei-tatar/nora-firebase-common';
+import {
+    Device, DeviceType, isLockUnlock, LockUnlockDevice, OpenCloseDevice,
+    OpenCloseDirection
+} from '@andrei-tatar/nora-firebase-common';
 import { Schema } from '@andrei-tatar/nora-firebase-common/build/schema';
 import { firstValueFrom } from 'rxjs';
 import { ConfigNode, NodeInterface } from '..';
@@ -11,8 +14,8 @@ module.exports = function (RED: any) {
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
-        const deviceType = `action.devices.types.${config.openclosetype}`;
-        if (!Schema.device.openclose.properties.type.enum.includes(deviceType)) {
+        const deviceType = `action.devices.types.${config.openclosetype}` as DeviceType;
+        if (!Schema.device.openclose.definitions.DeviceType.enum.includes(deviceType)) {
             this.warn(`Device type not supported: ${deviceType}`);
             return;
         }
