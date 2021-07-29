@@ -1,11 +1,11 @@
 import { combineLatest, Observable, Subject } from 'rxjs';
-import { ignoreElements, startWith, takeUntil, tap } from 'rxjs/operators';
+import { debounceTime, ignoreElements, startWith, takeUntil, tap } from 'rxjs/operators';
 import { NodeInterface } from '..';
 
 export class DeviceContext {
     public readonly error$ = new Subject<string | null>();
-    public readonly state$ = new Subject<string>();
-    public readonly local$ = new Subject<true>();
+    public readonly state$ = new Subject<string | null>();
+    public readonly local$ = new Subject<boolean>();
     public readonly connected$ = new Subject<boolean>();
     public readonly online$ = new Subject<boolean>();
 
@@ -22,6 +22,7 @@ export class DeviceContext {
             this.local$.pipe(startWith(false)),
             this.online$.pipe(startWith(true)),
         ]).pipe(
+            debounceTime(0),
             tap(([connected, state, error, local, online]) => {
                 this.node.status(connected
                     ? (online ?

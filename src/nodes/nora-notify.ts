@@ -1,5 +1,5 @@
 import { validateIndividual, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
-import { firstValueFrom } from 'rxjs';
+import { concat, defer, EMPTY, firstValueFrom, Subject, timer } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { ConfigNode, NodeInterface, singleton } from '..';
 import { FirebaseConnection } from '../nora/connection';
@@ -18,6 +18,7 @@ module.exports = function (RED: any) {
         const configActions: { p: string, v: string, vt: string }[] | undefined = config.actions;
 
         const close$ = getClose(this);
+        const notificationSent$ = new Subject<null>();
         const ctx = new DeviceContext(this);
         ctx.startUpdating(close$);
 
@@ -43,6 +44,22 @@ module.exports = function (RED: any) {
                 });
             }
         });
+
+        notificationSent$.pipe(
+            switchMap(_ => {
+                ctx.state$.next('sent');
+                ctx.local$.next(true);
+                return concat(
+                    timer(1000),
+                    defer(() => {
+                        ctx.state$.next(null);
+                        ctx.local$.next(false);
+                        return EMPTY;
+                    })
+                );
+            }),
+            takeUntil(close$),
+        ).subscribe();
 
         handleNodeInput({
             node: this,
@@ -75,8 +92,13 @@ module.exports = function (RED: any) {
                 }
 
                 const connection = await firstValueFrom(connection$);
-                await connection.sendNotification(notification);
-                ctx.error$.next(null);
+                try {
+                    ctx.error$.next(null);
+                    await connection.sendNotification(notification);
+                    notificationSent$.next(null);
+                } catch (err) {
+                    ctx.error$.next('Too many notifications');
+                }
             },
         });
     });
