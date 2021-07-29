@@ -128,7 +128,7 @@ export function handleNodeInput(opts: {
     handler: (msg: NodeMessage) => void | Promise<void>,
 }) {
     opts.node.on('input', async (msg, send, done) => {
-        if (opts.nodeConfig?.filter && opts.nodeConfig?.topic !== msg.topic) {
+        if (opts.nodeConfig?.filter && !topicMatch(opts.nodeConfig?.topic, msg.topic)) {
             done?.();
             return;
         }
@@ -149,6 +149,10 @@ export function handleNodeInput(opts: {
             }
         }
     });
+}
+
+function topicMatch(a: unknown, b: unknown): boolean {
+    return `${a}`.trim().toLowerCase() === `${b}`.trim().toLowerCase();
 }
 
 function withLocalExecution<T>(config: ConfigNode): MonoTypeOperatorFunction<T> {
