@@ -15,7 +15,12 @@ module.exports = function (RED: any) {
         if (!noraConfig?.valid) { return; }
 
         const identifier = `${getId(config)}|${noraConfig.group}`;
-        const configActions: { p: string, v: string, vt: string }[] | undefined = config.actions;
+        const configActions: { p: string, v: string, vt: string, d?: boolean }[] | undefined = config.actions;
+        const actions = configActions?.map(({ p: title, v: value, vt: type }, index) => ({
+            title,
+            action: type === 'link' ? value : `${index}`,
+        }));
+        const defaultAction = actions?.[configActions?.findIndex(c => !!c.d) ?? -1]?.action;
 
         const close$ = getClose(this);
         const notificationSent$ = new Subject<null>();
@@ -36,8 +41,8 @@ module.exports = function (RED: any) {
         ).subscribe(action => {
             const actionIndex = parseInt(action, 10);
             if (configActions?.length && actionIndex >= 0 && actionIndex < configActions.length) {
-                const { v, vt } = configActions[actionIndex];
-                const payload = getValue(RED, this, v, vt);
+                const { v: value, vt: valuetype } = configActions[actionIndex];
+                const payload = getValue(RED, this, value, valuetype);
                 this.send({
                     payload,
                     topic: config.topic,
@@ -80,13 +85,13 @@ module.exports = function (RED: any) {
                     warn: (propName) => this.warn(`ignoring property ${propName}`),
                 });
 
-                if (configActions?.length) {
-                    notification.actions = configActions.map(({ p }, index) => ({
-                        title: p,
-                        action: `${index}`,
-                    }));
-                    notification.data ??= {};
-                    notification.data.sender = identifier;
+                if (actions?.length) {
+                    notification.actions = actions;
+                    notification.data = {
+                        ...notification.data,
+                        sender: identifier,
+                        defaultAction: defaultAction,
+                    };
                 } else {
                     delete notification.actions;
                 }
