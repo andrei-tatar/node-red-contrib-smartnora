@@ -1,6 +1,7 @@
 import { validate } from '@andrei-tatar/nora-firebase-common';
 import * as chai from 'chai';
 import { getSafeUpdate } from './safe-update';
+import { TEMPERATURE_SETTING_STATE_MAPPING } from '../nodes/mapping';
 
 const expect = chai.expect;
 describe('getSafeUpdate', () => {
@@ -223,6 +224,36 @@ describe('getSafeUpdate', () => {
                 'msg.payload.color.missingProperty',
                 'msg.payload.color.spectrumHsv.missingProperty',
             ]);
+        });
+
+        it('should update ac mode', () => {
+            const safeUpdate = {};
+            const warnings: string[] = [];
+
+            getSafeUpdate({
+                update: {
+                    mode: 'cool',
+                },
+                currentState: {
+                    online: true,
+                    thermostatMode: 'off',
+                    thermostatTemperatureAmbient: 25,
+                    thermostatTemperatureSetpoint: 20,
+                    currentFanSpeedPercent: 100,
+                },
+                isValid: () => validate([
+                    'action.devices.traits.TemperatureSetting',
+                    'action.devices.traits.FanSpeed'
+                ], 'state-update', safeUpdate).valid,
+                warn: prop => warnings.push(prop),
+                safeUpdateObject: safeUpdate,
+                mapping: [...TEMPERATURE_SETTING_STATE_MAPPING],
+            });
+
+            expect(safeUpdate).to.deep.equal({
+                thermostatMode: 'cool',
+            });
+            expect(warnings).to.be.empty;
         });
     });
 });
