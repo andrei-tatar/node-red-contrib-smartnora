@@ -73,11 +73,11 @@ module.exports = function (RED: any) {
             }
         }
 
-        if (config.supportTransportControl) {
+        if (config.supportTransportControl && config.transportControlCommands?.length > 0) {
             deviceConfig.traits.push('action.devices.traits.TransportControl');
             if (isTransportControlDevice(deviceConfig)) {
                 const transportControlAttributes: TransportControlDevice['attributes'] = {
-                    transportControlSupportedCommands: ['NEXT'],
+                    transportControlSupportedCommands: config.transportControlCommands,
                 };
                 Object.assign(deviceConfig.attributes, transportControlAttributes);
             }

@@ -59,6 +59,9 @@
             supportTransportControl: {
                 value: false,
             },
+            transportControlCommands: {
+                value: ['PAUSE', 'RESUME', 'STOP'],
+            },
             supportInputSelector: {
                 value: false,
             },
@@ -86,6 +89,35 @@
                 $('.mediastate-trait')[$(this).is(':checked') ? 'show' : 'hide']();
             });
 
+            var availableCommands = [
+                // 'CAPTION_CONTROL', 'SEEK_RELATIVE', 'SEEK_TO_POSITION', 'SET_REPEAT',
+                'NEXT', 'PREVIOUS', 'PAUSE', 'RESUME', 'STOP', 'SHUFFLE'
+            ];
+
+            var selectedCommands = this.transportControlCommands || [];
+            for (var command of availableCommands) {
+                var commandRow = $('<div>').appendTo($('.transportcontrol-trait'));
+                $('<input/>', {
+                        type: 'checkbox',
+                        id: 'input-control-command-' + command,
+                        'data-command': command,
+                    })
+                    .appendTo(commandRow)
+                    .prop('checked', selectedCommands.includes(command));
+
+                $('<label/>', {
+                        for: 'input-control-command-' + command,
+                    })
+                    .text(toHummanCase(command))
+                    .appendTo(commandRow);
+            }
+
+            function toHummanCase(command) {
+                return command.substr(0, 1) + command.substr(1)
+                    .toLowerCase()
+                    .replace(/_(\w)/mg, (_, g) => ' ' + g.toUpperCase());
+            }
+
             $('#node-input-supportTransportControl').change(function () {
                 $('.transportcontrol-trait')[$(this).is(':checked') ? 'show' : 'hide']();
             });
@@ -95,7 +127,8 @@
             });
         },
         oneditsave: function () {
-
+            this.transportControlCommands = $('.transportcontrol-trait input:checked').toArray()
+                .map(c => c.getAttribute('data-command'));
         },
     });
 </script>
@@ -109,6 +142,20 @@
             padding-top: 10px;
             margin-top: -15px;
             margin-bottom: 5px;
+        }
+
+        .transportcontrol-trait {
+            display: grid;
+            grid-template-columns: repeat(auto-fit,minmax(120px, 1fr));
+        }
+
+        .transportcontrol-trait > div {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .transportcontrol-trait > div > label {
+            margin-left: 5px;
         }
     </style>
     <div class="form-row">
@@ -156,8 +203,8 @@
             <input type="checkbox" id="node-input-volumeCanMuteAndUnmute" style="display:inline-block; width:auto; vertical-align:top;">
         </div>
         <div class="form-row">
-            <label for="node-input-volumeLevelStepSize"><i class="fa fa-i-cursor"></i> Volume level step size</label>
-            <input type="text" id="node-input-volumeLevelStepSize" placeholder="1">
+            <label for="node-input-volumeLevelStepSize" style="width:unset"><i class="fa fa-i-cursor"></i> Volume level step size</label>
+            <input type="text" id="node-input-volumeLevelStepSize" style="width:30%" placeholder="1">
         </div>
     </div>
     <div class="form-row">
