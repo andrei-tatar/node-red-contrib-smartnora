@@ -65,6 +65,20 @@
             supportInputSelector: {
                 value: false,
             },
+            language: {
+                value: 'en',
+            },
+            mediaInputs: {
+                value: [{
+                    v: 'hdmi-1',
+                    n: 'hdmi 1,1st hdmi,TV',
+                    d: true,
+                }, {
+                    v: 'hdmi-2',
+                    n: 'hdmi 2,2nd hdmi,PlayStation',
+                    d: false,
+                }],
+            }
         },
         inputs: 1,
         outputs: 1,
@@ -125,10 +139,96 @@
             $('#node-input-supportInputSelector').change(function () {
                 $('.inputselector-trait')[$(this).is(':checked') ? 'show' : 'hide']();
             });
+
+            $('#node-input-inputs-container').change(function (ev) {
+                if (ev.target.classList.contains('node-input-inputs-input-default')) {
+                    $('.node-input-inputs-input-default').not(ev.target).prop('checked', false);
+                }
+            });
+
+            $('#node-input-inputs-container').css('min-height', '120px').css('min-width', '350px')
+                .editableList({
+                    addItem: function (container, i, opt) {
+                        var prop = opt;
+                        if (!prop.hasOwnProperty('v')) {
+                            prop = {
+                                v: '',
+                                n: ''
+                            };
+                        }
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        $('<input/>', {
+                                class: "node-input-inputs-input-value",
+                                type: "text",
+                                placeholder: 'Value',
+                                required: true,
+                            })
+                            .css("width", "30%")
+                            .val(prop.v)
+                            .appendTo(row);
+
+                        $('<div/>', {
+                                style: 'display:inline-block; padding:0px 6px;'
+                            })
+                            .text('=>')
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-inputs-input-name",
+                                type: "text",
+                                placeholder: 'Name in language',
+                                required: true,
+                            })
+                            .css("width", "calc(70% - 55px)")
+                            .val(prop.n)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-inputs-input-default",
+                                type: "checkbox",
+                                title: "Default",
+                            })
+                            .css("width", "30px")
+                            .appendTo(row)
+                            .prop('checked', !!prop.d);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+            if (!this.mediaInputs) {
+                this.mediaInputs = [];
+            }
+
+            for (const input of this.mediaInputs) {
+                $("#node-input-inputs-container").editableList('addItem', {
+                    ...input
+                });
+            }
         },
         oneditsave: function () {
             this.transportControlCommands = $('.transportcontrol-trait input:checked').toArray()
                 .map(c => c.getAttribute('data-command'));
+
+            var inputs = $("#node-input-inputs-container").editableList('items');
+            var node = this;
+            node.mediaInputs = [];
+            inputs.each(function (i) {
+                var input = $(this);
+                var p = {
+                    n: input.find(".node-input-inputs-input-name").val().trim(),
+                    v: input.find(".node-input-inputs-input-value").val().trim(),
+                    d: input.find(".node-input-inputs-input-default").is(':checked'),
+                };
+                if (p.n && p.v) {
+                    node.mediaInputs.push(p);
+                }
+            });
         },
     });
 </script>
@@ -233,7 +333,30 @@
         <input type="checkbox" id="node-input-supportInputSelector" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="trait-props inputselector-trait">
-        
+        <div class="form-row">
+            <label for="node-input-language"><i class="fa fa-i-cursor"></i> Language</label>
+            <select id="node-input-language">
+                <option value="da">da</option>
+                <option value="nl">nl</option>
+                <option value="en">en</option>
+                <option value="fr">fr</option>
+                <option value="de">de</option>
+                <option value="hi">hi</option>
+                <option value="id">id</option>
+                <option value="it">it</option>
+                <option value="ja">ja</option>
+                <option value="ko">ko</option>
+                <option value="no">no</option>
+                <option value="pt-BR">pt</option>
+                <option value="es">es</option>
+                <option value="sv">sv</option>
+                <option value="th">th</option>
+            </select>
+        </div>
+        <label><i class="fa fa-tag"></i> <span>Inputs:</span></label>
+        <div class="form-row">
+            <ol id="node-input-inputs-container"></ol>
+        </div>
     </div>
 
     <div class="form-row">

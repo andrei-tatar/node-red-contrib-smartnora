@@ -85,17 +85,24 @@ module.exports = function (RED: any) {
             }
         }
 
-        if (config.supportInputSelector) {
+        const mediaInputs: { v: string, n: string, d: boolean }[] = config.mediaInputs;
+        if (config.supportInputSelector && mediaInputs?.length >= 1) {
             deviceConfig.traits.push('action.devices.traits.InputSelector');
             if (isInputSelectorDevice(deviceConfig)) {
                 const inputSelectorAttributes: InputSelectorDevice['attributes'] = {
-                    availableInputs: [],
+                    availableInputs: mediaInputs.map(i => ({
+                        key: i.v,
+                        names: [{
+                            lang: config.language,
+                            name_synonym: i.n.split(',').map(s => s.trim()),
+                        }],
+                    })),
                     orderedInputs: true,
                 };
                 Object.assign(deviceConfig.attributes, inputSelectorAttributes);
 
                 const inputSelectorState: Omit<InputSelectorDevice['state'], 'online'> = {
-                    currentInput: 'bla',
+                    currentInput: (mediaInputs.find(i => i.d) ?? mediaInputs[0]).v,
                 };
                 Object.assign(deviceConfig.state, inputSelectorState);
             }
