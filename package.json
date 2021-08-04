@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-smartnora",
-  "version": "1.0.13",
+  "version": "1.1.0-0",
   "description": "Set of nodes for Smart NORA (https://smart-nora.eu/) integration",
   "keywords": [
     "node-red"
