@@ -53,7 +53,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         updateState: FirebaseDevice<T>['updateState'],
         state$: Observable<T['state']>,
     }) => Promise<void> | void,
-    customRegistration?: (device$: Observable<FirebaseDevice<T>>) => void,
+    customRegistration?: (device$: Observable<FirebaseDevice<T>>) => Observable<any>,
 }) {
     const noraConfig: ConfigNode = RED.nodes.getNode(nodeConfig.nora);
     if (!noraConfig?.valid) { return; }
@@ -110,7 +110,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         });
     }
 
-    options?.customRegistration?.(device$);
+    options?.customRegistration?.(device$)?.pipe(takeUntil(close$))?.subscribe();
 }
 
 export function getClose(node: NodeInterface) {

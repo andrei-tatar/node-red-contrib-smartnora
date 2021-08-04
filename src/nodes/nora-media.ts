@@ -2,7 +2,9 @@ import {
     Device, InputSelectorDevice, isInputSelectorDevice, isMediaStateDevice, isOnOff, isTransportControlDevice, isVolumeDevice,
     MediaStateDevice, OnOffDevice, TransportControlDevice, VolumeDevice
 } from '@andrei-tatar/nora-firebase-common';
+import { EMPTY, switchMap, tap } from 'rxjs';
 import { ConfigNode, NodeInterface } from '..';
+import { FirebaseTransportControlDevice } from '../nora/transport-control-device';
 import { registerNoraDevice } from './util';
 
 type ConfigDeviceType = 'SPEAKER' | 'AUDIO_VIDEO_RECEIVER' | 'REMOTECONTROL' |
@@ -159,6 +161,17 @@ module.exports = function (RED: any) {
                     to: 'currentInput',
                 }]);
             },
+            customRegistration: device$ => device$.pipe(
+                switchMap(d => d instanceof FirebaseTransportControlDevice
+                    ? d.command$
+                    : EMPTY),
+                tap(command => {
+                    this.send({
+                        payload: command,
+                        topic: config.topic,
+                    });
+                }),
+            ),
         });
 
         function isOnOffState(state: Device['state']): state is OnOffDevice['state'] {
