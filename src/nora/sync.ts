@@ -1,4 +1,4 @@
-import { Device, HEARTBEAT_TIMEOUT_SEC, isScene, isTransportControlDevice, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
+import { Device, HEARTBEAT_TIMEOUT_SEC, isChannelDevice, isScene, isTransportControlDevice, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
 import { Agent } from 'https';
 import fetch, { Response } from 'node-fetch';
@@ -12,8 +12,8 @@ import { Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singlet
 import { apiEndpoint } from '../config';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
+import { FirebaseMediaDevice } from './media-device';
 import { FirebaseSceneDevice } from './scene-device';
-import { FirebaseTransportControlDevice } from './transport-control-device';
 
 export class FirebaseSync {
     private db;
@@ -115,8 +115,8 @@ export class FirebaseSync {
             const cloudId = `${this.group}|${device.id}`;
             const firebaseDevice = isScene(device)
                 ? new FirebaseSceneDevice(cloudId, this, device, this.logger)
-                : isTransportControlDevice(device)
-                    ? new FirebaseTransportControlDevice(cloudId, this, device, this.logger)
+                : isTransportControlDevice(device) || isChannelDevice(device)
+                    ? new FirebaseMediaDevice(cloudId, this, device, this.logger)
                     : new FirebaseDevice<T>(cloudId, this, device, this.logger);
             observer.next(firebaseDevice);
             this.devices$.next(this.devices$.value.concat(firebaseDevice));

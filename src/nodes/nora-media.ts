@@ -1,10 +1,11 @@
 import {
-    Device, InputSelectorDevice, isInputSelectorDevice, isMediaStateDevice, isOnOff, isTransportControlDevice, isVolumeDevice,
+    ChannelDevice, Device, InputSelectorDevice, isChannelDevice, isInputSelectorDevice,
+    isMediaStateDevice, isOnOff, isTransportControlDevice, isVolumeDevice,
     MediaStateDevice, OnOffDevice, TransportControlDevice, VolumeDevice
 } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY, switchMap, tap } from 'rxjs';
 import { ConfigNode, NodeInterface } from '..';
-import { FirebaseTransportControlDevice } from '../nora/transport-control-device';
+import { FirebaseMediaDevice } from '../nora/media-device';
 import { registerNoraDevice } from './util';
 
 type ConfigDeviceType = 'SPEAKER' | 'AUDIO_VIDEO_RECEIVER' | 'REMOTECONTROL' |
@@ -108,6 +109,21 @@ module.exports = function (RED: any) {
             }
         }
 
+        const channels: { k: string, n: string; i: string }[] = config.mediaChannels;
+        if (config.supportChannel && channels?.length >= 1) {
+            deviceConfig.traits.push('action.devices.traits.Channel');
+            if (isChannelDevice(deviceConfig)) {
+                const channelAttributes: ChannelDevice['attributes'] = {
+                    availableChannels: channels.map(c => ({
+                        key: c.k,
+                        names: c.n.split(',').map(n => n.trim()),
+                        number: c.i,
+                    })),
+                };
+                Object.assign(deviceConfig.attributes, channelAttributes);
+            }
+        }
+
         registerNoraDevice<Device>(this, RED, config, {
             deviceConfig,
             updateStatus: ({ state, update }) => {
@@ -169,8 +185,8 @@ module.exports = function (RED: any) {
                 }]);
             },
             customRegistration: device$ => device$.pipe(
-                switchMap(d => d instanceof FirebaseTransportControlDevice
-                    ? d.command$
+                switchMap(d => d instanceof FirebaseMediaDevice
+                    ? d.mediaCommand$
                     : EMPTY),
                 tap(command => {
                     this.send([null, {

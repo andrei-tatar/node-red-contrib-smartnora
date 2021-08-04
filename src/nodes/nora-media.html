@@ -78,11 +78,25 @@
                     n: 'hdmi 2,2nd hdmi,PlayStation',
                     d: false,
                 }],
-            }
+            },
+            supportChannel: {
+                value: false,
+            },
+            mediaChannels: {
+                value: [{
+                    k: 'ch-1',
+                    n: 'CNN,channel 1',
+                    i: '1',
+                }, {
+                    k: 'ch-2',
+                    n: 'Fox,channel 2',
+                    i: '2',
+                }],
+            },
         },
         inputs: 1,
         outputs: 2,
-        outputLabels: ["state", "transport control command"],
+        outputLabels: ["state", "media command"],
         paletteLabel: 'media',
         label: function () {
             return this.name || this.devicename || 'Media device';
@@ -169,14 +183,10 @@
                                 placeholder: 'Value',
                                 required: true,
                             })
-                            .css("width", "30%")
-                            .val(prop.v)
-                            .appendTo(row);
-
-                        $('<div/>', {
-                                style: 'display:inline-block; padding:0px 6px;'
+                            .css({
+                                width: "30%",
                             })
-                            .text('=>')
+                            .val(prop.v)
                             .appendTo(row);
 
                         $('<input/>', {
@@ -185,7 +195,10 @@
                                 placeholder: 'Name in language',
                                 required: true,
                             })
-                            .css("width", "calc(70% - 55px)")
+                            .css({
+                                width: "calc(70% - 30px)",
+                                marginLeft: "5px",
+                            })
                             .val(prop.n)
                             .appendTo(row);
 
@@ -211,6 +224,76 @@
                     ...input
                 });
             }
+
+            $('#node-input-supportChannel').change(function () {
+                $('.channel-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-channels-container').css('min-height', '120px').css('min-width', '350px')
+                .editableList({
+                    addItem: function (container, i, opt) {
+                        var prop = opt;
+                        if (!prop.hasOwnProperty('k')) {
+                            prop = {
+                                k: '',
+                                n: '',
+                                i: '',
+                            };
+                        }
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        $('<input/>', {
+                                class: "node-input-channels-channel-key",
+                                type: "text",
+                                placeholder: 'Key',
+                                required: true,
+                            })
+                            .css("width", "30%")
+                            .val(prop.k)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-channels-channel-name",
+                                type: "text",
+                                placeholder: 'Name',
+                                required: true,
+                            })
+                            .css({
+                                width: "calc(30%)",
+                                marginLeft: "5px",
+                            })
+                            .val(prop.n)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-channels-channel-number",
+                                type: "text",
+                                placeholder: 'Number',
+                            })
+                            .css({
+                                width: "calc(30%)",
+                                marginLeft: "5px",
+                            })
+                            .val(prop.i)
+                            .appendTo(row);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+            if (!this.mediaChannels) {
+                this.mediaChannels = [];
+            }
+
+            for (const channel of this.mediaChannels) {
+                $("#node-input-channels-container").editableList('addItem', {
+                    ...channel
+                });
+            }
         },
         oneditsave: function () {
             this.transportControlCommands = $('.transportcontrol-trait input:checked').toArray()
@@ -228,6 +311,21 @@
                 };
                 if (p.n && p.v) {
                     node.mediaInputs.push(p);
+                }
+            });
+
+            var channels = $("#node-input-channels-container").editableList('items');
+            var node = this;
+            node.mediaChannels = [];
+            channels.each(function (i) {
+                var channel = $(this);
+                var p = {
+                    n: channel.find(".node-input-channels-channel-name").val().trim(),
+                    k: channel.find(".node-input-channels-channel-key").val().trim(),
+                    i: channel.find(".node-input-channels-channel-number").val().trim(),
+                };
+                if (p.n && p.k) {
+                    node.mediaChannels.push(p);
                 }
             });
         },
@@ -357,6 +455,17 @@
         <label><i class="fa fa-tag"></i> <span>Inputs:</span></label>
         <div class="form-row">
             <ol id="node-input-inputs-container"></ol>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportChannel"><i class="fa fa-play-circle"></i> Channel Trait </label>
+        <input type="checkbox" id="node-input-supportChannel" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props channel-trait">
+        <label><i class="fa fa-tag"></i> <span>Channels:</span></label>
+        <div class="form-row">
+            <ol id="node-input-channels-container"></ol>
         </div>
     </div>
 
