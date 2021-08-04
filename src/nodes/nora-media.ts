@@ -173,10 +173,10 @@ module.exports = function (RED: any) {
                     ? d.command$
                     : EMPTY),
                 tap(command => {
-                    this.send({
+                    this.send([null, {
                         payload: command,
                         topic: config.topic,
-                    });
+                    }]);
                 }),
             ),
         });
