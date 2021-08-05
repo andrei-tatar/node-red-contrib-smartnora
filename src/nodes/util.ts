@@ -1,6 +1,6 @@
 import { Device } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY, firstValueFrom, merge, MonoTypeOperatorFunction, Observable, of, Subject } from 'rxjs';
-import { switchMap, takeUntil, tap } from 'rxjs/operators';
+import { retryWhen, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface, NodeMessage, singleton } from '..';
 import { FirebaseConnection } from '../nora/connection';
 import { FirebaseDevice } from '../nora/device';
@@ -53,7 +53,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         updateState: FirebaseDevice<T>['updateState'],
         state$: Observable<T['state']>,
     }) => Promise<void> | void,
-    customRegistration?: (device$: Observable<FirebaseDevice<T>>) => void,
+    customRegistration?: (device$: Observable<FirebaseDevice<T>>) => Observable<any>,
 }) {
     const noraConfig: ConfigNode = RED.nodes.getNode(nodeConfig.nora);
     if (!noraConfig?.valid) { return; }
@@ -110,7 +110,10 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         });
     }
 
-    options?.customRegistration?.(device$);
+    options?.customRegistration?.(device$)?.pipe(
+        takeUntil(close$),
+        retryWhen(err$ => err$.pipe(tap(err => node.warn(err)))),
+    )?.subscribe();
 }
 
 export function getClose(node: NodeInterface) {

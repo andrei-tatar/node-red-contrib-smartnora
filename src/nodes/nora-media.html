@@ -1,0 +1,502 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-media', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Media device',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            topic: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            twofactor: {
+                value: 'off',
+            },
+            twofactorpin: {
+                value: ''
+            },
+            filter: {
+                value: false,
+            },
+            deviceType: {
+                value: 'SPEAKER',
+                required: true,
+            },
+            supportOnOff: {
+                value: false,
+            },
+            supportVolume: {
+                value: false,
+            },
+            volumeCanMuteAndUnmute: {
+                value: true,
+            },
+            volumeLevelStepSize: {},
+            supportMediaState: {
+                value: false,
+            },
+            supportActivityState: {
+                value: false,
+            },
+            supportPlaybackState: {
+                value: true,
+            },
+            supportTransportControl: {
+                value: false,
+            },
+            transportControlCommands: {
+                value: ['PAUSE', 'RESUME', 'STOP'],
+            },
+            supportInputSelector: {
+                value: false,
+            },
+            language: {
+                value: 'en',
+            },
+            mediaInputs: {
+                value: [{
+                    v: 'hdmi-1',
+                    n: 'hdmi 1,1st hdmi,TV',
+                    d: true,
+                }, {
+                    v: 'hdmi-2',
+                    n: 'hdmi 2,2nd hdmi,PlayStation',
+                    d: false,
+                }],
+            },
+            supportChannel: {
+                value: false,
+            },
+            mediaChannels: {
+                value: [{
+                    k: 'ch-1',
+                    n: 'CNN,channel 1',
+                    i: '1',
+                }, {
+                    k: 'ch-2',
+                    n: 'Fox,channel 2',
+                    i: '2',
+                }],
+            },
+        },
+        inputs: 1,
+        outputs: 2,
+        outputLabels: ["state", "media command"],
+        paletteLabel: 'media',
+        label: function () {
+            return this.name || this.devicename || 'Media device';
+        },
+        oneditprepare: function () {
+            $('#node-input-twofactor').change(function () {
+                if ($(this).val() === 'pin') {
+                    $('#node-twofactor-pin').show();
+                } else {
+                    $('#node-twofactor-pin').hide();
+                }
+            });
+
+            $('#node-input-supportVolume').change(function () {
+                $('.volume-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-supportMediaState').change(function () {
+                $('.mediastate-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            var availableCommands = [
+                'CAPTION_CONTROL', 'SEEK_RELATIVE', 'SEEK_TO_POSITION', 'SET_REPEAT',
+                'NEXT', 'PREVIOUS', 'PAUSE', 'RESUME', 'STOP', 'SHUFFLE'
+            ];
+
+            var selectedCommands = this.transportControlCommands || [];
+            for (var command of availableCommands) {
+                var commandRow = $('<div>').appendTo($('.transportcontrol-trait'));
+                $('<input/>', {
+                        type: 'checkbox',
+                        id: 'input-control-command-' + command,
+                        'data-command': command,
+                    })
+                    .appendTo(commandRow)
+                    .prop('checked', selectedCommands.includes(command));
+
+                $('<label/>', {
+                        for: 'input-control-command-' + command,
+                    })
+                    .text(toHummanCase(command))
+                    .appendTo(commandRow);
+            }
+
+            function toHummanCase(command) {
+                return command.substr(0, 1) + command.substr(1)
+                    .toLowerCase()
+                    .replace(/_(\w)/mg, (_, g) => ' ' + g.toUpperCase());
+            }
+
+            $('#node-input-supportTransportControl').change(function () {
+                $('.transportcontrol-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-supportInputSelector').change(function () {
+                $('.inputselector-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-inputs-container').change(function (ev) {
+                if (ev.target.classList.contains('node-input-inputs-input-default')) {
+                    $('.node-input-inputs-input-default').not(ev.target).prop('checked', false);
+                }
+            });
+
+            $('#node-input-inputs-container').css('min-height', '120px').css('min-width', '350px')
+                .editableList({
+                    addItem: function (container, i, opt) {
+                        var prop = opt;
+                        if (!prop.hasOwnProperty('v')) {
+                            prop = {
+                                v: '',
+                                n: ''
+                            };
+                        }
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        $('<input/>', {
+                                class: "node-input-inputs-input-value",
+                                type: "text",
+                                placeholder: 'Value',
+                                required: true,
+                            })
+                            .css({
+                                width: "30%",
+                            })
+                            .val(prop.v)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-inputs-input-name",
+                                type: "text",
+                                placeholder: 'Name in language',
+                                required: true,
+                            })
+                            .css({
+                                width: "calc(70% - 30px)",
+                                marginLeft: "5px",
+                            })
+                            .val(prop.n)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-inputs-input-default",
+                                type: "checkbox",
+                                title: "Default",
+                            })
+                            .css("width", "30px")
+                            .appendTo(row)
+                            .prop('checked', !!prop.d);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+            if (!this.mediaInputs) {
+                this.mediaInputs = [];
+            }
+
+            for (const input of this.mediaInputs) {
+                $("#node-input-inputs-container").editableList('addItem', {
+                    ...input
+                });
+            }
+
+            $('#node-input-supportChannel').change(function () {
+                $('.channel-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-channels-container').css('min-height', '120px').css('min-width', '350px')
+                .editableList({
+                    addItem: function (container, i, opt) {
+                        var prop = opt;
+                        if (!prop.hasOwnProperty('k')) {
+                            prop = {
+                                k: '',
+                                n: '',
+                                i: '',
+                            };
+                        }
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        $('<input/>', {
+                                class: "node-input-channels-channel-key",
+                                type: "text",
+                                placeholder: 'Key',
+                                required: true,
+                            })
+                            .css("width", "30%")
+                            .val(prop.k)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-channels-channel-name",
+                                type: "text",
+                                placeholder: 'Name',
+                                required: true,
+                            })
+                            .css({
+                                width: "calc(30%)",
+                                marginLeft: "5px",
+                            })
+                            .val(prop.n)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-channels-channel-number",
+                                type: "text",
+                                placeholder: 'Number',
+                            })
+                            .css({
+                                width: "calc(30%)",
+                                marginLeft: "5px",
+                            })
+                            .val(prop.i)
+                            .appendTo(row);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+            if (!this.mediaChannels) {
+                this.mediaChannels = [];
+            }
+
+            for (const channel of this.mediaChannels) {
+                $("#node-input-channels-container").editableList('addItem', {
+                    ...channel
+                });
+            }
+        },
+        oneditsave: function () {
+            this.transportControlCommands = $('.transportcontrol-trait input:checked').toArray()
+                .map(c => c.getAttribute('data-command'));
+
+            var inputs = $("#node-input-inputs-container").editableList('items');
+            var node = this;
+            node.mediaInputs = [];
+            inputs.each(function (i) {
+                var input = $(this);
+                var p = {
+                    n: input.find(".node-input-inputs-input-name").val().trim(),
+                    v: input.find(".node-input-inputs-input-value").val().trim(),
+                    d: input.find(".node-input-inputs-input-default").is(':checked'),
+                };
+                if (p.n && p.v) {
+                    node.mediaInputs.push(p);
+                }
+            });
+
+            var channels = $("#node-input-channels-container").editableList('items');
+            var node = this;
+            node.mediaChannels = [];
+            channels.each(function (i) {
+                var channel = $(this);
+                var p = {
+                    n: channel.find(".node-input-channels-channel-name").val().trim(),
+                    k: channel.find(".node-input-channels-channel-key").val().trim(),
+                    i: channel.find(".node-input-channels-channel-number").val().trim(),
+                };
+                if (p.n && p.k) {
+                    node.mediaChannels.push(p);
+                }
+            });
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-media">
+    <style>
+        .trait-props {
+            margin-left: 5px;
+            border-left: 1px solid lightgray;
+            padding-left: 10px;
+            padding-top: 10px;
+            margin-top: -15px;
+            margin-bottom: 5px;
+        }
+
+        .transportcontrol-trait {
+            display: grid;
+            grid-template-columns: repeat(auto-fit,minmax(120px, 1fr));
+        }
+
+        .transportcontrol-trait > div {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .transportcontrol-trait > div > label {
+            margin-left: 5px;
+        }
+    </style>
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Media Name</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceType"><i class="fa fa-question-sign"></i> Device Type</label>
+        <select id="node-input-deviceType">
+            <option value="SPEAKER">Speaker</option>
+            <option value="AUDIO_VIDEO_RECEIVER">Audio Video Receiver</option>
+            <option value="REMOTECONTROL">Remote Control</option>
+            <option value="SETTOP">Settop</option>
+            <option value="SOUNDBAR">Soundbar</option>
+            <option value="STREAMING_BOX">Streaming Box</option>
+            <option value="STREAMING_SOUNDBAR">Streaming Soundbar</option>
+            <option value="STREAMING_STICK">Streaming Stick</option>
+            <option value="TV">TV</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportOnOff"><i class="fa fa-power-off"></i> On/Off Trait </label>
+        <input type="checkbox" id="node-input-supportOnOff" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportVolume"><i class="fa fa-volume-up"></i> Volume Trait </label>
+        <input type="checkbox" id="node-input-supportVolume" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props volume-trait">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-volumeCanMuteAndUnmute"> Can mute/unmute </label>
+            <input type="checkbox" id="node-input-volumeCanMuteAndUnmute" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+        <div class="form-row">
+            <label for="node-input-volumeLevelStepSize" style="width:unset"><i class="fa fa-i-cursor"></i> Volume level step size</label>
+            <input type="text" id="node-input-volumeLevelStepSize" style="width:30%" placeholder="1">
+        </div>
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportMediaState"><i class="fa fa-play"></i> Media State Trait </label>
+        <input type="checkbox" id="node-input-supportMediaState" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props mediastate-trait">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-supportActivityState"> Support activity state </label>
+            <input type="checkbox" id="node-input-supportActivityState" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+        <div class="form-row">
+            <label style="width:auto" for="node-input-supportPlaybackState"> Support playback state </label>
+            <input type="checkbox" id="node-input-supportPlaybackState" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportTransportControl"><i class="fa fa-play-circle"></i> Transport Control Trait </label>
+        <input type="checkbox" id="node-input-supportTransportControl" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props transportcontrol-trait">
+
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportInputSelector"><i class="fa fa-play-circle"></i> Input Selector Trait </label>
+        <input type="checkbox" id="node-input-supportInputSelector" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props inputselector-trait">
+        <div class="form-row">
+            <label for="node-input-language"><i class="fa fa-i-cursor"></i> Language</label>
+            <select id="node-input-language">
+                <option value="da">da</option>
+                <option value="nl">nl</option>
+                <option value="en">en</option>
+                <option value="fr">fr</option>
+                <option value="de">de</option>
+                <option value="hi">hi</option>
+                <option value="id">id</option>
+                <option value="it">it</option>
+                <option value="ja">ja</option>
+                <option value="ko">ko</option>
+                <option value="no">no</option>
+                <option value="pt-BR">pt</option>
+                <option value="es">es</option>
+                <option value="sv">sv</option>
+                <option value="th">th</option>
+            </select>
+        </div>
+        <label><i class="fa fa-tag"></i> <span>Inputs:</span></label>
+        <div class="form-row">
+            <ol id="node-input-inputs-container"></ol>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportChannel"><i class="fa fa-play-circle"></i> Channel Trait </label>
+        <input type="checkbox" id="node-input-supportChannel" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props channel-trait">
+        <label><i class="fa fa-tag"></i> <span>Channels:</span></label>
+        <div class="form-row">
+            <ol id="node-input-channels-container"></ol>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-input-twofactor">
+            <option value="off">None</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-twofactor-pin" class="form-row">
+        <label for="node-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-input-twofactorpin">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-media">
+    <p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/media/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/media/README.md</a>
+</p>
+</script>

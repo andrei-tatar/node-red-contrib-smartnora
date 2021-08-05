@@ -1,6 +1,6 @@
 import { SceneDevice } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface } from '..';
 import { FirebaseSceneDevice } from '../nora/scene-device';
 import { convertValueType, getValue, registerNoraDevice } from './util';
@@ -33,19 +33,18 @@ module.exports = function (RED: any) {
                 noraSpecific: {
                 },
             },
-            customRegistration: device$ => {
-                device$.pipe(
-                    switchMap(d => d instanceof FirebaseSceneDevice
-                        ? d.activateScene$
-                        : EMPTY)
-                ).subscribe(({ deactivate }) => {
+            customRegistration: device$ => device$.pipe(
+                switchMap(d => d instanceof FirebaseSceneDevice
+                    ? d.activateScene$
+                    : EMPTY),
+                tap(({ deactivate }) => {
                     const value = !deactivate;
                     this.send({
                         payload: getValue(RED, this, value ? onValue : offValue, value ? onType : offType),
                         topic: config.topic
                     });
-                });
-            },
+                }),
+            ),
         });
     });
 };
