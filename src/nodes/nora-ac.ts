@@ -15,7 +15,7 @@ module.exports = function (RED: any) {
 
         registerNoraDevice<TemperatureSettingDevice & FanSpeedDevice>(this, RED, config, {
             deviceConfig: {
-                type: 'action.devices.types.THERMOSTAT',
+                type: 'action.devices.types.AC_UNIT',
                 traits: [
                     'action.devices.traits.TemperatureSetting',
                     'action.devices.traits.FanSpeed',
