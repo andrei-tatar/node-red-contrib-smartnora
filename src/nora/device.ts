@@ -49,14 +49,14 @@ export class FirebaseDevice<T extends Device = Device> {
         this._localStateUpdate$,
     );
 
-    connectedAndSynced$ = new Observable<never>(_ => {
+    readonly connectedAndSynced$ = new Observable<never>(_ => {
         this.connectedAndSynced = true;
         return () => this.connectedAndSynced = false;
     }).pipe(
         singleton(),
     );
 
-    error$ = new Observable<string | null>(observer => {
+    readonly error$ = new Observable<string | null>(observer => {
         const ref = this.noraSpecific.child('error/msg');
         const handler = ref.on('value', (snapshot: firebase.database.DataSnapshot) => {
             const value: string | null = snapshot.val();
@@ -65,12 +65,10 @@ export class FirebaseDevice<T extends Device = Device> {
         return () => ref.off('value', handler);
     });
 
-    local$ = new Subject<true>();
-
-    protected readonly state = this.sync.states.child(this.device.id);
-    protected readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
-
-    readonly asyncCommands$ = AsyncCommandsRegistry.getCloudAsyncCommandHandler(this.noraSpecific);
+    readonly local$ = new Subject<true>();
+    readonly state = this.sync.states.child(this.device.id);
+    readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
+    readonly asyncCommands$ = AsyncCommandsRegistry.getCloudAsyncCommandHandler(this);
 
     constructor(
         readonly cloudId: string,

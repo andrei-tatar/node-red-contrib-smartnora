@@ -1,6 +1,9 @@
-import { AsyncCommand, AsyncResponse } from '@andrei-tatar/nora-firebase-common';
+import { AsyncCommand, AsyncResponse, Device, validate } from '@andrei-tatar/nora-firebase-common';
+import { Schema } from '@andrei-tatar/nora-firebase-common/build/schema';
 import { catchError, EMPTY, first, ignoreElements, merge, mergeMap, Observable, Observer, of, race, Subject, switchMap, timeout } from 'rxjs';
 import { Logger } from '..';
+import { FirebaseDevice } from './device';
+import { getSafeUpdate } from './safe-update';
 
 export class AsyncCommandsRegistry {
     private static readonly handlers = new Map<string, Observer<AsyncResponse>>();
@@ -17,9 +20,9 @@ export class AsyncCommandsRegistry {
         return this;
     }
 
-    static getCloudAsyncCommandHandler(noraSpecific: firebase.default.database.Reference) {
-        const asyncCommands = noraSpecific.child('commands');
-        const asyncResponses = noraSpecific.child('responses');
+    static getCloudAsyncCommandHandler<T extends Device>(device: FirebaseDevice<T>) {
+        const asyncCommands = device.noraSpecific.child('commands');
+        const asyncResponses = device.noraSpecific.child('responses');
         return new Observable<{ id: string, command: AsyncCommand }>(observer => {
             const handler = asyncCommands.on('child_added', d => {
                 this.logger?.trace(`[async-cmd] async command received ${d.key}`);
@@ -33,10 +36,36 @@ export class AsyncCommandsRegistry {
             return () => asyncCommands.off('child_added', handler);
         }).pipe(
             mergeMap(cmd => {
-                const response = new Subject<AsyncResponse>();
-                const writeResponse$ = response.pipe(
+                const handler = new Subject<AsyncResponse>();
+                const writeResponse$ = handler.pipe(
                     first(),
-                    switchMap(d => asyncResponses.child(cmd.id).set(d)),
+                    switchMap(d => {
+                        const response: AsyncResponse = {};
+                        if ('errorCode' in d && typeof d.errorCode === 'string') {
+                            if (!Schema.device.armdisarm.definitions.ErrorCode.enum.includes(d.errorCode)) {
+                                this.logger?.warn(`[async-cmd] invalid error code ${d.errorCode}`);
+                                return EMPTY;
+                            }
+                            response.errorCode = d.errorCode;
+                        } else if ('state' in d && typeof d.state === 'object') {
+                            const safeUpdate = {};
+                            getSafeUpdate({
+                                path: 'msg.payload.state.',
+                                currentState: device.device.state,
+                                safeUpdateObject: safeUpdate,
+                                isValid: () => validate(device.device.traits, 'state-update', safeUpdate).valid,
+                                update: d.state,
+                                warn: prop => this.logger?.warn(`[async-cmd] ignoring state prop ${prop}`),
+                            });
+                            response.state = safeUpdate;
+                        }
+
+                        if (Object.keys(response).length === 0) {
+                            (response as any).timestamp = new Date().getTime();
+                        }
+
+                        return asyncResponses.child(cmd.id).set(response);
+                    }),
                     timeout(1000),
                     catchError(_ => {
                         this.logger?.warn(`[async-cmd] timeout waiting for response`);
@@ -46,7 +75,7 @@ export class AsyncCommandsRegistry {
                 );
 
                 const registerHandler$ = new Observable<never>(_ => {
-                    this.handlers.set(cmd.id, response);
+                    this.handlers.set(cmd.id, handler);
                     return () => this.handlers.delete(cmd.id);
                 });
 

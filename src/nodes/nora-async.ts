@@ -9,16 +9,7 @@ module.exports = function (RED: any) {
         handleNodeInput({
             node: this,
             nodeConfig: config,
-            handler: msg => {
-                if (typeof msg.payload === 'object') {
-                    const response = {
-                        state: msg.payload?.state,
-                        errorCode: msg.payload?.errorCode,
-                        timestamp: new Date().getTime(),
-                    };
-                    AsyncCommandsRegistry.handle(msg._asyncCommandId, response);
-                }
-            },
+            handler: msg => AsyncCommandsRegistry.handle(msg._asyncCommandId, msg.payload),
         });
     });
 };
