@@ -6,6 +6,7 @@ import { merge, Observable, of, timer } from 'rxjs';
 import { delayWhen, finalize, ignoreElements, map, retryWhen, switchMap, tap } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
 import { firebaseConfig, NoraConfig } from '../config';
+import { AsyncCommandsRegistry } from './async-commands.registry';
 import { DeviceContext } from './device-context';
 import { LocalExecution } from './local-execution';
 import { FirebaseSync } from './sync';
@@ -24,6 +25,7 @@ export class FirebaseConnection {
     static withLogger(logger: Logger) {
         this.logger ??= logger;
         LocalExecution.withLogger(logger);
+        AsyncCommandsRegistry.withLogger(logger);
         return this;
     }
 

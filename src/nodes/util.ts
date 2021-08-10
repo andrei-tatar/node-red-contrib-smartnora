@@ -95,6 +95,22 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         ).subscribe(state => options?.stateChanged?.(state));
     }
 
+    if (deviceConfig.noraSpecific.asyncCommandExecution) {
+        device$.pipe(
+            switchMap(d => d.asyncCommands$),
+            tap(({ id, command }) => {
+                node.send([null, {
+                    _asyncCommandId: id,
+                    payload: {
+                        command: command.command.substr(command.command.lastIndexOf('.') + 1),
+                        ...command.params,
+                    },
+                }]);
+            }),
+            takeUntil(close$),
+        ).subscribe();
+    }
+
     if (options.handleNodeInput) {
         handleNodeInput({
             node,

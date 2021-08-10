@@ -3,6 +3,7 @@ import firebase from 'firebase/app';
 import { merge, Observable, Subject } from 'rxjs';
 import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
 import { Logger, singleton } from '..';
+import { AsyncCommandsRegistry } from './async-commands.registry';
 import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
 
@@ -16,15 +17,13 @@ export class FirebaseDevice<T extends Device = Device> {
             timestamp: number,
         }
     }>(observer => {
-        const handler = (snapshot: firebase.database.DataSnapshot) => observer.next(snapshot.val());
-        const noraHandler = (snapshot: firebase.database.DataSnapshot) => {
+        const handler = this.state.on('value', snapshot => observer.next(snapshot.val()));
+        const noraHandler = this.noraSpecific.on('value', snapshot => {
             if (this.connectedAndSynced) {
                 // keep noraSpecific in sync as it's needed for local execution
                 this.device.noraSpecific = snapshot.val() ?? {};
             }
-        };
-        this.state.on('value', handler);
-        this.noraSpecific.on('value', noraHandler);
+        });
         return () => {
             this.state.off('value', handler);
             this.noraSpecific.off('value', noraHandler);
@@ -58,12 +57,11 @@ export class FirebaseDevice<T extends Device = Device> {
     );
 
     error$ = new Observable<string | null>(observer => {
-        const handler = (snapshot: firebase.database.DataSnapshot) => {
+        const ref = this.noraSpecific.child('error/msg');
+        const handler = ref.on('value', (snapshot: firebase.database.DataSnapshot) => {
             const value: string | null = snapshot.val();
             observer.next(value ?? null);
-        };
-        const ref = this.noraSpecific.child('error/msg');
-        ref.on('value', handler);
+        });
         return () => ref.off('value', handler);
     });
 
@@ -71,6 +69,8 @@ export class FirebaseDevice<T extends Device = Device> {
 
     protected readonly state = this.sync.states.child(this.device.id);
     protected readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
+
+    readonly asyncCommands$ = AsyncCommandsRegistry.getCloudAsyncCommandHandler(this.noraSpecific);
 
     constructor(
         readonly cloudId: string,
