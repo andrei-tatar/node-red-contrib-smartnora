@@ -1,6 +1,6 @@
-import { Device, executeCommand, updateState, validate } from '@andrei-tatar/nora-firebase-common';
+import { AsyncCommand, Changes, Device, executeCommand, ExecuteCommandError, updateState, validate } from '@andrei-tatar/nora-firebase-common';
 import firebase from 'firebase/app';
-import { merge, Observable, Subject } from 'rxjs';
+import { firstValueFrom, merge, Observable, Subject } from 'rxjs';
 import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
 import { Logger, singleton } from '..';
 import { AsyncCommandsRegistry } from './async-commands.registry';
@@ -34,6 +34,7 @@ export class FirebaseDevice<T extends Device = Device> {
     );
 
     private readonly _localStateUpdate$ = new Subject<T['state']>();
+    private readonly _localAsyncCommand$ = new Subject<{ id: string, command: AsyncCommand }>();
 
     readonly state$ = this._state$.pipe(
         map(({ state }) => state),
@@ -68,7 +69,10 @@ export class FirebaseDevice<T extends Device = Device> {
     readonly local$ = new Subject<true>();
     readonly state = this.sync.states.child(this.device.id);
     readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
-    readonly asyncCommands$ = AsyncCommandsRegistry.getCloudAsyncCommandHandler(this);
+    readonly asyncCommands$ = merge(
+        this._localAsyncCommand$,
+        AsyncCommandsRegistry.getCloudAsyncCommandHandler(this),
+    );
 
     constructor(
         readonly cloudId: string,
@@ -84,10 +88,30 @@ export class FirebaseDevice<T extends Device = Device> {
         return this.updateStateInternal(update, { mapping });
     }
 
-    executeCommand(command: string, params: any): T['state'] {
+    async executeCommand(command: string, params: any): Promise<T['state']> {
         this.local$.next(true);
-        const updates = executeCommand({ command, params, device: this.device });
-        this.logger?.trace(`[nora][local-execution][${this.device.id}] executed ${command}`);
+
+        let updates: Changes | null = null;
+        if (this.device.noraSpecific?.asyncCommandExecution) {
+            const commandId = `${this.device.id}:${new Date().getTime()}`;
+            const response = AsyncCommandsRegistry.getLocalResponse(commandId, this.device);
+            this._localAsyncCommand$.next({
+                id: commandId,
+                command: { command, params },
+            });
+
+            const result = await firstValueFrom(response);
+            if (result.errorCode) {
+                throw new ExecuteCommandError(result.errorCode);
+            } else if (result.state) {
+                updates = {
+                    updateState: result.state,
+                };
+            }
+        } else {
+            updates = executeCommand({ command, params, device: this.device });
+            this.logger?.trace(`[nora][local-execution][${this.device.id}] executed ${command}`);
+        }
 
         if (updates?.updateState) {
             this.updateStateInternal(updates.updateState).catch(err =>
