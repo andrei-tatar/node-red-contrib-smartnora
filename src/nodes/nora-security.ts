@@ -16,6 +16,7 @@ module.exports = function (RED: any) {
             roomHint: config.roomhint,
             willReportState: true,
             noraSpecific: {
+                asyncCommandExecution: !!config.asyncCmd,
             },
             state: {
                 online: true,
@@ -71,6 +72,12 @@ module.exports = function (RED: any) {
                 });
             },
             handleNodeInput: async ({ msg, updateState }) => {
+                if ((msg?.payload?.currentArmLevel ?? undefined) !== undefined &&
+                    !armLevels?.find(s => s.v === msg.payload.currentArmLevel)) {
+                    this.warn(`invalid arm level: ${msg.payload.currentArmLevel}`);
+                    return;
+                }
+
                 await updateState(msg?.payload);
             },
         });

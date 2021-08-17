@@ -47,9 +47,16 @@
                     },
                 ]
             },
+            asyncCmd: {
+                value: false,
+            },
+            outputs: {
+                value: 1,
+            },
         },
         inputs: 1,
         outputs: 1,
+        outputLabels: ["state", "async command"],
         paletteLabel: 'security',
         label: function () {
             return this.name || this.devicename || 'security';
@@ -121,6 +128,10 @@
                 };
                 $("#node-input-levels-container").editableList('addItem', newLevel);
             }
+
+            $('#node-input-asyncCmd').change(function () {
+                $('.hide-when-async')[$(this).is(':checked') ? 'hide' : 'show']();
+            });
         },
         oneditsave: function () {
             var armLevels = $("#node-input-levels-container").editableList('items');
@@ -136,6 +147,8 @@
                     node.armLevels.push(p);
                 }
             });
+
+            node.outputs = $('#node-input-asyncCmd').is(':checked') ? 2 : 1;
         },
     });
 </script>
@@ -157,7 +170,10 @@
         <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
         <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
-
+    <div class="form-row">
+        <label style="width:auto" for="node-input-asyncCmd"><i class="fa fa-refresh"></i> Async command execution: </label>
+        <input type="checkbox" id="node-input-asyncCmd" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
     <div class="form-row">
         <label for="node-input-language"><i class="fa fa-i-cursor"></i> Language</label>
         <select id="node-input-language">
@@ -182,7 +198,6 @@
     <div class="form-row node-input-levels-container-row node-input-levels">
         <ol id="node-input-levels-container"></ol>
     </div>
-
     <div class="form-row">
         <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
         <input type="text" id="node-input-roomhint">
