@@ -1,0 +1,216 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-security', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Security System',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+            twofactor: {
+                value: 'off',
+            },
+            twofactorpin: {
+                value: ''
+            },
+            filter: {
+                value: false,
+            },
+            language: {
+                value: 'en',
+            },
+            armLevels: {
+                value: [{
+                        v: 'L1',
+                        n: 'home and guarding,SL1'
+                    },
+                    {
+                        v: 'L2',
+                        n: 'away and guarding,SL2'
+                    },
+                ]
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'security',
+        label: function () {
+            return this.name || this.devicename || 'security';
+        },
+        oneditprepare: function () {
+            $('#node-input-twofactor').change(function () {
+                if ($(this).val() === 'pin') {
+                    $('#node-twofactor-pin').show();
+                } else {
+                    $('#node-twofactor-pin').hide();
+                }
+            });
+
+            $('#node-input-levels-container').css('min-height', '120px').css('min-width', '450px')
+                .editableList({
+                    addItem: function (container, i, opt) {
+                        var prop = opt;
+                        if (!prop.hasOwnProperty('v')) {
+                            prop = {
+                                v: '',
+                                n: ''
+                            };
+                        }
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        $('<input/>', {
+                                class: "node-input-levels-level-value",
+                                type: "text",
+                                placeholder: 'Value',
+                                required: true,
+                            })
+                            .css("width", "30%")
+                            .val(prop.v)
+                            .appendTo(row);
+
+                        $('<div/>', {
+                                style: 'display:inline-block; padding:0px 6px;'
+                            })
+                            .text('=>')
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-levels-level-name",
+                                type: "text",
+                                placeholder: 'Name in language',
+                                required: true,
+                            })
+                            .css("width", "calc(70% - 30px)")
+                            .val(prop.n)
+                            .appendTo(row);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+            if (!this.armLevels) {
+                this.armLevels = [];
+            }
+
+            for (var i = 0; i < this.armLevels.length; i++) {
+                var armLevel = this.armLevels[i];
+                var newLevel = {
+                    v: armLevel.v,
+                    n: armLevel.n
+                };
+                $("#node-input-levels-container").editableList('addItem', newLevel);
+            }
+        },
+        oneditsave: function () {
+            var armLevels = $("#node-input-levels-container").editableList('items');
+            var node = this;
+            node.armLevels = [];
+            armLevels.each(function (i) {
+                var armLevel = $(this);
+                var p = {
+                    n: armLevel.find(".node-input-levels-level-name").val().trim(),
+                    v: armLevel.find(".node-input-levels-level-value").val().trim(),
+                };
+                if (p.n && p.v) {
+                    node.armLevels.push(p);
+                }
+            });
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-security">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Device Name</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-language"><i class="fa fa-i-cursor"></i> Language</label>
+        <select id="node-input-language">
+            <option value="da">da</option>
+            <option value="nl">nl</option>
+            <option value="en">en</option>
+            <option value="fr">fr</option>
+            <option value="de">de</option>
+            <option value="hi">hi</option>
+            <option value="id">id</option>
+            <option value="it">it</option>
+            <option value="ja">ja</option>
+            <option value="ko">ko</option>
+            <option value="no">no</option>
+            <option value="pt-BR">pt</option>
+            <option value="es">es</option>
+            <option value="sv">sv</option>
+            <option value="th">th</option>
+        </select>
+    </div>
+    <label><i class="fa fa-tag"></i> <span>Arm Levels (empty if none):</span></label>
+    <div class="form-row node-input-levels-container-row node-input-levels">
+        <ol id="node-input-levels-container"></ol>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-input-twofactor">
+            <option value="off">None</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-twofactor-pin" class="form-row">
+        <label for="node-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-input-twofactorpin">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-security">
+    <p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/security/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/security/README.md</a>
+</p>
+</script>
