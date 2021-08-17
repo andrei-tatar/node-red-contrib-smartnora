@@ -5,7 +5,7 @@ import {
 } from 'rxjs';
 import { filter, map, scan, share, switchMap } from 'rxjs/operators';
 
-export interface NodeMessage {
+export interface NodeMessage extends Record<string, any> {
     payload: any;
     topic?: string;
 }

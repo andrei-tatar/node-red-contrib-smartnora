@@ -58,9 +58,16 @@
             filter: {
                 value: false,
             },
+            asyncCmd: {
+                value: false,
+            },
+            outputs: {
+                value: 1,
+            },
         },
         inputs: 1,
         outputs: 1,
+        outputLabels: ["state", "async command"],
         paletteLabel: 'outlet',
         label: function () {
             return this.name || this.devicename || 'outlet';
@@ -83,6 +90,13 @@
                     $('#node-twofactor-pin').hide();
                 }
             });
+            $('#node-input-asyncCmd').change(function () {
+                $('.hide-when-async')[$(this).is(':checked') ? 'hide' : 'show']();
+            });
+        },
+        oneditsave: function () {
+            var node = this;
+            node.outputs = $('#node-input-asyncCmd').is(':checked') ? 2 : 1;
         },
     });
 </script>
@@ -105,6 +119,10 @@
         <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
+        <label style="width:auto" for="node-input-asyncCmd"><i class="fa fa-refresh"></i> Async command execution: </label>
+        <input type="checkbox" id="node-input-asyncCmd" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row hide-when-async">
         <label style="width:auto" for="node-input-errorifstateunchaged"><i class="fa fa-exclamation-triangle"></i> If state doesn't change via voice, warn user: </label>
         <input type="checkbox" id="node-input-errorifstateunchaged" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
@@ -145,7 +163,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="noraf-outlet">
-<p>
+    <p>
     <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/outlet/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/outlet/README.md</a>
 </p>
 </script>

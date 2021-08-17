@@ -39,12 +39,12 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
             singleton(),
         );
 
-    override executeCommand(command: string, params: any) {
+    override async executeCommand(command: string, params: any) {
         if (command === 'action.devices.commands.ActivateScene') {
             this.activateSceneLocal$.next({ deactivate: params?.deactivate ?? false });
             return this.device.state;
         } else {
-            return super.executeCommand(command, params);
+            return await super.executeCommand(command, params);
         }
     }
 }

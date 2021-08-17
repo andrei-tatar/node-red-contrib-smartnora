@@ -53,7 +53,8 @@ export class LocalExecution {
                         const device = this.devices$.value.find(d => d.cloudId === body.deviceId);
                         try {
                             if (device) {
-                                this.sendJson(res, device.executeCommand(body.command, body.params));
+                                const state = await device.executeCommand(body.command, body.params);
+                                this.sendJson(res, state);
                             } else {
                                 this.sendJson(res, { errorCode: 'deviceNotFound' });
                             }

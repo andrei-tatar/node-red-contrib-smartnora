@@ -29,7 +29,8 @@ module.exports = function (RED: any) {
                 },
                 noraSpecific: {
                     returnOnOffErrorCodeIfStateAlreadySet: !!config.errorifstateunchaged,
-                }
+                    asyncCommandExecution: !!config.asyncCmd,
+                },
             },
             updateStatus: ({ state, update }) => {
                 update(`(${state.on ? 'on' : 'off'})`);

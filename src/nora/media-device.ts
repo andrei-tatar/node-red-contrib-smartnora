@@ -53,7 +53,7 @@ export class FirebaseMediaDevice<T extends (TransportControlDevice | ChannelDevi
         );
     }
 
-    override executeCommand(command: string, params: any) {
+    override async executeCommand(command: string, params: any) {
         if (command.startsWith(TRANSPORT_CONTROL_COMMAND_PREFIX)) {
             const mediaCommand = command.substr(TRANSPORT_CONTROL_COMMAND_PREFIX.length);
             this.localCommand$.next({
@@ -70,6 +70,6 @@ export class FirebaseMediaDevice<T extends (TransportControlDevice | ChannelDevi
             }
         }
 
-        return super.executeCommand(command, params);
+        return await super.executeCommand(command, params);
     }
 }
