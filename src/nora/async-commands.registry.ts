@@ -12,30 +12,30 @@ export class AsyncCommandsRegistry {
     }>();
     private static logger: Logger | null;
 
-    static handle(id: string, d: AsyncResponse): void {
+    static handle({ id, response: rsp, warn }: { id: string, response: AsyncResponse, warn: (msg: string) => void }): void {
         this.logger?.trace(`[async-cmd] got response for ${id}`);
         const handler = this.handlers.get(id);
         if (!handler) {
-            // TODO: log?
+            warn('No handled registered for command');
             return;
         }
 
         const response: AsyncResponse = {};
-        if ('errorCode' in d && typeof d.errorCode === 'string') {
-            if (!Schema.device.armdisarm.definitions.ErrorCode.enum.includes(d.errorCode)) {
-                this.logger?.warn(`[async-cmd] invalid error code ${d.errorCode}`);
+        if ('errorCode' in rsp && typeof rsp.errorCode === 'string') {
+            if (!Schema.device.armdisarm.definitions.ErrorCode.enum.includes(rsp.errorCode)) {
+                warn(`Invalid error code: ${rsp.errorCode}`);
                 return;
             }
-            response.errorCode = d.errorCode;
-        } else if ('state' in d && typeof d.state === 'object') {
+            response.errorCode = rsp.errorCode;
+        } else if ('state' in rsp && typeof rsp.state === 'object') {
             const safeUpdate = {};
             getSafeUpdate({
-                path: 'msg.payload.state.',
+                update: rsp.state,
                 currentState: handler.device.state,
                 safeUpdateObject: safeUpdate,
+                path: 'msg.payload.state.',
                 isValid: () => validate(handler.device.traits, 'state-update', safeUpdate).valid,
-                update: d.state,
-                warn: prop => this.logger?.warn(`[async-cmd] ignoring state prop ${prop}`),
+                warn: prop => warn(`Ignoring prop ${prop}`),
             });
             response.state = safeUpdate;
         }

@@ -96,16 +96,20 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
     }
 
     if (deviceConfig.noraSpecific.asyncCommandExecution) {
+        const padding = new Array<null>(nodeConfig.outputs - 1).fill(null);
         device$.pipe(
             switchMap(d => d.asyncCommands$),
             tap(({ id, command }) => {
-                node.send([null, {
-                    _asyncCommandId: id,
-                    payload: {
-                        command: command.command.substr(command.command.lastIndexOf('.') + 1),
-                        ...command.params,
+                node.send([
+                    ...padding,
+                    {
+                        _asyncCommandId: id,
+                        payload: {
+                            command: command.command.substr(command.command.lastIndexOf('.') + 1),
+                            ...command.params,
+                        },
                     },
-                }]);
+                ]);
             }),
             takeUntil(close$),
         ).subscribe();

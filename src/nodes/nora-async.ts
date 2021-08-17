@@ -9,7 +9,11 @@ module.exports = function (RED: any) {
         handleNodeInput({
             node: this,
             nodeConfig: config,
-            handler: msg => AsyncCommandsRegistry.handle(msg._asyncCommandId, msg.payload),
+            handler: msg => AsyncCommandsRegistry.handle({
+                id: msg._asyncCommandId,
+                response: msg.payload,
+                warn: w => this.warn(w),
+            }),
         });
     });
 };

@@ -8,4 +8,4 @@
   - `Acknowledge` - Google Assistant will ask for confirmation when a command is invoked, preventing accidental command execution
   - `Pin` - Google Assistant will ask for a pin code when a command is invoked, preventing unauthorized access
 - `Topic` Attaches the string value as a `topic` property to any outgoing message from the node (also used to optionally filter the input messages)
-
+- `Async command execution` if checked it enables [asynchronous command execution](./async.md) for this node
