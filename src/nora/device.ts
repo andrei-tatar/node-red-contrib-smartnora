@@ -102,7 +102,7 @@ export class FirebaseDevice<T extends Device = Device> {
 
             const result = await firstValueFrom(response);
             if (result.errorCode) {
-                throw new ExecuteCommandError(result.errorCode);
+                throw new ExecuteCommandError(result.errorCode as any);
             } else if (result.state) {
                 updates = {
                     updateState: result.state,

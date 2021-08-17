@@ -22,7 +22,7 @@ export class AsyncCommandsRegistry {
 
         const response: AsyncResponse = {};
         if ('errorCode' in rsp && typeof rsp.errorCode === 'string') {
-            if (!Schema.device.armdisarm.definitions.ErrorCode.enum.includes(rsp.errorCode)) {
+            if (!Schema.device.statusreport.definitions.ErrorCode.enum.includes(rsp.errorCode as any)) {
                 warn(`Invalid error code: ${rsp.errorCode}`);
                 return;
             }
