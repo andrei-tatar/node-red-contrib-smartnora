@@ -2,11 +2,10 @@ Smart NORA integration plugin for Node RED
 =====================
 
 [![Node.js CI](https://github.com/andrei-tatar/node-red-contrib-smartnora/actions/workflows/node.js.yml/badge.svg)](https://github.com/andrei-tatar/node-red-contrib-smartnora/actions/workflows/node.js.yml)
-[![npm](https://img.shields.io/npm/v/node-red-contrib-smartnora.svg?style=flat-square&logo=npm)](https://www.npmjs.com/package/node-red-contrib-smartnora)
-[![dependencies Status](https://img.shields.io/david/andrei-tatar/node-red-contrib-smartnora.svg?style=flat-square)](https://david-dm.org/andrei-tatar/node-red-contrib-smartnora)
-[![devDependencies Status](https://img.shields.io/david/dev/andrei-tatar/node-red-contrib-smartnora.svg?style=flat-square)](https://david-dm.org/andrei-tatar/node-red-contrib-smartnora?type=dev)
-[![downloads](https://img.shields.io/npm/dm/node-red-contrib-smartnora.svg?style=flat-square)](https://www.npmjs.com/package/node-red-contrib-smartnora)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg?style=flat-square&logo=paypal)](https://paypal.me/andreitatar)
+[![npm](https://img.shields.io/npm/v/node-red-contrib-smartnora.svg?logo=npm)](https://www.npmjs.com/package/node-red-contrib-smartnora)
+[![dependencies Status](https://img.shields.io/david/andrei-tatar/node-red-contrib-smartnora.svg)](https://david-dm.org/andrei-tatar/node-red-contrib-smartnora)
+[![downloads](https://img.shields.io/npm/dm/node-red-contrib-smartnora.svg)](https://www.npmjs.com/package/node-red-contrib-smartnora)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg?logo=paypal)](https://paypal.me/andreitatar)
 
 This module provides a set of nodes in Node-RED for Google smart home Action integration via [Smart NORA](https://smart-nora.eu/).
 
