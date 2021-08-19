@@ -1,5 +1,4 @@
-import { AsyncCommand, AsyncResponse, ASYNC_CMD_TIMEOUT_ERRORCODE, ASYNC_CMD_TIMEOUT_MILLISECONDS, Device, validate } from '@andrei-tatar/nora-firebase-common';
-import { Schema } from '@andrei-tatar/nora-firebase-common/build/schema';
+import { AsyncCommand, AsyncResponse, ASYNC_CMD_TIMEOUT_ERRORCODE, ASYNC_CMD_TIMEOUT_MILLISECONDS, Device, isErrorCode, validate } from '@andrei-tatar/nora-firebase-common';
 import { catchError, EMPTY, first, ignoreElements, merge, mergeMap, Observable, Observer, of, race, Subject, switchMap, timeout } from 'rxjs';
 import { Logger } from '..';
 import { FirebaseDevice } from './device';
@@ -22,7 +21,7 @@ export class AsyncCommandsRegistry {
 
         const response: AsyncResponse = {};
         if ('errorCode' in rsp && typeof rsp.errorCode === 'string') {
-            if (!Schema.device.statusreport.definitions.ErrorCode.enum.includes(rsp.errorCode as any)) {
+            if (!isErrorCode(rsp.errorCode)) {
                 warn(`Invalid error code: ${rsp.errorCode}`);
                 return;
             }

@@ -1,8 +1,7 @@
 import {
-    Device, DeviceType, isLockUnlock, LockUnlockDevice, OpenCloseDevice,
+    Device, isDeviceType, isLockUnlock, isOpenCloseDirection, LockUnlockDevice, OpenCloseDevice,
     OpenCloseDirection
 } from '@andrei-tatar/nora-firebase-common';
-import { Schema } from '@andrei-tatar/nora-firebase-common/build/schema';
 import { firstValueFrom } from 'rxjs';
 import { ConfigNode, NodeInterface } from '..';
 import { convertValueType, getValue, registerNoraDevice } from './util';
@@ -14,8 +13,8 @@ module.exports = function (RED: any) {
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
-        const deviceType = `action.devices.types.${config.openclosetype}` as DeviceType;
-        if (!Schema.device.openclose.definitions.DeviceType.enum.includes(deviceType)) {
+        const deviceType = `action.devices.types.${config.openclosetype}`;
+        if (!isDeviceType(deviceType)) {
             this.warn(`Device type not supported: ${deviceType}`);
             return;
         }
@@ -25,7 +24,7 @@ module.exports = function (RED: any) {
         if (!openCloseDirections?.length) {
             openCloseDirections = undefined;
         }
-        if (openCloseDirections?.some(d => !Schema.device.openclose.definitions.OpenCloseDirection.enum.includes(d))) {
+        if (openCloseDirections?.some(d => !isOpenCloseDirection(d))) {
             this.warn(`Open/Close direction not supported: ${directions}`);
             return;
         }
@@ -42,7 +41,7 @@ module.exports = function (RED: any) {
         } = convertValueType(RED, config.closevalue, config.closevalueType, { defaultValue: false });
 
         const deviceConfig: Omit<OpenCloseDevice, 'id'> = {
-            type: deviceType as Device['type'],
+            type: deviceType,
             traits: ['action.devices.traits.OpenClose'],
             name: {
                 name: config.devicename,
