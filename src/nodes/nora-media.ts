@@ -1,5 +1,5 @@
 import {
-    ChannelDevice, Device, InputSelectorDevice, isChannelDevice, isInputSelectorDevice,
+    ChannelDevice, Device, InputSelectorDevice, isChannelDevice, isDeviceType, isInputSelectorDevice,
     isMediaStateDevice, isOnOff, isTransportControlDevice, isVolumeDevice,
     MediaStateDevice, OnOffDevice, TransportControlDevice, VolumeDevice
 } from '@andrei-tatar/nora-firebase-common';
@@ -8,9 +8,6 @@ import { ConfigNode, NodeInterface } from '..';
 import { FirebaseMediaDevice } from '../nora/media-device';
 import { registerNoraDevice } from './util';
 
-type ConfigDeviceType = 'SPEAKER' | 'AUDIO_VIDEO_RECEIVER' | 'REMOTECONTROL' |
-    'SETTOP' | 'SOUNDBAR' | 'STREAMING_BOX' | 'STREAMING_SOUNDBAR' | 'STREAMING_STICK' | 'TV';
-
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-media', function (this: NodeInterface, config: any) {
         RED.nodes.createNode(this, config);
@@ -18,9 +15,14 @@ module.exports = function (RED: any) {
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
         if (!noraConfig?.valid) { return; }
 
-        const deviceType: ConfigDeviceType = config.deviceType;
+        const deviceType = `action.devices.types.${config.deviceType}`;
+        if (!isDeviceType(deviceType)) {
+            this.warn(`Device type not supported: ${deviceType}`);
+            return;
+        }
+
         const deviceConfig: Omit<Device, 'id'> = {
-            type: `action.devices.types.${deviceType}`,
+            type: deviceType,
             traits: [],
             name: {
                 name: config.devicename,
