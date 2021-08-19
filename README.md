@@ -3,7 +3,7 @@ Smart NORA integration plugin for Node RED
 
 [![Node.js CI](https://github.com/andrei-tatar/node-red-contrib-smartnora/actions/workflows/node.js.yml/badge.svg)](https://github.com/andrei-tatar/node-red-contrib-smartnora/actions/workflows/node.js.yml)
 [![npm](https://img.shields.io/npm/v/node-red-contrib-smartnora.svg?logo=npm)](https://www.npmjs.com/package/node-red-contrib-smartnora)
-[![GitHub last commit](https://img.shields.io/github/last-commit/andrei-tatar/node-red-contrib-smartnora?style=plastic)
+[![GitHub last commit](https://img.shields.io/github/last-commit/andrei-tatar/node-red-contrib-smartnora)](https://github.com/andrei-tatar/node-red-contrib-smartnora/commits/master)
 [![downloads](https://img.shields.io/npm/dm/node-red-contrib-smartnora.svg)](https://www.npmjs.com/package/node-red-contrib-smartnora)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg?logo=paypal)](https://paypal.me/andreitatar)
 
