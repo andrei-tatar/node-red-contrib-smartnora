@@ -1,0 +1,274 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-camera', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Camera',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+            twofactor: {
+                value: 'off',
+            },
+            twofactorpin: {
+                value: ''
+            },
+            filter: {
+                value: false,
+            },
+            asyncCmd: {
+                value: false,
+            },
+            outputs: {
+                value: 0,
+            },
+            cameraStreamNeedAuthToken: {
+                value: false,
+            },
+            protocols: {
+                value: [],
+            },
+        },
+        inputs: 1,
+        outputs: 0,
+        outputLabels: ["async command"],
+        paletteLabel: 'camera',
+        label: function () {
+            return this.name || this.devicename || 'camera';
+        },
+        oneditprepare: function () {
+            $('#node-input-twofactor').change(function () {
+                if ($(this).val() === 'pin') {
+                    $('#node-twofactor-pin').show();
+                } else {
+                    $('#node-twofactor-pin').hide();
+                }
+            });
+
+            $('#node-input-asyncCmd').change(function () {
+                $('.hide-when-async')[$(this).is(':checked') ? 'addClass' : 'removeClass']('hide');
+            });
+
+            const protocols = ['hls', 'dash', 'smooth_stream', 'progressive_mp4', 'webrtc'];
+            const container = $('#camera-protocols');
+
+            function createFormRow(id, label, config, labelConfig) {
+                const container = $('<div/>', {
+                    class: 'form-row'
+                });
+
+                $('<label/>', {
+                        for: id,
+                        ...labelConfig,
+                    })
+                    .text(label)
+                    .appendTo(container);
+
+                $('<input/>', {
+                    id,
+                    ...config,
+                }).appendTo(container);
+
+                return container;
+            }
+
+            for (let protocol of protocols) {
+                const savedProtocol = (this.protocols || []).find(p => p.cameraStreamProtocol === protocol);
+                createFormRow(`${protocol}-enable`, `Enable ${protocol.replace('_', ' ')} `, {
+                        class: 'protocol-enable',
+                        'data-protocol': protocol,
+                        type: 'checkbox',
+                        checked: !!savedProtocol,
+                        style: 'display:inline-block; width:auto; vertical-align:top;',
+                    }, {
+                        style: 'width:auto',
+                    })
+                    .appendTo(container);
+
+                const protocolContainer = $('<div/>', {
+                    'data-protocol': protocol,
+                    class: 'hide-when-async',
+                });
+
+                createFormRow(`${protocol}-token`, `Auth token`, {
+                        type: 'text',
+                        class: 'show-token-required',
+                        value: savedProtocol && savedProtocol.cameraStreamAuthToken,
+                    })
+                    .appendTo(protocolContainer);
+
+                if (protocol !== 'webrtc') {
+                    createFormRow(`${protocol}-url`, `Access URL`, {
+                            type: 'text',
+                            value: savedProtocol && savedProtocol.cameraStreamAccessUrl,
+                        })
+                        .appendTo(protocolContainer);
+                    createFormRow(`${protocol}-appid`, `App Id`, {
+                            type: 'text',
+                            value: savedProtocol && savedProtocol.cameraStreamReceiverAppId,
+                        })
+                        .appendTo(protocolContainer);
+                } else {
+                    createFormRow(`${protocol}-signalingurl`, `Signaling URL`, {
+                            type: 'text',
+                            value: savedProtocol && savedProtocol.cameraStreamSignalingUrl,
+                        })
+                        .appendTo(protocolContainer);
+                    createFormRow(`${protocol}-offer`, `Offer`, {
+                            type: 'text',
+                            value: savedProtocol && savedProtocol.cameraStreamOffer,
+                        })
+                        .appendTo(protocolContainer);
+                    createFormRow(`${protocol}-iceservers`, `ICE Servers`, {
+                            type: 'text',
+                            value: savedProtocol && savedProtocol.cameraStreamIceServers,
+                        })
+                        .appendTo(protocolContainer);
+                }
+
+                protocolContainer.appendTo(container);
+            }
+
+            $('.protocol-enable').on('change', function () {
+                const protocol = $(this).attr('data-protocol');
+                const selected = $(this).is(':checked');
+                $(`div[data-protocol='${protocol}']`)[selected ? 'show' : 'hide']();
+            });
+            $('.protocol-enable').trigger('change');
+
+            $('#node-input-cameraStreamNeedAuthToken').on('change', function () {
+                const selected = $(this).is(':checked');
+                $('.show-token-required').parent()[selected ? 'show' : 'hide']();
+            });
+        },
+        oneditsave: function () {
+            var node = this;
+            node.outputs = $('#node-input-asyncCmd').is(':checked') ? 1 : 0;
+
+            var enabledProtocols = [];
+            $('.protocol-enable:checked').each(function () {
+                enabledProtocols.push($(this).attr('data-protocol'));
+            });
+
+            node.protocols = [];
+            for (const protocol of enabledProtocols) {
+                node.protocols.push({
+                    cameraStreamProtocol: protocol,
+                    cameraStreamAuthToken: $(`#${protocol}-token`).val().trim() || undefined,
+                    ...(protocol !== 'webrtc' ? {
+                        cameraStreamAccessUrl: $(`#${protocol}-url`).val().trim() || undefined,
+                        cameraStreamReceiverAppId: $(`#${protocol}-appid`).val().trim() ||
+                            undefined,
+                    } : {
+                        cameraStreamSignalingUrl: $(`#${protocol}-signalingurl`).val().trim() ||
+                            undefined,
+                        cameraStreamOffer: $(`#${protocol}-offer`).val().trim() || undefined,
+                        cameraStreamIceServers: $(`#${protocol}-iceservers`).val().trim() ||
+                            undefined,
+                    }),
+                });
+            }
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-camera">
+    <style>
+        #camera-protocols .protocol-enable {
+            margin-left: 5px;
+        }
+
+        #camera-protocols > [data-protocol] {
+            margin-left: 5px;
+            border-left: 1px solid lightgray;
+            padding-left: 10px;
+            padding-top: 10px;
+            margin-top: -15px;
+            margin-bottom: 5px;
+        }
+
+        #camera-protocols > [data-protocol].hide {
+            display: none !important;
+        }
+
+        #camera-protocols > [data-protocol] input {
+            margin-left: 5px;
+        }
+    </style>
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Camera</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-asyncCmd"><i class="fa fa-refresh"></i> Async command execution: </label>
+        <input type="checkbox" id="node-input-asyncCmd" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-cameraStreamNeedAuthToken"><i class="fa fa-key"></i> Needs auth token: </label>
+        <input type="checkbox" id="node-input-cameraStreamNeedAuthToken" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+
+    <div id="camera-protocols">
+
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-input-twofactor">
+            <option value="off">None</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-twofactor-pin" class="form-row">
+        <label for="node-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-input-twofactorpin">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-camera">
+    <p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/camera/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/camera/README.md</a>
+</p>
+</script>
