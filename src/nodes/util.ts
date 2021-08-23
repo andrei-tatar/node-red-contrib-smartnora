@@ -82,7 +82,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
             switchMap(d => d.state$),
             tap(state => options.updateStatus?.({
                 state,
-                update: msg => ctx.state$.next(msg),
+                update: msg => ctx.status$.next(msg),
             })),
             takeUntil(close$),
         ).subscribe();

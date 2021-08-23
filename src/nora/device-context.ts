@@ -4,7 +4,7 @@ import { NodeInterface } from '..';
 
 export class DeviceContext {
     public readonly error$ = new Subject<string | null>();
-    public readonly state$ = new Subject<string | null>();
+    public readonly status$ = new Subject<string | null>();
     public readonly local$ = new Subject<boolean>();
     public readonly connected$ = new Subject<boolean>();
     public readonly online$ = new Subject<boolean>();
@@ -17,7 +17,7 @@ export class DeviceContext {
     startUpdating(stop$: Observable<any>) {
         combineLatest([
             this.connected$.pipe(startWith(false)),
-            this.state$.pipe(startWith(null)),
+            this.status$.pipe(startWith(null)),
             this.error$.pipe(startWith(null)),
             this.local$.pipe(startWith(false)),
             this.online$.pipe(startWith(true)),
