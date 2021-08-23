@@ -77,6 +77,8 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
             takeUntil(close$),
         );
 
+    let subscriptions = 0;
+
     if (options.updateStatus) {
         device$.pipe(
             switchMap(d => d.state$),
@@ -86,6 +88,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
             })),
             takeUntil(close$),
         ).subscribe();
+        subscriptions++;
     }
 
     if (options.stateChanged) {
@@ -93,6 +96,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
             switchMap(d => d.stateUpdates$),
             takeUntil(close$),
         ).subscribe(state => options?.stateChanged?.(state));
+        subscriptions++;
     }
 
     if (deviceConfig.noraSpecific.asyncCommandExecution) {
@@ -113,6 +117,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
             }),
             takeUntil(close$),
         ).subscribe();
+        subscriptions++;
     }
 
     if (options.handleNodeInput) {
@@ -128,6 +133,10 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
                 state$: device$.pipe(switchMap(d => d.state$)),
             }),
         });
+    }
+
+    if (!subscriptions) {
+        device$.subscribe();
     }
 
     options?.customRegistration?.(device$)?.pipe(
