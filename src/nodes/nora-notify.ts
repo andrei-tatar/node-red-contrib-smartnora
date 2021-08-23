@@ -52,12 +52,12 @@ module.exports = function (RED: any) {
 
         notificationSent$.pipe(
             switchMap(_ => {
-                ctx.state$.next('sent');
+                ctx.status$.next('sent');
                 ctx.local$.next(true);
                 return concat(
                     timer(1000),
                     defer(() => {
-                        ctx.state$.next(null);
+                        ctx.status$.next(null);
                         ctx.local$.next(false);
                         return EMPTY;
                     })
