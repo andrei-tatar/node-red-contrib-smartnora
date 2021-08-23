@@ -42,6 +42,7 @@ module.exports = function (RED: any) {
             deviceConfig.traits.push('action.devices.traits.OnOff');
             if (isOnOff(deviceConfig)) {
                 deviceConfig.state.on = false;
+                deviceConfig.noraSpecific.returnOnOffErrorCodeIfStateAlreadySet = !!config.errorifstateunchaged;
             }
         }
 

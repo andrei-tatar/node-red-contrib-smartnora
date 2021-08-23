@@ -4,6 +4,7 @@ Represents a [Google Home Security System](https://developers.google.com/assista
 
 Node attributes:
 - [Common](../common.md)
+- `If arm/disarm state doesn't change via voice, warn user` - if checked, the assistant will warn if the device is already armed/disarmed
 
 Input/output payload is an object with the following properties:
 - `online` - boolean: true/false, default: true. Flag that indicates if a device is online.

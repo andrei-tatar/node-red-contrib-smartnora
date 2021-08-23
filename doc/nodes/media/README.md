@@ -15,6 +15,7 @@ Node attributes:
 - [Common](../common.md)
 - `Device Type` - list to select the device type that will be presented to Google (see the list above)
 - `On/Off Trait` - if checked, the device will support the [OnOff trait](https://developers.google.com/assistant/smarthome/traits/onoff)
+  - `If on/off state doesn't change via voice, warn user` - if checked, the assistant will warn if the device is already on/off
 - `Volume Trait` - if checked, the device will support the [Volume trait](https://developers.google.com/assistant/smarthome/traits/volume). 
   - `Can mute/unmute` - Indicates if the device can mute and unmute the volume. Mute is a separate option as the 'mute' behavior takes the volume to 0 while remembering the previous volume, so that unmute restores it. This is reflected in volume state—if volume is 5, and the user mutes, the volume remains 5 and isMuted is true
   - `Volume level step size` - The default step size for relative volume queries like 'volume up on <device_name>.

@@ -93,6 +93,9 @@
                     i: '2',
                 }],
             },
+            errorifstateunchaged: {
+                value: false,
+            },
         },
         inputs: 1,
         outputs: 2,
@@ -146,7 +149,10 @@
                     .toLowerCase()
                     .replace(/_(\w)/mg, (_, g) => ' ' + g.toUpperCase());
             }
-
+            $('#node-input-supportOnOff').change(function () {
+                $('.onoff-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+            
             $('#node-input-supportTransportControl').change(function () {
                 $('.transportcontrol-trait')[$(this).is(':checked') ? 'show' : 'hide']();
             });
@@ -391,6 +397,12 @@
     <div class="form-row">
         <label style="width:auto" for="node-input-supportOnOff"><i class="fa fa-power-off"></i> On/Off Trait </label>
         <input type="checkbox" id="node-input-supportOnOff" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props onoff-trait">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-errorifstateunchaged"><i class="fa fa-exclamation-triangle"></i> If on/off state doesn't change via voice, warn user: </label>
+            <input type="checkbox" id="node-input-errorifstateunchaged" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-supportVolume"><i class="fa fa-volume-up"></i> Volume Trait </label>

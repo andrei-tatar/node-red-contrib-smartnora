@@ -17,6 +17,7 @@ module.exports = function (RED: any) {
             willReportState: true,
             noraSpecific: {
                 asyncCommandExecution: !!config.asyncCmd,
+                returnArmDisarmErrorCodeIfStateAlreadySet: !!config.errorifstateunchaged,
             },
             state: {
                 online: true,
@@ -54,9 +55,13 @@ module.exports = function (RED: any) {
             updateStatus: ({ state, update }) => {
                 const statuses: string[] = [];
 
-                statuses.push(state.isArmed ? 'armed' : 'disarmed');
-                if (state.currentArmLevel) {
-                    statuses.push(state.currentArmLevel);
+                if (state.isArmed) {
+                    statuses.push('armed');
+                    if (state.currentArmLevel) {
+                        statuses.push(state.currentArmLevel);
+                    }
+                } else {
+                    statuses.push('disarmed');
                 }
 
                 if (typeof state.exitAllowance === 'number') {

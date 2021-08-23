@@ -53,6 +53,9 @@
             outputs: {
                 value: 1,
             },
+            errorifstateunchaged: {
+                value: false,
+            }
         },
         inputs: 1,
         outputs: 1,
@@ -173,6 +176,10 @@
     <div class="form-row">
         <label style="width:auto" for="node-input-asyncCmd"><i class="fa fa-refresh"></i> Async command execution: </label>
         <input type="checkbox" id="node-input-asyncCmd" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row hide-when-async">
+        <label style="width:auto" for="node-input-errorifstateunchaged"><i class="fa fa-exclamation-triangle"></i> If arm/disarm state doesn't change via voice, warn user: </label>
+        <input type="checkbox" id="node-input-errorifstateunchaged" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
         <label for="node-input-language"><i class="fa fa-i-cursor"></i> Language</label>
