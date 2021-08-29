@@ -1,4 +1,4 @@
-import { AsyncCommand, AsyncResponse, ASYNC_CMD_TIMEOUT_ERRORCODE, ASYNC_CMD_TIMEOUT_MILLISECONDS, Device, isErrorCode, validate } from '@andrei-tatar/nora-firebase-common';
+import { AsyncCommand, AsyncResponse, ASYNC_CMD_TIMEOUT_ERRORCODE, ASYNC_CMD_TIMEOUT_MILLISECONDS, Device, isCameraResult, isErrorCode, isVolumeDevice, validate } from '@andrei-tatar/nora-firebase-common';
 import { catchError, EMPTY, first, ignoreElements, merge, mergeMap, Observable, Observer, of, race, Subject, switchMap, timeout } from 'rxjs';
 import { Logger } from '..';
 import { FirebaseDevice } from './device';
@@ -26,6 +26,10 @@ export class AsyncCommandsRegistry {
                 return;
             }
             response.errorCode = rsp.errorCode;
+        } else if ('result' in rsp && typeof rsp.result === 'object') {
+            if (isCameraResult(rsp.result)) {
+                response.result = rsp.result;
+            }
         } else if ('state' in rsp && typeof rsp.state === 'object') {
             const safeUpdate = {};
             getSafeUpdate({

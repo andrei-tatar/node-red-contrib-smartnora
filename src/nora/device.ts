@@ -103,9 +103,10 @@ export class FirebaseDevice<T extends Device = Device> {
             const result = await firstValueFrom(response);
             if (result.errorCode) {
                 throw new ExecuteCommandError(result.errorCode as any);
-            } else if (result.state) {
+            } else {
                 updates = {
                     updateState: result.state,
+                    result: result.result,
                 };
             }
         } else {
@@ -121,7 +122,10 @@ export class FirebaseDevice<T extends Device = Device> {
             return this.device.state;
         }
 
-        return this.device.state;
+        return {
+            ...this.device.state,
+            ...updates?.result,
+        };
     }
 
     private async updateStateInternal<TState = Partial<T['state']>, TPayload = TState>(
