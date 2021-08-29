@@ -1,5 +1,5 @@
 import { AsyncCommand, Changes, Device, executeCommand, ExecuteCommandError, updateState, validate } from '@andrei-tatar/nora-firebase-common';
-import firebase from 'firebase/app';
+import { child, onValue } from 'firebase/database';
 import { firstValueFrom, merge, Observable, Subject } from 'rxjs';
 import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
 import { Logger, singleton } from '..';
@@ -17,16 +17,16 @@ export class FirebaseDevice<T extends Device = Device> {
             timestamp: number,
         }
     }>(observer => {
-        const handler = this.state.on('value', snapshot => observer.next(snapshot.val()));
-        const noraHandler = this.noraSpecific.on('value', snapshot => {
+        const stateSubscription = onValue(this.state, s => observer.next(s.val()));
+        const noraSubscription = onValue(this.noraSpecific, s => {
             if (this.connectedAndSynced) {
                 // keep noraSpecific in sync as it's needed for local execution
-                this.device.noraSpecific = snapshot.val() ?? {};
+                this.device.noraSpecific = s.val() ?? {};
             }
         });
         return () => {
-            this.state.off('value', handler);
-            this.noraSpecific.off('value', noraHandler);
+            stateSubscription();
+            noraSubscription();
         };
     }).pipe(
         filter(v => !!v && typeof v === 'object'),
@@ -58,17 +58,16 @@ export class FirebaseDevice<T extends Device = Device> {
     );
 
     readonly error$ = new Observable<string | null>(observer => {
-        const ref = this.noraSpecific.child('error/msg');
-        const handler = ref.on('value', (snapshot: firebase.database.DataSnapshot) => {
-            const value: string | null = snapshot.val();
+        const ref = child(this.noraSpecific, 'error/msg');
+        return onValue(ref, s => {
+            const value: string | null = s.val();
             observer.next(value ?? null);
         });
-        return () => ref.off('value', handler);
     });
 
     readonly local$ = new Subject<true>();
-    readonly state = this.sync.states.child(this.device.id);
-    readonly noraSpecific = this.sync.noraSpecific.child(this.device.id);
+    readonly state = child(this.sync.states, this.device.id);
+    readonly noraSpecific = child(this.sync.noraSpecific, this.device.id);
     readonly asyncCommands$ = merge(
         this._localAsyncCommand$,
         AsyncCommandsRegistry.getCloudAsyncCommandHandler(this),

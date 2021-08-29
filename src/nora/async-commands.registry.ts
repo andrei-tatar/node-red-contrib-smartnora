@@ -1,4 +1,5 @@
 import * as common from '@andrei-tatar/nora-firebase-common';
+import { child, onChildAdded, set } from 'firebase/database';
 import { catchError, EMPTY, first, ignoreElements, merge, mergeMap, Observable, Observer, of, race, Subject, switchMap, timeout } from 'rxjs';
 import { Logger } from '..';
 import { FirebaseDevice } from './device';
@@ -69,10 +70,10 @@ export class AsyncCommandsRegistry {
     }
 
     static getCloudAsyncCommandHandler<T extends common.Device>(device: FirebaseDevice<T>) {
-        const asyncCommands = device.noraSpecific.child('commands');
-        const asyncResponses = device.noraSpecific.child('responses');
-        return new Observable<{ id: string, command: common.AsyncCommand }>(observer => {
-            const handler = asyncCommands.on('child_added', d => {
+        const asyncCommands = child(device.noraSpecific, 'commands');
+        const asyncResponses = child(device.noraSpecific, 'responses');
+        return new Observable<{ id: string, command: common.AsyncCommand }>(observer =>
+            onChildAdded(asyncCommands, d => {
                 this.logger?.trace(`[async-cmd] async command received ${d.key}`);
                 if (d.key) {
                     observer.next({
@@ -80,14 +81,13 @@ export class AsyncCommandsRegistry {
                         command: d.val(),
                     });
                 }
-            });
-            return () => asyncCommands.off('child_added', handler);
-        }).pipe(
+            })
+        ).pipe(
             mergeMap(cmd => {
                 const handler = new Subject<common.AsyncResponse>();
                 const writeResponse$ = handler.pipe(
                     first(),
-                    switchMap(response => asyncResponses.child(cmd.id).set(response)),
+                    switchMap(response => set(child(asyncResponses, cmd.id), response)),
                     timeout(1000),
                     catchError(_ => {
                         this.logger?.warn(`[async-cmd] timeout waiting for response`);

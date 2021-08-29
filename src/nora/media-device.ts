@@ -1,6 +1,6 @@
 import { ChannelDevice, TransportControlDevice, TransportControlIncomingCommand } from '@andrei-tatar/nora-firebase-common';
 import { COMMAND_HANDLERS } from '@andrei-tatar/nora-firebase-common';
-import firebase from 'firebase/app';
+import { child, DatabaseReference, DataSnapshot, onValue, remove } from 'firebase/database';
 import { merge, Observable, Subject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { Logger, singleton } from '..';
@@ -23,8 +23,8 @@ export class FirebaseMediaDevice<T extends (TransportControlDevice | ChannelDevi
         super(cloudId, sync, device, logger);
     }
 
-    private readonly transportControlCommand = this.noraSpecific.child('pendingTransportControlCommand');
-    private readonly channelChangeCommand = this.noraSpecific.child('pendingChannelChangeCommand');
+    private readonly transportControlCommand = child(this.noraSpecific, 'pendingTransportControlCommand');
+    private readonly channelChangeCommand = child(this.noraSpecific, 'pendingChannelChangeCommand');
     private readonly localCommand$ = new Subject<MediaCommand>();
 
     readonly mediaCommand$ = merge(
@@ -35,19 +35,17 @@ export class FirebaseMediaDevice<T extends (TransportControlDevice | ChannelDevi
         singleton(),
     );
 
-    private static command<T>(reference: firebase.database.Reference) {
-        return new Observable<T>(observer => {
-            const handler = (snapshot: firebase.database.DataSnapshot) => {
+    private static command<T>(reference: DatabaseReference) {
+        return new Observable<T>(observer =>
+            onValue(reference, (snapshot: DataSnapshot) => {
                 const value = snapshot.val();
                 if (value) {
                     observer.next(value);
                 }
-            };
-            reference.on('value', handler);
-            return () => reference.off('value', handler);
-        }).pipe(
+            })
+        ).pipe(
             switchMap(async v => {
-                await reference.remove();
+                await remove(reference);
                 return v;
             }),
         );

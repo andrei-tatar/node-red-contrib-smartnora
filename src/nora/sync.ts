@@ -1,5 +1,7 @@
 import { Device, HEARTBEAT_TIMEOUT_SEC, isChannelDevice, isScene, isTransportControlDevice, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
-import firebase from 'firebase/app';
+import { FirebaseApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { DatabaseReference, get, getDatabase, onValue, ref, remove, set } from 'firebase/database';
 import { Agent } from 'https';
 import fetch, { Response } from 'node-fetch';
 import { BehaviorSubject, concat, defer, merge, Observable, of, Subject, timer } from 'rxjs';
@@ -65,7 +67,7 @@ export class FirebaseSync {
     );
 
     private groupUpdateHeartbeat$ = timer(0, HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
-        switchMap(_ => this.groupHeartbeat.set(new Date().getTime())),
+        switchMap(_ => set(this.groupHeartbeat, new Date().getTime())),
         retryWhen(err$ =>
             err$.pipe(tap(err => {
                 this.logger?.warn(`nora: while sending heartbeat: ${err.message}\n${err.stack}`);
@@ -74,9 +76,7 @@ export class FirebaseSync {
     ).pipe(ignoreElements());
 
     readonly connected$ = new Observable<boolean>(observer => {
-        const handler = (s: firebase.database.DataSnapshot) => observer.next(!!s.val());
-        this.connected.on('value', handler);
-        return () => this.connected.off('value', handler);
+        return onValue(this.connected, s => observer.next(!!s.val()));
     }).pipe(
         distinctUntilChanged(),
         tap(connected => this.logger?.info(`nora: ${this.group} - ${connected ? 'connected' : 'disconnected'}`)),
@@ -88,22 +88,22 @@ export class FirebaseSync {
     );
 
     readonly uid: string | undefined;
-    readonly states: firebase.database.Reference;
-    readonly noraSpecific: firebase.database.Reference;
-    readonly groupHeartbeat: firebase.database.Reference;
-    private readonly connected: firebase.database.Reference;
+    readonly states: DatabaseReference;
+    readonly noraSpecific: DatabaseReference;
+    readonly groupHeartbeat: DatabaseReference;
+    private readonly connected: DatabaseReference;
 
     constructor(
-        private app: firebase.app.App,
+        private app: FirebaseApp,
         private readonly group: string = '<default>',
         private logger: Logger | null,
     ) {
-        this.uid = this.app.auth().currentUser?.uid;
-        this.db = firebase.database(app);
-        this.states = this.db.ref(`device_states/${this.uid}/${this.group}`);
-        this.noraSpecific = this.db.ref(`device_nora/${this.uid}/${this.group}`);
-        this.groupHeartbeat = this.db.ref(`user/${this.uid}/version/${this.group}/heartbeat`);
-        this.connected = this.db.ref('.info/connected');
+        this.uid = getAuth(this.app).currentUser?.uid;
+        this.db = getDatabase(app);
+        this.states = ref(this.db, `device_states/${this.uid}/${this.group}`);
+        this.noraSpecific = ref(this.db, `device_nora/${this.uid}/${this.group}`);
+        this.groupHeartbeat = ref(this.db, `user/${this.uid}/version/${this.group}/heartbeat`);
+        this.connected = ref(this.db, '.info/connected');
         const { name, version } = require('../../package.json');
         this.userAgent = `${name}/${version}`;
     }
@@ -153,26 +153,25 @@ export class FirebaseSync {
     }
 
     watchForActions(identifier: string): Observable<string> {
-        const ref = this.db.ref(`user/${this.uid}/actions/${identifier}`);
-        return new Observable<string>(observer => {
-            const handler = (snapshot: firebase.database.DataSnapshot) => {
-                const value: { action: string, timestamp: number } | null = snapshot.val();
+        const actionRef = ref(this.db, `user/${this.uid}/actions/${identifier}`);
+        return new Observable<string>(observer =>
+            onValue(actionRef, s => {
+                const value: { action: string, timestamp: number } | null = s.val();
                 if (value) {
                     observer.next(value.action);
                 }
-            };
-            ref.on('value', handler);
-            return () => ref.off('value', handler);
-        }).pipe(
+            })
+        ).pipe(
             switchMap(async v => {
-                await ref.remove();
+                await remove(actionRef);
                 return v;
             }),
         );
     }
 
     private async hasDeviceTokens() {
-        const tokens: string[] | null = await this.db.ref(`user/${this.uid}/device_tokens`).get().then(s => s.val());
+        const tokensRef = ref(this.db, `user/${this.uid}/device_tokens`);
+        const tokens: string[] | null = await get(tokensRef).then(s => s.val());
         return !!tokens?.length;
     }
 
@@ -280,7 +279,7 @@ export class FirebaseSync {
         tries?: number,
     }) {
         while (tries--) {
-            const token = await this.app.auth().currentUser?.getIdToken();
+            const token = await getAuth(this.app).currentUser?.getIdToken();
             const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
             const response = await fetch(url, {
                 method: method,

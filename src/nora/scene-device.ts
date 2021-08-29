@@ -1,5 +1,5 @@
 import { SceneDevice } from '@andrei-tatar/nora-firebase-common';
-import firebase from 'firebase/app';
+import { child, onValue, remove } from 'firebase/database';
 import { merge, Observable, Subject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { Logger, singleton } from '..';
@@ -16,22 +16,20 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
         super(cloudId, sync, device, logger);
     }
 
-    private readonly pendingScene = this.noraSpecific.child('pendingScene');
+    private readonly pendingScene = child(this.noraSpecific, 'pendingScene');
     private activateSceneLocal$ = new Subject<{ deactivate: boolean }>();
 
     readonly activateScene$ = merge(
-        new Observable<{ deactivate: boolean }>(observer => {
-            const handler = (snapshot: firebase.database.DataSnapshot) => {
-                const value = snapshot.val();
+        new Observable<{ deactivate: boolean }>(observer =>
+            onValue(this.pendingScene, s => {
+                const value = s.val();
                 if (value) {
                     observer.next(value);
                 }
-            };
-            this.pendingScene.on('value', handler);
-            return () => this.pendingScene.off('value', handler);
-        }).pipe(
+            })
+        ).pipe(
             switchMap(async v => {
-                await this.pendingScene.remove();
+                await remove(this.pendingScene);
                 return v;
             }),
         ),

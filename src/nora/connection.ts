@@ -1,6 +1,5 @@
-import firebase from 'firebase/app';
-import 'firebase/auth';
-import 'firebase/database';
+import { deleteApp, FirebaseApp, initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 import { merge, Observable, of, timer } from 'rxjs';
 import { delayWhen, finalize, ignoreElements, map, retryWhen, switchMap, tap } from 'rxjs/operators';
@@ -19,7 +18,7 @@ export class FirebaseConnection {
     } = {};
 
     private static readonly apps: {
-        [key: string]: Observable<firebase.app.App>;
+        [key: string]: Observable<FirebaseApp>;
     } = {};
 
     static withLogger(logger: Logger) {
@@ -69,8 +68,7 @@ export class FirebaseConnection {
         if (!cached) {
             cached = this.apps[key] = this.createFirebaseApp().pipe(
                 switchMap(async app => {
-                    const result = await firebase.auth(app)
-                        .signInWithEmailAndPassword(config.email, config.password);
+                    const result = await signInWithEmailAndPassword(getAuth(app), config.email, config.password);
                     this.logger?.info(`nora: authenticated, uid: ${result.user?.uid}`);
                     return app;
                 }),
@@ -82,10 +80,10 @@ export class FirebaseConnection {
     }
 
     private static createFirebaseApp() {
-        return new Observable<firebase.app.App>(observer => {
-            const app = firebase.initializeApp(firebaseConfig, `app-${new Date().getTime()}`);
+        return new Observable<FirebaseApp>(observer => {
+            const app = initializeApp(firebaseConfig, `app-${new Date().getTime()}`);
             observer.next(app);
-            return () => app.delete();
+            return () => deleteApp(app);
         });
     }
 }

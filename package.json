@@ -13,7 +13,7 @@
   "dependencies": {
     "@andrei-tatar/nora-firebase-common": "^1.4.2",
     "cbor": "^8.0.0",
-    "firebase": "^8.8.0",
+    "firebase": "^9.0.0",
     "node-fetch": "^2.6.1",
     "rxjs": "^7.3.0"
   },
