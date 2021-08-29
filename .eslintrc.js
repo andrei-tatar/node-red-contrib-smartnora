@@ -25,7 +25,6 @@ module.exports = {
     "plugins": [
         "eslint-plugin-import",
         "@typescript-eslint",
-        "@typescript-eslint/tslint"
     ],
     "rules": {
         "@typescript-eslint/consistent-type-definitions": "error",
@@ -161,22 +160,6 @@ module.exports = {
                 "markers": [
                     "/"
                 ]
-            }
-        ],
-        "@typescript-eslint/tslint/config": [
-            "error",
-            {
-                "rules": {
-                    "import-spacing": true,
-                    "whitespace": [
-                        true,
-                        "check-branch",
-                        "check-decl",
-                        "check-operator",
-                        "check-separator",
-                        "check-type"
-                    ]
-                }
             }
         ]
     }
