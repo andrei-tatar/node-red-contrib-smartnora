@@ -1,4 +1,4 @@
-import { AsyncCommand, AsyncResponse, ASYNC_CMD_TIMEOUT_ERRORCODE, ASYNC_CMD_TIMEOUT_MILLISECONDS, Device, isCameraResult, isErrorCode, isVolumeDevice, validate } from '@andrei-tatar/nora-firebase-common';
+import * as common from '@andrei-tatar/nora-firebase-common';
 import { catchError, EMPTY, first, ignoreElements, merge, mergeMap, Observable, Observer, of, race, Subject, switchMap, timeout } from 'rxjs';
 import { Logger } from '..';
 import { FirebaseDevice } from './device';
@@ -6,12 +6,12 @@ import { getSafeUpdate } from './safe-update';
 
 export class AsyncCommandsRegistry {
     private static readonly handlers = new Map<string, {
-        observer: Observer<AsyncResponse>;
-        device: Device;
+        observer: Observer<common.AsyncResponse>;
+        device: common.Device;
     }>();
     private static logger: Logger | null;
 
-    static handle({ id, response: rsp, warn }: { id: string, response: AsyncResponse, warn: (msg: string) => void }): void {
+    static handle({ id, response: rsp, warn }: { id: string, response: common.AsyncResponse, warn: (msg: string) => void }): void {
         this.logger?.trace(`[async-cmd] got response for ${id}`);
         const handler = this.handlers.get(id);
         if (!handler) {
@@ -19,15 +19,15 @@ export class AsyncCommandsRegistry {
             return;
         }
 
-        const response: AsyncResponse = {};
+        const response: common.AsyncResponse = {};
         if ('errorCode' in rsp && typeof rsp.errorCode === 'string') {
-            if (!isErrorCode(rsp.errorCode)) {
+            if (!common.isErrorCode(rsp.errorCode)) {
                 warn(`Invalid error code: ${rsp.errorCode}`);
                 return;
             }
             response.errorCode = rsp.errorCode;
         } else if ('result' in rsp && typeof rsp.result === 'object') {
-            if (isCameraResult(rsp.result)) {
+            if (common.isCameraResult(rsp.result)) {
                 response.result = rsp.result;
             }
         } else if ('state' in rsp && typeof rsp.state === 'object') {
@@ -37,7 +37,7 @@ export class AsyncCommandsRegistry {
                 currentState: handler.device.state,
                 safeUpdateObject: safeUpdate,
                 path: 'msg.payload.state.',
-                isValid: () => validate(handler.device.traits, 'state-update', safeUpdate).valid,
+                isValid: () => common.validate(handler.device.traits, 'state-update', safeUpdate).valid,
                 warn: prop => warn(`Ignoring prop ${prop}`),
             });
             response.state = safeUpdate;
@@ -55,23 +55,23 @@ export class AsyncCommandsRegistry {
         return this;
     }
 
-    static getLocalResponse(id: string, device: Device): Observable<AsyncResponse> {
-        return new Observable<AsyncResponse>(observer => {
+    static getLocalResponse(id: string, device: common.Device): Observable<common.AsyncResponse> {
+        return new Observable<common.AsyncResponse>(observer => {
             this.handlers.set(id, { observer, device });
             return () => this.handlers.delete(id);
         }).pipe(
             first(),
-            timeout(ASYNC_CMD_TIMEOUT_MILLISECONDS),
-            catchError(_ => of<AsyncResponse>({
-                errorCode: ASYNC_CMD_TIMEOUT_ERRORCODE,
+            timeout(common.ASYNC_CMD_TIMEOUT_MILLISECONDS),
+            catchError(_ => of<common.AsyncResponse>({
+                errorCode: common.ASYNC_CMD_TIMEOUT_ERRORCODE,
             })),
         );
     }
 
-    static getCloudAsyncCommandHandler<T extends Device>(device: FirebaseDevice<T>) {
+    static getCloudAsyncCommandHandler<T extends common.Device>(device: FirebaseDevice<T>) {
         const asyncCommands = device.noraSpecific.child('commands');
         const asyncResponses = device.noraSpecific.child('responses');
-        return new Observable<{ id: string, command: AsyncCommand }>(observer => {
+        return new Observable<{ id: string, command: common.AsyncCommand }>(observer => {
             const handler = asyncCommands.on('child_added', d => {
                 this.logger?.trace(`[async-cmd] async command received ${d.key}`);
                 if (d.key) {
@@ -84,7 +84,7 @@ export class AsyncCommandsRegistry {
             return () => asyncCommands.off('child_added', handler);
         }).pipe(
             mergeMap(cmd => {
-                const handler = new Subject<AsyncResponse>();
+                const handler = new Subject<common.AsyncResponse>();
                 const writeResponse$ = handler.pipe(
                     first(),
                     switchMap(response => asyncResponses.child(cmd.id).set(response)),
