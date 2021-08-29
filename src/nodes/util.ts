@@ -181,7 +181,7 @@ export function handleNodeInput(opts: {
             if (done) {
                 done(err);
             } else {
-                opts.node.error(err);
+                opts.node.error(`${err}`);
             }
         }
     });

@@ -338,5 +338,5 @@ type Job = SyncJob | ReportStateJob | SendNotificationJob;
 interface JobInQueue {
     job: Job;
     resolve: (value?: any) => void;
-    reject: (err: Error) => void;
+    reject: (err: any) => void;
 }
