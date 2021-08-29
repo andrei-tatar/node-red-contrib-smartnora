@@ -34,8 +34,8 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
             }),
         ),
         this.activateSceneLocal$).pipe(
-            singleton(),
-        );
+        singleton(),
+    );
 
     override async executeCommand(command: string, params: any) {
         if (command === 'action.devices.commands.ActivateScene') {

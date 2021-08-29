@@ -6,7 +6,7 @@ module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-security', function (this: NodeInterface, config: any) {
         RED.nodes.createNode(this, config);
 
-        const armLevels: { v: string, n: string }[] | undefined = config.armLevels;
+        const armLevels: { v: string; n: string }[] | undefined = config.armLevels;
         const deviceConfig: Omit<ArmDisarmDevice, 'id'> = {
             type: 'action.devices.types.SECURITYSYSTEM',
             traits: ['action.devices.traits.ArmDisarm'],
@@ -28,11 +28,13 @@ module.exports = function (RED: any) {
                 availableArmLevels: armLevels && armLevels?.length > 0
                     ? {
                         levels: armLevels.map(({ v, n }) => ({
+                            /* eslint-disable */
                             level_name: v,
                             level_values: [{
                                 level_synonym: n.split(',').map(p => p.trim()),
                                 lang: config.language,
                             }],
+                            /* eslint-enable */
                         })),
                         ordered: true,
                     }

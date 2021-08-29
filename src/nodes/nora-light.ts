@@ -11,7 +11,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const brightnessControl = !!config.brightnesscontrol;
         const statepayload = !!config.statepayload;
@@ -57,7 +59,7 @@ module.exports = function (RED: any) {
         if (colorControl) {
             deviceConfig.traits.push('action.devices.traits.ColorSetting');
             if (!isColorSetting(deviceConfig)) {
-                this.warn(`Unable to add ColorSetting trait`);
+                this.warn('Unable to add ColorSetting trait');
                 return;
             }
 

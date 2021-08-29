@@ -8,7 +8,7 @@ import { DeviceContext } from '../nora/device-context';
 import { LocalExecution } from '../nora/local-execution';
 
 export function convertValueType(RED: any, value: any, type: any,
-    { defaultType = 'bool', defaultValue = false }: { defaultType?: string, defaultValue?: any } = {}) {
+    { defaultType = 'bool', defaultValue = false }: { defaultType?: string; defaultValue?: any } = {}) {
     if (type === 'flow' || type === 'global') {
         try {
             const parts = RED.util.normalisePropertyExpression(value);
@@ -37,26 +37,30 @@ export function getId({ id }: { id: string }) {
 
 export function getNumberOrDefault(a: any, defaultValue = 0) {
     const nr = +a;
-    if (isFinite(nr)) { return nr; }
+    if (isFinite(nr)) {
+        return nr;
+    }
     return defaultValue;
 }
 
 export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: any, nodeConfig: any, options: {
-    deviceConfig: Omit<T, 'id'>,
+    deviceConfig: Omit<T, 'id'>;
     updateStatus?: (opts: {
-        state: T['state'],
-        update: (state: string) => void,
-    }) => void,
-    stateChanged?: (state: T['state']) => void,
+        state: T['state'];
+        update: (state: string) => void;
+    }) => void;
+    stateChanged?: (state: T['state']) => void;
     handleNodeInput?: (opts: {
-        msg: NodeMessage,
-        updateState: FirebaseDevice<T>['updateState'],
-        state$: Observable<T['state']>,
-    }) => Promise<void> | void,
-    customRegistration?: (device$: Observable<FirebaseDevice<T>>) => Observable<any>,
+        msg: NodeMessage;
+        updateState: FirebaseDevice<T>['updateState'];
+        state$: Observable<T['state']>;
+    }) => Promise<void> | void;
+    customRegistration?: (device$: Observable<FirebaseDevice<T>>) => Observable<any>;
 }) {
     const noraConfig: ConfigNode = RED.nodes.getNode(nodeConfig.nora);
-    if (!noraConfig?.valid) { return; }
+    if (!noraConfig?.valid) {
+        return;
+    }
 
     const close$ = getClose(node);
     const ctx = new DeviceContext(node);
@@ -155,9 +159,9 @@ export function getClose(node: NodeInterface) {
 }
 
 export function handleNodeInput(opts: {
-    node: NodeInterface,
-    nodeConfig?: any,
-    handler: (msg: NodeMessage) => void | Promise<void>,
+    node: NodeInterface;
+    nodeConfig?: any;
+    handler: (msg: NodeMessage) => void | Promise<void>;
 }) {
     opts.node.on('input', async (msg, send, done) => {
         if (opts.nodeConfig?.filter && `${opts.nodeConfig?.topic}` !== `${msg.topic}`) {

@@ -1,8 +1,8 @@
-import { Device, HEARTBEAT_TIMEOUT_SEC, isChannelDevice, isScene, isTransportControlDevice, SceneDevice, WebpushNotification } from '@andrei-tatar/nora-firebase-common';
+import { Agent } from 'https';
+import * as common from '@andrei-tatar/nora-firebase-common';
 import { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { DatabaseReference, get, getDatabase, onValue, ref, remove, set } from 'firebase/database';
-import { Agent } from 'https';
 import fetch, { Response } from 'node-fetch';
 import { BehaviorSubject, concat, defer, merge, Observable, of, Subject, timer } from 'rxjs';
 import {
@@ -66,7 +66,7 @@ export class FirebaseSync {
         publishReplayRefCountWithDelay(1000),
     );
 
-    private groupUpdateHeartbeat$ = timer(0, HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
+    private groupUpdateHeartbeat$ = timer(0, common.HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
         switchMap(_ => set(this.groupHeartbeat, new Date().getTime())),
         retryWhen(err$ =>
             err$.pipe(tap(err => {
@@ -75,9 +75,7 @@ export class FirebaseSync {
         ),
     ).pipe(ignoreElements());
 
-    readonly connected$ = new Observable<boolean>(observer => {
-        return onValue(this.connected, s => observer.next(!!s.val()));
-    }).pipe(
+    readonly connected$ = new Observable<boolean>(observer => onValue(this.connected, s => observer.next(!!s.val()))).pipe(
         distinctUntilChanged(),
         tap(connected => this.logger?.info(`nora: ${this.group} - ${connected ? 'connected' : 'disconnected'}`)),
         switchMap(connected => connected
@@ -108,34 +106,32 @@ export class FirebaseSync {
         this.userAgent = `${name}/${version}`;
     }
 
-    withDevice<T extends SceneDevice>(device: T, ctx?: DeviceContext): Observable<FirebaseSceneDevice<T>>;
-    withDevice<T extends Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>>;
-    withDevice<T extends Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>> {
+    withDevice<T extends common.SceneDevice>(device: T, ctx?: DeviceContext): Observable<FirebaseSceneDevice<T>>;
+    withDevice<T extends common.Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>>;
+    withDevice<T extends common.Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
             const cloudId = `${this.group}|${device.id}`;
-            const firebaseDevice = isScene(device)
+            const firebaseDevice = common.isScene(device)
                 ? new FirebaseSceneDevice(cloudId, this, device, this.logger)
-                : isTransportControlDevice(device) || isChannelDevice(device)
+                : common.isTransportControlDevice(device) || common.isChannelDevice(device)
                     ? new FirebaseMediaDevice(cloudId, this, device, this.logger)
                     : new FirebaseDevice<T>(cloudId, this, device, this.logger);
             observer.next(firebaseDevice);
             this.devices$.next(this.devices$.value.concat(firebaseDevice));
             return () => this.devices$.next(this.devices$.value.filter(d => d !== firebaseDevice));
         }).pipe(
-            switchMap(d => {
-                return ctx
-                    ? merge(
-                        d.error$.pipe(tap(ctx?.error$), ignoreElements()),
-                        d.local$.pipe(tap(ctx?.local$), ignoreElements()),
-                        d.state$.pipe(map(s => s.online), tap(ctx?.online$), ignoreElements()),
-                        of(d)
-                    )
-                    : of(d);
-            })
+            switchMap(d => ctx
+                ? merge(
+                    d.error$.pipe(tap(ctx?.error$), ignoreElements()),
+                    d.local$.pipe(tap(ctx?.local$), ignoreElements()),
+                    d.state$.pipe(map(s => s.online), tap(ctx?.online$), ignoreElements()),
+                    of(d)
+                )
+                : of(d))
         );
     }
 
-    async updateState(deviceId: string, state: Partial<Device['state']>) {
+    async updateState(deviceId: string, state: Partial<common.Device['state']>) {
         await this.queueJob({
             type: 'report-state',
             deviceId,
@@ -143,7 +139,7 @@ export class FirebaseSync {
         });
     }
 
-    async sendNotification(notification: WebpushNotification) {
+    async sendNotification(notification: common.WebpushNotification) {
         if (await this.hasDeviceTokens()) {
             await this.queueJob({
                 type: 'notify',
@@ -156,7 +152,7 @@ export class FirebaseSync {
         const actionRef = ref(this.db, `user/${this.uid}/actions/${identifier}`);
         return new Observable<string>(observer =>
             onValue(actionRef, s => {
-                const value: { action: string, timestamp: number } | null = s.val();
+                const value: { action: string; timestamp: number } | null = s.val();
                 if (value) {
                     observer.next(value.action);
                 }
@@ -193,14 +189,14 @@ export class FirebaseSync {
         switch (current.job.type) {
             case 'sync':
                 if (previous.job.type !== 'sync') {
-                    throw new Error(`can't merge jobs with different types`);
+                    throw new Error('can\'t merge jobs with different types');
                 }
                 previous.resolve();
                 return current;
 
             case 'report-state':
                 if (previous.job.type !== 'report-state') {
-                    throw new Error(`can't merge jobs with different types`);
+                    throw new Error('can\'t merge jobs with different types');
                 }
                 previous.resolve();
                 return {
@@ -272,11 +268,11 @@ export class FirebaseSync {
         body,
         tries = 3,
     }: {
-        path: string,
-        query?: string,
-        method?: string,
-        body: any,
-        tries?: number,
+        path: string;
+        query?: string;
+        method?: string;
+        body: any;
+        tries?: number;
     }) {
         while (tries--) {
             const token = await getAuth(this.app).currentUser?.getIdToken();
@@ -334,7 +330,7 @@ interface ReportStateJob {
 
 interface SendNotificationJob {
     type: 'notify';
-    notification: WebpushNotification;
+    notification: common.WebpushNotification;
 }
 
 type Job = SyncJob | ReportStateJob | SendNotificationJob;

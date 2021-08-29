@@ -11,7 +11,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const deviceType = `action.devices.types.${config.openclosetype}`;
         if (!isDeviceType(deviceType)) {

@@ -1,8 +1,8 @@
-import { deviceSupportsLocalExecution, ExecuteCommandError } from '@andrei-tatar/nora-firebase-common';
-import { encodeAsync } from 'cbor';
 import { createSocket, Socket } from 'dgram';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { networkInterfaces } from 'os';
+import { encodeAsync } from 'cbor';
+import { deviceSupportsLocalExecution, ExecuteCommandError } from '@andrei-tatar/nora-firebase-common';
 import { BehaviorSubject, EMPTY, merge, Observable } from 'rxjs';
 import { filter, ignoreElements, switchMap } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
@@ -20,7 +20,7 @@ export class LocalExecution {
 
     private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
 
-    private discovery$ = new Observable<{ socket: Socket, data: Buffer, from: string }>(observer => {
+    private discovery$ = new Observable<{ socket: Socket; data: Buffer; from: string }>(observer => {
         const socket = createSocket('udp4');
         socket.on('message', (msg, rinfo) => observer.next({ socket, data: msg, from: rinfo.address }));
         socket.bind(DISCOVERY_PORT);
@@ -42,10 +42,10 @@ export class LocalExecution {
         const server = createServer(async (req, res) => {
             if (req.url === '/nora-local-execution' && req.method === 'POST') {
                 const body = await this.readBody<{
-                    type: 'EXECUTE',
-                    deviceId: string,
-                    command: string,
-                    params: any,
+                    type: 'EXECUTE';
+                    deviceId: string;
+                    command: string;
+                    params: any;
                 }>(req);
                 switch (body.type) {
                     case 'EXECUTE':
@@ -69,6 +69,7 @@ export class LocalExecution {
                 }
             }
 
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('NOT FOUND');
         });

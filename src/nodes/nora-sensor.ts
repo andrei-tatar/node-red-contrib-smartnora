@@ -1,4 +1,7 @@
-import { Device, HumiditySettingDevice, isHumiditySetting, isTemperatureControl, TemperatureControlDevice } from '@andrei-tatar/nora-firebase-common';
+import {
+    Device, HumiditySettingDevice, isHumiditySetting,
+    isTemperatureControl, TemperatureControlDevice
+} from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { registerNoraDevice } from './util';
 
@@ -7,7 +10,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const deviceConfig: Omit<Device, 'id'> = {
             type: 'action.devices.types.SENSOR',

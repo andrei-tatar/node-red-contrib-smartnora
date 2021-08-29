@@ -8,9 +8,11 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
-        const speeds: { n: string, v: string }[] = config.speeds;
+        const speeds: { n: string; v: string }[] = config.speeds;
 
         registerNoraDevice<FanSpeedDevice & OnOffDevice>(this, RED, config, {
             deviceConfig: {
@@ -39,11 +41,13 @@ module.exports = function (RED: any) {
                             supportsFanSpeedPercent: false,
                             availableFanSpeeds: {
                                 speeds: speeds.map(s => ({
+                                    /* eslint-disable */
                                     speed_name: s.v.trim(),
                                     speed_values: [{
                                         speed_synonym: s.n.split(',').map(v => v.trim()),
                                         lang: config.language,
                                     }],
+                                    /* eslint-enable */
                                 })),
                                 ordered: true,
                             },

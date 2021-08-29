@@ -7,7 +7,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const { value: onValue, type: onType } = convertValueType(RED, config.onvalue, config.onvalueType, { defaultValue: true });
         const { value: offValue, type: offType } = convertValueType(RED, config.offvalue, config.offvalueType, { defaultValue: false });

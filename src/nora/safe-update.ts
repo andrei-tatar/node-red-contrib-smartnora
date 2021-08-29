@@ -3,7 +3,7 @@ export interface GetSafeUpdateParams {
     currentState: any;
     safeUpdateObject: any;
     isValid: () => boolean;
-    mapping?: { from: keyof any, to: keyof any }[];
+    mapping?: { from: keyof any; to: keyof any }[];
     path?: string;
     statePath?: string;
     warn?: (prop: string) => void;
@@ -41,7 +41,9 @@ export function getSafeUpdate({
     warn,
 }: GetSafeUpdateParams) {
     for (const [key, v] of Object.entries(update)) {
-        if (typeof key !== 'string') { continue; }
+        if (typeof key !== 'string') {
+            continue;
+        }
 
         let updateValue: any = v;
         const updateKey = mapping?.find(m => m.from === key)?.to ?? key;

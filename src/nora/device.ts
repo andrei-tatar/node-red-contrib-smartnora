@@ -1,4 +1,4 @@
-import { AsyncCommand, Changes, Device, executeCommand, ExecuteCommandError, updateState, validate } from '@andrei-tatar/nora-firebase-common';
+import * as common from '@andrei-tatar/nora-firebase-common';
 import { child, onValue } from 'firebase/database';
 import { firstValueFrom, merge, Observable, Subject } from 'rxjs';
 import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
@@ -7,15 +7,15 @@ import { AsyncCommandsRegistry } from './async-commands.registry';
 import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
 
-export class FirebaseDevice<T extends Device = Device> {
+export class FirebaseDevice<T extends common.Device = common.Device> {
     private connectedAndSynced = false;
 
     private readonly _state$ = new Observable<{
-        state: T['state'],
+        state: T['state'];
         update: {
-            by: 'server' | 'client',
-            timestamp: number,
-        }
+            by: 'server' | 'client';
+            timestamp: number;
+        };
     }>(observer => {
         const stateSubscription = onValue(this.state, s => observer.next(s.val()));
         const noraSubscription = onValue(this.noraSpecific, s => {
@@ -34,7 +34,7 @@ export class FirebaseDevice<T extends Device = Device> {
     );
 
     private readonly _localStateUpdate$ = new Subject<T['state']>();
-    private readonly _localAsyncCommand$ = new Subject<{ id: string, command: AsyncCommand }>();
+    private readonly _localAsyncCommand$ = new Subject<{ id: string; command: common.AsyncCommand }>();
 
     readonly state$ = this._state$.pipe(
         map(({ state }) => state),
@@ -83,14 +83,14 @@ export class FirebaseDevice<T extends Device = Device> {
 
     updateState<TState = Partial<T['state']>, TPayload = TState>(
         update: TPayload,
-        mapping?: { from: keyof TPayload, to: keyof TState }[]) {
+        mapping?: { from: keyof TPayload; to: keyof TState }[]) {
         return this.updateStateInternal(update, { mapping });
     }
 
     async executeCommand(command: string, params: any): Promise<T['state']> {
         this.local$.next(true);
 
-        let updates: Changes | null = null;
+        let updates: common.Changes | null = null;
         if (this.device.noraSpecific?.asyncCommandExecution) {
             const commandId = `${this.device.id}:${new Date().getTime()}`;
             const response = AsyncCommandsRegistry.getLocalResponse(commandId, this.device);
@@ -101,7 +101,7 @@ export class FirebaseDevice<T extends Device = Device> {
 
             const result = await firstValueFrom(response);
             if (result.errorCode) {
-                throw new ExecuteCommandError(result.errorCode as any);
+                throw new common.ExecuteCommandError(result.errorCode as any);
             } else {
                 updates = {
                     updateState: result.state,
@@ -109,7 +109,7 @@ export class FirebaseDevice<T extends Device = Device> {
                 };
             }
         } else {
-            updates = executeCommand({ command, params, device: this.device });
+            updates = common.executeCommand({ command, params, device: this.device });
             this.logger?.trace(`[nora][local-execution][${this.device.id}] executed ${command}`);
         }
 
@@ -130,7 +130,7 @@ export class FirebaseDevice<T extends Device = Device> {
     private async updateStateInternal<TState = Partial<T['state']>, TPayload = TState>(
         update: TPayload,
         { mapping }: {
-            mapping?: { from: keyof TPayload, to: keyof TState }[],
+            mapping?: { from: keyof TPayload; to: keyof TState }[];
         } = {}) {
 
         if (typeof update !== 'object') {
@@ -143,16 +143,19 @@ export class FirebaseDevice<T extends Device = Device> {
             update,
             currentState,
             safeUpdateObject: safeUpdate,
-            isValid: () => validate(this.device.traits, 'state-update', safeUpdate).valid,
+            isValid: () => common.validate(this.device.traits, 'state-update', safeUpdate).valid,
             mapping,
             warn: (msg) => this?.logger?.warn(`[${this.device.name.name}] ignoring property ${msg}`),
         });
 
-        const { hasChanges, state } = updateState(safeUpdate, this.device.state);
+        const { hasChanges, state } = common.updateState(safeUpdate, this.device.state);
         if (hasChanges) {
-            const { valid } = validate(this.device.traits, 'state', state);
+            const { valid } = common.validate(this.device.traits, 'state', state);
             if (!valid) {
-                this?.logger?.warn(`[${this.device.name.name}] invalid state after update. aborting update. ${JSON.stringify(safeUpdate)} => ${JSON.stringify(state)}`);
+                const name = this.device.name.name;
+                const safeStr = JSON.stringify(safeUpdate);
+                const stateStr = JSON.stringify(state);
+                this?.logger?.warn(`[${name}] invalid state after update. aborting update. ${safeStr} => ${stateStr}`);
                 return;
             }
 

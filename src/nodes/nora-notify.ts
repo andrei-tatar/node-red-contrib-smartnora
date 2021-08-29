@@ -12,10 +12,12 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const identifier = `${getId(config)}|${noraConfig.group}`;
-        const configActions: { p: string, v: string, vt: string, d?: boolean }[] | undefined = config.actions;
+        const configActions: { p: string; v: string; vt: string; d?: boolean }[] | undefined = config.actions;
         const actions = configActions?.map(({ p: title, v: value, vt: type }, index) => ({
             title,
             action: type === 'link' ? value : `${index}`,

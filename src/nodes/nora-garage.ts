@@ -7,7 +7,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const { value: openValue, type: openType } =
             convertValueType(RED, config.openvalue, config.openvalueType, { defaultValue: true });
@@ -37,9 +39,9 @@ module.exports = function (RED: any) {
             updateStatus: ({ state, update }) => {
                 if ('openPercent' in state) {
                     if (state.openPercent === 0) {
-                        update(`(closed)`);
+                        update('(closed)');
                     } else {
-                        update(`(open)`);
+                        update('(open)');
                     }
                 }
             },

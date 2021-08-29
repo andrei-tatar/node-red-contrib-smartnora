@@ -1,6 +1,9 @@
 import * as common from '@andrei-tatar/nora-firebase-common';
 import { child, onChildAdded, set } from 'firebase/database';
-import { catchError, EMPTY, first, ignoreElements, merge, mergeMap, Observable, Observer, of, race, Subject, switchMap, timeout } from 'rxjs';
+import {
+    catchError, EMPTY, first, ignoreElements, merge, mergeMap,
+    Observable, Observer, of, race, Subject, switchMap, timeout
+} from 'rxjs';
 import { Logger } from '..';
 import { FirebaseDevice } from './device';
 import { getSafeUpdate } from './safe-update';
@@ -12,7 +15,7 @@ export class AsyncCommandsRegistry {
     }>();
     private static logger: Logger | null;
 
-    static handle({ id, response: rsp, warn }: { id: string, response: common.AsyncResponse, warn: (msg: string) => void }): void {
+    static handle({ id, response: rsp, warn }: { id: string; response: common.AsyncResponse; warn: (msg: string) => void }): void {
         this.logger?.trace(`[async-cmd] got response for ${id}`);
         const handler = this.handlers.get(id);
         if (!handler) {
@@ -72,7 +75,7 @@ export class AsyncCommandsRegistry {
     static getCloudAsyncCommandHandler<T extends common.Device>(device: FirebaseDevice<T>) {
         const asyncCommands = child(device.noraSpecific, 'commands');
         const asyncResponses = child(device.noraSpecific, 'responses');
-        return new Observable<{ id: string, command: common.AsyncCommand }>(observer =>
+        return new Observable<{ id: string; command: common.AsyncCommand }>(observer =>
             onChildAdded(asyncCommands, d => {
                 this.logger?.trace(`[async-cmd] async command received ${d.key}`);
                 if (d.key) {
@@ -90,7 +93,7 @@ export class AsyncCommandsRegistry {
                     switchMap(response => set(child(asyncResponses, cmd.id), response)),
                     timeout(1000),
                     catchError(_ => {
-                        this.logger?.warn(`[async-cmd] timeout waiting for response`);
+                        this.logger?.warn('[async-cmd] timeout waiting for response');
                         return EMPTY;
                     }),
                     ignoreElements(),

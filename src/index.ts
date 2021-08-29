@@ -13,7 +13,7 @@ export interface NodeMessage extends Record<string, any> {
 export interface NodeInterface {
     credentials: { [key: string]: string };
 
-    on(type: 'input', callback: (msg: NodeMessage, send?: (msg: NodeMessage) => void, done?: (err?: any) => void) => void): void;
+    on(type: 'input', callback: (msg: NodeMessage, send?: (msgToSend: NodeMessage) => void, done?: (err?: any) => void) => void): void;
     on(type: 'close', callback: () => void): void;
 
     send(msg: any): void;
@@ -23,9 +23,9 @@ export interface NodeInterface {
     error(msg: string): void;
 
     status(params: {
-        fill: 'red' | 'green' | 'yellow' | 'blue' | 'grey',
-        text: string,
-        shape: 'ring' | 'dot',
+        fill: 'red' | 'green' | 'yellow' | 'blue' | 'grey';
+        text: string;
+        shape: 'ring' | 'dot';
     } | {}): void;
 }
 
@@ -78,17 +78,19 @@ export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperat
 
 const NO_EVENT: unknown = Symbol('no-event');
 
+interface RateLimitContext<T> {
+    overflow: T;
+    fwdMessage: T;
+    ticks: number[];
+    getNextFree(): Date;
+}
+
 export function rateLimitSlidingWindow<T>(
     windowSizeMiliseconds: number,
     numberOfEvents: number,
     mergeEvents: (current: T, previous: T) => T): MonoTypeOperatorFunction<T> {
     return source => source.pipe(
-        scan<T, {
-            overflow: T;
-            fwdMessage: T,
-            ticks: number[];
-            getNextFree(): Date;
-        }>((ctx, msg) => {
+        scan<T, RateLimitContext<T>>((ctx, msg) => {
             const now = new Date().getTime();
             ctx.ticks = ctx.ticks.filter(t => t > now - windowSizeMiliseconds);
             if (ctx.ticks.length === numberOfEvents) {

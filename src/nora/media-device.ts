@@ -35,8 +35,8 @@ export class FirebaseMediaDevice<T extends (TransportControlDevice | ChannelDevi
         singleton(),
     );
 
-    private static command<T>(reference: DatabaseReference) {
-        return new Observable<T>(observer =>
+    private static command<TCommand>(reference: DatabaseReference) {
+        return new Observable<TCommand>(observer =>
             onValue(reference, (snapshot: DataSnapshot) => {
                 const value = snapshot.val();
                 if (value) {

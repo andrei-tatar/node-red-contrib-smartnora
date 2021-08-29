@@ -7,7 +7,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const { value: lockValue, type: lockType } = convertValueType(RED, config.lockValue,
             config.lockValueType, { defaultValue: true });
@@ -41,7 +43,7 @@ module.exports = function (RED: any) {
             },
             updateStatus: ({ state, update }) => {
                 if (state.isJammed) {
-                    update(`(jammed)`);
+                    update('(jammed)');
                 } else {
                     update(`(${state.isLocked ? 'locked' : 'unlocked'})`);
                 }

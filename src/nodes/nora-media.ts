@@ -13,7 +13,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
 
         const noraConfig: ConfigNode = RED.nodes.getNode(config.nora);
-        if (!noraConfig?.valid) { return; }
+        if (!noraConfig?.valid) {
+            return;
+        }
 
         const deviceType = `action.devices.types.${config.deviceType}`;
         if (!isDeviceType(deviceType)) {
@@ -89,7 +91,7 @@ module.exports = function (RED: any) {
             }
         }
 
-        const mediaInputs: { v: string, n: string, d: boolean }[] = config.mediaInputs;
+        const mediaInputs: { v: string; n: string; d: boolean }[] = config.mediaInputs;
         if (config.supportInputSelector && mediaInputs?.length >= 1) {
             deviceConfig.traits.push('action.devices.traits.InputSelector');
             if (isInputSelectorDevice(deviceConfig)) {
@@ -98,6 +100,7 @@ module.exports = function (RED: any) {
                         key: i.v,
                         names: [{
                             lang: config.language,
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             name_synonym: i.n.split(',').map(s => s.trim()),
                         }],
                     })),
@@ -112,7 +115,7 @@ module.exports = function (RED: any) {
             }
         }
 
-        const channels: { k: string, n: string; i: string }[] = config.mediaChannels;
+        const channels: { k: string; n: string; i: string }[] = config.mediaChannels;
         if (config.supportChannel && channels?.length >= 1) {
             deviceConfig.traits.push('action.devices.traits.Channel');
             if (isChannelDevice(deviceConfig)) {
