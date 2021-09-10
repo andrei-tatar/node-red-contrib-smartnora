@@ -10,6 +10,9 @@
     "type": "git",
     "url": "git+https://github.com/andrei-tatar/node-red-contrib-smartnora.git"
   },
+  "engines": {
+    "node": ">=12.19"
+  },
   "dependencies": {
     "@andrei-tatar/nora-firebase-common": "^1.4.2",
     "cbor": "^8.0.0",
