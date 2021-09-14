@@ -103,7 +103,9 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         subscriptions++;
     }
 
-    if (deviceConfig.noraSpecific.asyncCommandExecution) {
+    if (deviceConfig.noraSpecific.asyncCommandExecution === true ||
+        Array.isArray(deviceConfig.noraSpecific.asyncCommandExecution) &&
+        deviceConfig.noraSpecific.asyncCommandExecution.length) {
         const padding = new Array<null>(nodeConfig.outputs - 1).fill(null);
         device$.pipe(
             switchMap(d => d.asyncCommands$),

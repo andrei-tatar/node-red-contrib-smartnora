@@ -96,10 +96,28 @@
             errorifstateunchaged: {
                 value: false,
             },
+            asyncCmdOnOff: {
+                value: false,
+            },
+            asyncCmdVolume: {
+                value: false,
+            },
+            asyncCmdTransportControl: {
+                value: false,
+            },
+            asyncCmdInputSelector: {
+                value: false,
+            },
+            asyncCmdChannel: {
+                value: false,
+            },
+            outputs: {
+                value: 2,
+            },
         },
         inputs: 1,
         outputs: 2,
-        outputLabels: ["state", "media command"],
+        outputLabels: ["state", "media command", "async command"],
         paletteLabel: 'media',
         label: function () {
             return this.name || this.devicename || 'Media device';
@@ -128,7 +146,8 @@
 
             var selectedCommands = this.transportControlCommands || [];
             for (var command of availableCommands) {
-                var commandRow = $('<div>').appendTo($('.transportcontrol-trait'));
+                var commandRow = $('<div>').appendTo($(
+                    '.transportcontrol-trait .transportcontrol-options'));
                 $('<input/>', {
                         type: 'checkbox',
                         id: 'input-control-command-' + command,
@@ -152,7 +171,7 @@
             $('#node-input-supportOnOff').change(function () {
                 $('.onoff-trait')[$(this).is(':checked') ? 'show' : 'hide']();
             });
-            
+
             $('#node-input-supportTransportControl').change(function () {
                 $('.transportcontrol-trait')[$(this).is(':checked') ? 'show' : 'hide']();
             });
@@ -321,7 +340,6 @@
             });
 
             var channels = $("#node-input-channels-container").editableList('items');
-            var node = this;
             node.mediaChannels = [];
             channels.each(function (i) {
                 var channel = $(this);
@@ -334,6 +352,8 @@
                     node.mediaChannels.push(p);
                 }
             });
+
+            node.outputs = $('.async-cmd:checked').length ? 3 : 2;
         },
     });
 </script>
@@ -349,17 +369,17 @@
             margin-bottom: 5px;
         }
 
-        .transportcontrol-trait {
+        .transportcontrol-options {
             display: grid;
             grid-template-columns: repeat(auto-fit,minmax(120px, 1fr));
         }
 
-        .transportcontrol-trait > div {
+        .transportcontrol-options > div {
             display: flex;
             flex-direction: row;
         }
 
-        .transportcontrol-trait > div > label {
+        .transportcontrol-options > div > label {
             margin-left: 5px;
         }
     </style>
@@ -400,6 +420,10 @@
     </div>
     <div class="trait-props onoff-trait">
         <div class="form-row">
+            <label style="width:auto" for="node-input-asyncCmdOnOff"><i class="fa fa-refresh"></i> Async command execution: </label>
+            <input type="checkbox" class="async-cmd" id="node-input-asyncCmdOnOff" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+        <div class="form-row">
             <label style="width:auto" for="node-input-errorifstateunchaged"><i class="fa fa-exclamation-triangle"></i> If on/off state doesn't change via voice, warn user: </label>
             <input type="checkbox" id="node-input-errorifstateunchaged" style="display:inline-block; width:auto; vertical-align:top;">
         </div>
@@ -409,6 +433,10 @@
         <input type="checkbox" id="node-input-supportVolume" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="trait-props volume-trait">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-asyncCmdVolume"><i class="fa fa-refresh"></i> Async command execution: </label>
+            <input type="checkbox" class="async-cmd" id="node-input-asyncCmdVolume" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
         <div class="form-row">
             <label style="width:auto" for="node-input-volumeCanMuteAndUnmute"> Can mute/unmute </label>
             <input type="checkbox" id="node-input-volumeCanMuteAndUnmute" style="display:inline-block; width:auto; vertical-align:top;">
@@ -437,13 +465,22 @@
         <input type="checkbox" id="node-input-supportTransportControl" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="trait-props transportcontrol-trait">
-
+        <div class="form-row">
+            <label style="width:auto" for="node-input-asyncCmdTransportControl"><i class="fa fa-refresh"></i> Async command execution: </label>
+            <input type="checkbox" class="async-cmd" id="node-input-asyncCmdTransportControl" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+        <div class="transportcontrol-options">
+        </div>
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-supportInputSelector"><i class="fa fa-play-circle"></i> Input Selector Trait </label>
         <input type="checkbox" id="node-input-supportInputSelector" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="trait-props inputselector-trait">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-asyncCmdInputSelector"><i class="fa fa-refresh"></i> Async command execution: </label>
+            <input type="checkbox" class="async-cmd" id="node-input-asyncCmdInputSelector" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
         <div class="form-row">
             <label for="node-input-language"><i class="fa fa-i-cursor"></i> Language</label>
             <select id="node-input-language">
@@ -475,6 +512,10 @@
         <input type="checkbox" id="node-input-supportChannel" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="trait-props channel-trait">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-asyncCmdChannel"><i class="fa fa-refresh"></i> Async command execution: </label>
+            <input type="checkbox" class="async-cmd" id="node-input-asyncCmdChannel" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
         <label><i class="fa fa-tag"></i> <span>Channels:</span></label>
         <div class="form-row">
             <ol id="node-input-channels-container"></ol>

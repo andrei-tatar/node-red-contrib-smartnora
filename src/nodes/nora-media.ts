@@ -40,11 +40,16 @@ module.exports = function (RED: any) {
             },
         };
 
+        const asyncCommandExecution: string[] = [];
         if (config.supportOnOff) {
             deviceConfig.traits.push('action.devices.traits.OnOff');
             if (isOnOff(deviceConfig)) {
                 deviceConfig.state.on = false;
                 deviceConfig.noraSpecific.returnOnOffErrorCodeIfStateAlreadySet = !!config.errorifstateunchaged;
+            }
+
+            if (config.asyncCmdOnOff) {
+                asyncCommandExecution.push('action.devices.commands.OnOff');
             }
         }
 
@@ -63,6 +68,13 @@ module.exports = function (RED: any) {
                     levelStepSize: parseInt(config.volumeLevelStepSize, 10) || undefined,
                 };
                 Object.assign(deviceConfig.attributes, volumeAttributes);
+            }
+
+            if (config.asyncCmdVolume) {
+                asyncCommandExecution.push(
+                    'action.devices.commands.setVolume',
+                    'action.devices.commands.mute',
+                    'action.devices.commands.volumeRelative');
             }
         }
 
@@ -89,6 +101,21 @@ module.exports = function (RED: any) {
                 };
                 Object.assign(deviceConfig.attributes, transportControlAttributes);
             }
+
+            if (config.asyncCmdTransportControl) {
+                asyncCommandExecution.push(
+                    'action.devices.commands.mediaStop',
+                    'action.devices.commands.mediaNext',
+                    'action.devices.commands.mediaPrevious',
+                    'action.devices.commands.mediaPause',
+                    'action.devices.commands.mediaResume',
+                    'action.devices.commands.mediaSeekRelative',
+                    'action.devices.commands.mediaSeekToPosition',
+                    'action.devices.commands.mediaRepeatMode',
+                    'action.devices.commands.mediaShuffle',
+                    'action.devices.commands.mediaClosedCaptioningOn',
+                    'action.devices.commands.mediaClosedCaptioningOff');
+            }
         }
 
         const mediaInputs: { v: string; n: string; d: boolean }[] = config.mediaInputs;
@@ -113,6 +140,13 @@ module.exports = function (RED: any) {
                 };
                 Object.assign(deviceConfig.state, inputSelectorState);
             }
+
+            if (config.asyncCmdInputSelector) {
+                asyncCommandExecution.push(
+                    'action.devices.commands.SetInput',
+                    'action.devices.commands.NextInput',
+                    'action.devices.commands.PreviousInput');
+            }
         }
 
         const channels: { k: string; n: string; i: string }[] = config.mediaChannels;
@@ -128,10 +162,23 @@ module.exports = function (RED: any) {
                 };
                 Object.assign(deviceConfig.attributes, channelAttributes);
             }
+
+            if (config.asyncCmdChannel) {
+                asyncCommandExecution.push(
+                    'action.devices.commands.selectChannel',
+                    'action.devices.commands.relativeChannel',
+                    'action.devices.commands.returnChannel');
+            }
         }
 
         registerNoraDevice<Device>(this, RED, config, {
-            deviceConfig,
+            deviceConfig: {
+                ...deviceConfig,
+                noraSpecific: {
+                    ...deviceConfig.noraSpecific,
+                    asyncCommandExecution,
+                },
+            },
             updateStatus: ({ state, update }) => {
                 const states: string[] = [];
                 if (isOnOffState(state)) {

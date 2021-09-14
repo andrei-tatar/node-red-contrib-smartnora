@@ -91,7 +91,9 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
         this.local$.next(true);
 
         let updates: common.Changes | null = null;
-        if (this.device.noraSpecific?.asyncCommandExecution) {
+        if (this.device.noraSpecific?.asyncCommandExecution === true ||
+            Array.isArray(this.device.noraSpecific.asyncCommandExecution) &&
+            this.device.noraSpecific.asyncCommandExecution.includes(command)) {
             const commandId = `${this.device.id}:${new Date().getTime()}`;
             const response = AsyncCommandsRegistry.getLocalResponse(commandId, this.device);
             this._localAsyncCommand$.next({
