@@ -1,0 +1,251 @@
+<script type="text/javascript">
+    (function () {
+        function resizeDialog(size) {
+            size = size || {
+                height: $(".red-ui-tray-content form").height()
+            }
+            var rows = $("#dialog-form>div:not(.node-input-speeds-container-row):visible");
+            var height = size.height;
+            for (var i = 0; i < rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            var editorRow = $("#dialog-form>div.node-input-speeds-container-row");
+            height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+            $("#node-input-speeds-container").editableList('height', height);
+        }
+
+        RED.nodes.registerType('noraf-airpurifier', {
+            category: 'nora',
+            color: 'rgb(235, 227, 141)',
+            icon: 'assistant.png',
+            defaults: {
+                devicename: {
+                    value: 'Air Purifier',
+                    required: true,
+                },
+                roomhint: {
+                    value: ''
+                },
+                name: {
+                    value: ''
+                },
+                passthru: {
+                    value: false,
+                },
+                percentcontrol: {
+                    value: false,
+                },
+                nora: {
+                    type: 'noraf-config',
+                    required: true
+                },
+                topic: {
+                    value: ''
+                },
+                twofactor: {
+                    value: 'off',
+                },
+                twofactorpin: {
+                    value: ''
+                },
+                language: {
+                    value: 'en',
+                },
+                speeds: {
+                    value: [{
+                            v: 'low',
+                            n: 'Low'
+                        },
+                        {
+                            v: 'medium',
+                            n: 'Medium'
+                        },
+                        {
+                            v: 'high',
+                            n: 'High'
+                        },
+                    ]
+                },
+                filter: {
+                    value: false,
+                },
+            },
+            inputs: 1,
+            outputs: 1,
+            paletteLabel: 'air purifier',
+            label: function () {
+                return this.name || this.devicename || 'air purifier';
+            },
+            oneditresize: resizeDialog,
+            oneditprepare: function () {
+                $('#node-input-twofactor').change(function () {
+                    if ($(this).val() === 'pin') {
+                        $('#node-twofactor-pin').show();
+                    } else {
+                        $('#node-twofactor-pin').hide();
+                    }
+                });
+
+                $('#node-input-percentcontrol').change(function () {
+                    if ($(this).is(':checked')) {
+                        $('.node-input-speeds').hide();
+                    } else {
+                        $('.node-input-speeds').show();
+                        resizeDialog();
+                    }
+                });
+
+                $('#node-input-speeds-container').css('min-height', '120px').css('min-width', '450px')
+                    .editableList({
+                        addItem: function (container, i, opt) {
+                            var prop = opt;
+                            if (!prop.hasOwnProperty('v')) {
+                                prop = {
+                                    v: '',
+                                    n: ''
+                                };
+                            }
+                            container.css({
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap'
+                            });
+                            var row = $('<div/>').appendTo(container);
+
+                            $('<input/>', {
+                                    class: "node-input-speeds-speed-value",
+                                    type: "text",
+                                    placeholder: 'Value',
+                                    required: true,
+                                })
+                                .css("width", "30%")
+                                .val(prop.v)
+                                .appendTo(row);
+
+                            $('<div/>', {
+                                    style: 'display:inline-block; padding:0px 6px;'
+                                })
+                                .text('=>')
+                                .appendTo(row);
+
+                            $('<input/>', {
+                                    class: "node-input-speeds-speed-name",
+                                    type: "text",
+                                    placeholder: 'Name in language',
+                                    required: true,
+                                })
+                                .css("width", "calc(70% - 30px)")
+                                .val(prop.n)
+                                .appendTo(row);
+                        },
+                        removable: true,
+                        sortable: true
+                    });
+
+                if (!this.speeds) {
+                    this.speeds = [];
+                }
+
+                for (var i = 0; i < this.speeds.length; i++) {
+                    var speed = this.speeds[i];
+                    var newSpeed = {
+                        v: speed.v,
+                        n: speed.n
+                    };
+                    $("#node-input-speeds-container").editableList('addItem', newSpeed);
+                }
+            },
+            oneditsave: function () {
+                var speeds = $("#node-input-speeds-container").editableList('items');
+                var node = this;
+                node.speeds = [];
+                speeds.each(function (i) {
+                    var speed = $(this);
+                    var p = {
+                        n: speed.find(".node-input-speeds-speed-name").val().trim(),
+                        v: speed.find(".node-input-speeds-speed-value").val().trim(),
+                    };
+                    if (p.n && p.v) {
+                        node.speeds.push(p);
+                    }
+                });
+            }
+        });
+    })();
+</script>
+
+<script type="text/x-red" data-template-name="noraf-airpurifier">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Air Purifier</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-percentcontrol">Control speed using percentage: </label>
+        <input type="checkbox" id="node-input-percentcontrol" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row node-input-speeds">
+        <label for="node-input-language"><i class="fa fa-i-cursor"></i> Language</label>
+        <select id="node-input-language">
+            <option value="da">da</option>
+            <option value="nl">nl</option>
+            <option value="en">en</option>
+            <option value="fr">fr</option>
+            <option value="de">de</option>
+            <option value="hi">hi</option>
+            <option value="id">id</option>
+            <option value="it">it</option>
+            <option value="ja">ja</option>
+            <option value="ko">ko</option>
+            <option value="no">no</option>
+            <option value="pt-BR">pt</option>
+            <option value="es">es</option>
+            <option value="sv">sv</option>
+            <option value="th">th</option>
+        </select>
+    </div>
+    <label class="node-input-speeds"><i class="fa fa-tag"></i> <span>Speeds:</span></label>
+    <div class="form-row node-input-speeds-container-row node-input-speeds">
+        <ol id="node-input-speeds-container"></ol>
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-input-twofactor">
+            <option value="off">None</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-twofactor-pin" class="form-row">
+        <label for="node-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-input-twofactorpin">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-airpurifier">
+    <p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/fan/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/fan/README.md</a>
+</p>
+</script>

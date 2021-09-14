@@ -47,6 +47,7 @@
     "version": ">=1.0.0",
     "nodes": {
       "noraf-ac": "build/nodes/nora-ac.js",
+      "noraf-airpurifier": "build/nodes/nora-airpurifier.js",
       "noraf-blinds": "build/nodes/nora-blinds.js",
       "noraf-camera": "build/nodes/nora-camera.js",
       "noraf-config": "build/nodes/nora-config.js",
