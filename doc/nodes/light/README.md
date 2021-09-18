@@ -25,7 +25,7 @@ Represents a [Google Home Light](https://developers.google.com/assistant/smartho
   - `brightness` - number: 0-100, default: 0. Brightness the light is set at in percentage (only if `Allow brightness control` is checked)
   - `color` - object that contains the color:
     - if `RGB` mode is used, it has a number property called `spectrumRgb` which contains the RGB value of the color
-    - if `HSV` mode is used, it has 3 number properties called `hue` (0-360), `saturation` (0-1), `value` (0-1) which contain the HSV colro
+    - if `HSV` mode is used, it has an object called `spectrumHsv` which contains 3 number properties called `hue` (0-360), `saturation` (0-1), `value` (0-1) which contain the HSV color
     - if `Temperature` mode is used, it has a number property called `temperatureK` which contains the temperature in K degrees
 
 
