@@ -5,7 +5,7 @@
   "keywords": [
     "node-red"
   ],
-  "main": "index.js",
+  "main": "build/context.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/andrei-tatar/node-red-contrib-smartnora.git"
