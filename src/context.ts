@@ -4,7 +4,7 @@ import { getDatabase, Database, ref, DatabaseReference, child, update, onValue, 
 import { firebaseConfig } from './config';
 
 interface ContextConfiguration {
-    user: string;
+    email: string;
     password: string;
     group?: string;
 }
@@ -44,7 +44,7 @@ class FirebaseContextStorage {
 
         const app = initializeApp(firebaseConfig, 'app-context');
         const auth = getAuth(app);
-        const { user } = await signInWithEmailAndPassword(auth, this.config.user, this.config.password);
+        const { user } = await signInWithEmailAndPassword(auth, this.config.email, this.config.password);
         this.db = getDatabase(app);
         this.contextReferece = ref(this.db, `context_store/${user.uid}/${this.encode(this.config.group ?? 'default')}`);
         let firstLoadResolve: null | ((...args: any[]) => void);
@@ -125,9 +125,10 @@ class FirebaseContextStorage {
     }
 
     async clean(activeNodes: string[]) {
-        // TODO: not exactly sure how to determine what is safe to remove
-        // const scopes = Object.keys(this.context).filter(scope => !activeNodes.includes(scope));
-        // await Promise.all(scopes.map(scope => this.delete(scope)));
+        const keepScopes = ['global', ...activeNodes].map(n => this.encode(n));
+        const scopes = Object.keys(this.context)
+            .filter(key => !keepScopes.some(e => key.startsWith(e)));
+        await Promise.all(scopes.map(scope => this.delete(scope)));
     }
 
     private encode(value: string) {
