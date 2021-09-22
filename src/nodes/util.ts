@@ -1,4 +1,4 @@
-import { Device } from '@andrei-tatar/nora-firebase-common';
+import { Device, updateState, validate } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY, firstValueFrom, merge, MonoTypeOperatorFunction, Observable, of, Subject } from 'rxjs';
 import { retryWhen, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ConfigNode, NodeInterface, NodeMessage, singleton } from '..';
@@ -6,6 +6,7 @@ import { FirebaseConnection } from '../nora/connection';
 import { FirebaseDevice } from '../nora/device';
 import { DeviceContext } from '../nora/device-context';
 import { LocalExecution } from '../nora/local-execution';
+import { getSafeUpdate } from '../nora/safe-update';
 
 export function convertValueType(RED: any, value: any, type: any,
     { defaultType = 'bool', defaultValue = false }: { defaultType?: string; defaultValue?: any } = {}) {
@@ -71,6 +72,21 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         ...options.deviceConfig,
     } as T, nodeConfig);
 
+    if (noraConfig.storeStateInContext) {
+        const contextState = node.context().get<T['state']>('state');
+
+        const safeUpdate = {};
+        getSafeUpdate({
+            update: contextState ?? {},
+            safeUpdateObject: safeUpdate,
+            currentState: deviceConfig.state,
+            isValid: () => validate(deviceConfig.traits, 'state-update', safeUpdate).valid,
+            warn: (propName) => node.warn(`ignoring property from stored context ${propName}`),
+        });
+        const { state: safeState } = updateState(safeUpdate, deviceConfig.state);
+        deviceConfig.state = safeState;
+    }
+
     const device$ = FirebaseConnection
         .withLogger(RED.log)
         .fromConfig(noraConfig, ctx)
@@ -83,15 +99,19 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
 
     let subscriptions = 0;
 
-    if (options.updateStatus) {
+    if (options.updateStatus || noraConfig.storeStateInContext) {
         device$.pipe(
             switchMap(d => d.state$),
-            tap(state => options.updateStatus?.({
+            takeUntil(close$),
+        ).subscribe(state => {
+            if (noraConfig.storeStateInContext) {
+                node.context().set('state', state);
+            }
+            options.updateStatus?.({
                 state,
                 update: msg => ctx.status$.next(msg),
-            })),
-            takeUntil(close$),
-        ).subscribe();
+            });
+        });
         subscriptions++;
     }
 
@@ -109,20 +129,19 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         const padding = new Array<null>(nodeConfig.outputs - 1).fill(null);
         device$.pipe(
             switchMap(d => d.asyncCommands$),
-            tap(({ id, command }) => {
-                node.send([
-                    ...padding,
-                    {
-                        _asyncCommandId: id,
-                        payload: {
-                            command: command.command.substr(command.command.lastIndexOf('.') + 1),
-                            ...command.params,
-                        },
-                    },
-                ]);
-            }),
             takeUntil(close$),
-        ).subscribe();
+        ).subscribe(({ id, command }) => {
+            node.send([
+                ...padding,
+                {
+                    _asyncCommandId: id,
+                    payload: {
+                        command: command.command.substr(command.command.lastIndexOf('.') + 1),
+                        ...command.params,
+                    },
+                },
+            ]);
+        });
         subscriptions++;
     }
 

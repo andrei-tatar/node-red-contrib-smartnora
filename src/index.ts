@@ -27,6 +27,11 @@ export interface NodeInterface {
         text: string;
         shape: 'ring' | 'dot';
     } | {}): void;
+
+    context(): {
+        get<T>(key: string): T;
+        set<T>(key: string, value: T): void;
+    };
 }
 
 export interface Logger {
@@ -43,6 +48,7 @@ export interface ConfigNode {
     group?: string;
     valid: boolean;
     localExecution: boolean;
+    storeStateInContext: boolean;
 
     setCommon<T extends Device>(device: T, deviceConfig?: any): T;
 }

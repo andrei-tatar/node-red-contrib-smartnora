@@ -90,9 +90,10 @@ class FirebaseContextStorage {
                 scopeUpdate[encodedKey] = null;
                 delete this.context[encodedScope]?.[encodedKey];
             } else {
+                singleValue = JSON.stringify(singleValue);
                 this.context[encodedScope] ??= {};
                 this.context[encodedScope][encodedKey] = singleValue;
-                scopeUpdate[encodedKey] = JSON.stringify(singleValue);
+                scopeUpdate[encodedKey] = singleValue;
             }
         };
         if (Array.isArray(key)) {
@@ -138,7 +139,11 @@ class FirebaseContextStorage {
     }
 
     private parse(value?: string) {
-        return value && JSON.parse(value);
+        try {
+            return value && JSON.parse(value);
+        } catch {
+            return null;
+        }
     }
 }
 

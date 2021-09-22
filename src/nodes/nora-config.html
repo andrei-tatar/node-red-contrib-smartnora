@@ -20,10 +20,17 @@
             structure: {
                 value: ''
             },
+            storeStateInContext: {
+                value: false,
+            }
         },
         credentials: {
-            email: { type: 'text' },
-            password: { type: 'text' },
+            email: {
+                type: 'text'
+            },
+            password: {
+                type: 'text'
+            },
         },
         paletteLabel: 'nora config',
         label: function () {
@@ -75,13 +82,17 @@
         <input type="text" id="node-config-input-twofactorpin">
     </div>
     <div class="form-row">
-        <label style="width:auto" for="node-input-localexecution"><i class="fa fa-gear"></i> Local execution support: </label>
-        <input type="checkbox" checked id="node-input-localexecution" style="display:inline-block; width:auto; vertical-align:top;">
+        <label style="width:auto" for="node-config-input-localexecution"><i class="fa fa-gear"></i> Local execution support: </label>
+        <input type="checkbox" checked id="node-config-input-localexecution" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-config-input-storeStateInContext"><i class="fa fa-refresh"></i> Store state in node context: </label>
+        <input type="checkbox" checked id="node-config-input-storeStateInContext" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
 </script>
 
 <script type="text/x-red" data-help-name="noraf-config">
-<p>
+    <p>
     <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/config/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/config/README.md</a>
 </p>
 </script>
