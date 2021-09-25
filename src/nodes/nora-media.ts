@@ -1,7 +1,7 @@
 import {
-    ChannelDevice, Device, InputSelectorDevice, isChannelDevice, isDeviceType, isInputSelectorDevice,
+    ChannelDevice, Device, InputSelectorDevice, isAppSelectorDevice, isChannelDevice, isDeviceType, isInputSelectorDevice,
     isMediaStateDevice, isOnOff, isTransportControlDevice, isVolumeDevice,
-    MediaStateDevice, OnOffDevice, TransportControlDevice, VolumeDevice
+    AppSelectorDevice, MediaStateDevice, OnOffDevice, TransportControlDevice, VolumeDevice
 } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY, switchMap, tap } from 'rxjs';
 import { ConfigNode, NodeInterface } from '..';
@@ -149,6 +149,36 @@ module.exports = function (RED: any) {
             }
         }
 
+        const mediaApps: { v: string; n: string; d: boolean }[] = config.mediaApps;
+        if (config.supportAppSelector && mediaApps?.length >= 1) {
+            deviceConfig.traits.push('action.devices.traits.AppSelector');
+            if (isAppSelectorDevice(deviceConfig)) {
+                const appSelectorAttributes: AppSelectorDevice['attributes'] = {
+                    availableApplications: mediaApps.map(i => ({
+                        key: i.v,
+                        names: [{
+                            lang: config.appsLanguage,
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
+                            name_synonym: i.n.split(',').map(s => s.trim()),
+                        }],
+                    }))
+                };
+                Object.assign(deviceConfig.attributes, appSelectorAttributes);
+
+                const appSelectorState: Omit<AppSelectorDevice['state'], 'online'> = {
+                    currentApplication: (mediaApps.find(i => i.d) ?? mediaApps[0]).v,
+                };
+                Object.assign(deviceConfig.state, appSelectorState);
+            }
+
+            if (config.asyncCmdAppSelector) {
+                asyncCommandExecution.push(
+                    'action.devices.commands.appSelect',
+                    'action.devices.commands.appSearch',
+                    'action.devices.commands.appInstall');
+            }
+        }
+
         const channels: { k: string; n: string; i: string }[] = config.mediaChannels;
         if (config.supportChannel && channels?.length >= 1) {
             deviceConfig.traits.push('action.devices.traits.Channel');
@@ -198,6 +228,9 @@ module.exports = function (RED: any) {
                 if (isInputSelectorState(state)) {
                     states.push(state.currentInput);
                 }
+                if (isAppSelectorState(state)) {
+                    states.push(state.currentApplication);
+                }
                 update(states.join(','));
             },
             stateChanged: state => {
@@ -214,6 +247,9 @@ module.exports = function (RED: any) {
                         } : null),
                         ...(isInputSelectorState(state) ? {
                             input: state.currentInput,
+                        } : null),
+                        ...(isAppSelectorState(state) ? {
+                            application: state.currentApplication,
                         } : null)
                     },
                     topic: config.topic,
@@ -235,6 +271,9 @@ module.exports = function (RED: any) {
                 }, {
                     from: 'input',
                     to: 'currentInput',
+                }, {
+                    from: 'application',
+                    to: 'currentApplication',
                 }]);
             },
             customRegistration: device$ => device$.pipe(
@@ -264,6 +303,10 @@ module.exports = function (RED: any) {
 
         function isInputSelectorState(state: Device['state']): state is InputSelectorDevice['state'] {
             return isInputSelectorDevice(deviceConfig) && 'currentInput' in state;
+        }
+
+        function isAppSelectorState(state: Device['state']): state is AppSelectorDevice['state'] {
+            return isAppSelectorDevice(deviceConfig) && 'currentApplication' in state;
         }
     });
 };
