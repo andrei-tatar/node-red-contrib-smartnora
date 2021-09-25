@@ -28,6 +28,10 @@ Node attributes:
   - `Language` - the language in which the input names are spelled
   - `Inputs` - the value and the name of each input (note the inputs are sorted)
   - `Default Input` - the checkbox at the end of the input editor row, selects the default input to be selected (when node-red starts, this input will be set as the state)
+- `App Selector Trait` - if checked, the device will support the [AppSelector trait](https://developers.google.com/assistant/smarthome/traits/appselector)
+  - `Language` - the language in which the app names are spelled
+  - `Apps` - the value and the name of each app
+  - `Default App` - the checkbox at the end of the app editor row, selects the default app to be selected (when node-red starts, this app will be set as the state). If no app is set as default, application will be set to `unknown`
 - `Channel Trait` - if checked, the device will support the [Channel trait](https://developers.google.com/assistant/smarthome/traits/channel)
   - `Channels` - the key, name and (optional) number of each defined channel
 
@@ -39,6 +43,7 @@ Input/output **1** payload is an object with the following properties:
 - `activity` - enum [`INACTIVE`, `STANDBY`, `ACTIVE`] (if the `Media State` trait is enabled)
 - `playback` - enum [`PAUSED`, `PLAYING`, `FAST_FORWARDING`, `REWINDING`, `BUFFERING`, `STOPPED`] (if the `Media State` trait is enabled)
 - `input` - string - the value of the current selected input
+- `application` - string - the value of the current running application
 
 Output **2** payload is used when commands are triggered:
 
@@ -137,3 +142,20 @@ Output **2** payload is used when commands are triggered:
     command: 'ClosedCaptioningOff';
   }
   ```
+- [Install the given application](https://developers.google.com/assistant/smarthome/traits/appselector#action.devices.commands.appinstall) (if `App Selector Trait` is enabled)
+  ```
+  {
+    command: 'AppInstall';
+    newApplication: string;        -- Key of the application to install.
+    newApplicationName: string;    -- Name of the application to install.
+  }
+  ```
+- [Search for the given application](https://developers.google.com/assistant/smarthome/traits/appselector#action.devices.commands.appsearch) (if `App Selector Trait` is enabled)
+  ```
+  {
+    command: 'AppSearch';
+    newApplication: string;       -- Key of the application to search for.
+    newApplicationName: string;   -- Name of the application to search for.
+  }
+  ```
+
