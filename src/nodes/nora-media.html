@@ -79,6 +79,23 @@
                     d: false,
                 }],
             },
+            supportAppSelector: {
+                value: false,
+            },
+            appsLanguage: {
+                value: 'en'
+            },
+            mediaApps: {
+                value: [{
+                    v: 'netflix',
+                    n: 'Netflix',
+                    d: true
+                }, {
+                    v: 'youtube',
+                    n: 'Youtube',
+                    d: false
+                }],
+            },
             supportChannel: {
                 value: false,
             },
@@ -106,6 +123,9 @@
                 value: false,
             },
             asyncCmdInputSelector: {
+                value: false,
+            },
+            asyncCmdAppSelector: {
                 value: false,
             },
             asyncCmdChannel: {
@@ -250,6 +270,80 @@
                 });
             }
 
+            $('#node-input-supportAppSelector').change(function () {
+                $('.appselector-trait')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-apps-container').change(function (ev) {
+                if (ev.target.classList.contains('node-input-apps-app-default')) {
+                    $('.node-input-apps-app-default').not(ev.target).prop('checked', false);
+                }
+            });
+
+            $('#node-input-apps-container').css('min-height', '120px').css('min-width', '350px')
+                .editableList({
+                    addItem: function (container, i, opt) {
+                        var prop = opt;
+                        if (!prop.hasOwnProperty('v')) {
+                            prop = {
+                                v: '',
+                                n: ''
+                            };
+                        }
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        $('<input/>', {
+                                class: "node-input-apps-app-value",
+                                type: "text",
+                                placeholder: 'Value',
+                                required: true,
+                            })
+                            .css({
+                                width: "30%",
+                            })
+                            .val(prop.v)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-apps-app-name",
+                                type: "text",
+                                placeholder: 'Name in language',
+                                required: true,
+                            })
+                            .css({
+                                width: "calc(70% - 30px)",
+                                marginLeft: "5px",
+                            })
+                            .val(prop.n)
+                            .appendTo(row);
+
+                        $('<input/>', {
+                                class: "node-input-apps-app-default",
+                                type: "checkbox",
+                                title: "Default",
+                            })
+                            .css("width", "30px")
+                            .appendTo(row)
+                            .prop('checked', !!prop.d);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+            if (!this.mediaApps) {
+                this.mediaApps = [];
+            }
+
+            for (const app of this.mediaApps) {
+                $("#node-input-apps-container").editableList('addItem', {
+                    ...app
+                });
+            }
+
             $('#node-input-supportChannel').change(function () {
                 $('.channel-trait')[$(this).is(':checked') ? 'show' : 'hide']();
             });
@@ -336,6 +430,21 @@
                 };
                 if (p.n && p.v) {
                     node.mediaInputs.push(p);
+                }
+            });
+
+            var apps = $("#node-input-apps-container").editableList('items');
+            var node = this;
+            node.mediaApps = [];
+            apps.each(function (i) {
+                var app = $(this);
+                var p = {
+                    n: app.find(".node-input-apps-app-name").val().trim(),
+                    v: app.find(".node-input-apps-app-value").val().trim(),
+                    d: app.find(".node-input-apps-app-default").is(':checked'),
+                };
+                if (p.n && p.v) {
+                    node.mediaApps.push(p);
                 }
             });
 
@@ -504,6 +613,41 @@
         <label><i class="fa fa-tag"></i> <span>Inputs:</span></label>
         <div class="form-row">
             <ol id="node-input-inputs-container"></ol>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label style="width:auto" for="node-input-supportAppSelector"><i class="fa fa-window-maximize"></i> App Selector Trait </label>
+        <input type="checkbox" id="node-input-supportAppSelector" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="trait-props appselector-trait">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-asyncCmdAppSelector"><i class="fa fa-refresh"></i> Async command execution: </label>
+            <input type="checkbox" class="async-cmd" id="node-input-asyncCmdAppSelector" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+        <div class="form-row">
+            <label for="node-input-appsLanguage"><i class="fa fa-i-cursor"></i> Language</label>
+            <select id="node-input-appsLanguage">
+                <option value="da">da</option>
+                <option value="nl">nl</option>
+                <option value="en">en</option>
+                <option value="fr">fr</option>
+                <option value="de">de</option>
+                <option value="hi">hi</option>
+                <option value="id">id</option>
+                <option value="it">it</option>
+                <option value="ja">ja</option>
+                <option value="ko">ko</option>
+                <option value="no">no</option>
+                <option value="pt-BR">pt</option>
+                <option value="es">es</option>
+                <option value="sv">sv</option>
+                <option value="th">th</option>
+            </select>
+        </div>
+        <label><i class="fa fa-tag"></i> <span>Apps:</span></label>
+        <div class="form-row">
+            <ol id="node-input-apps-container"></ol>
         </div>
     </div>
 
