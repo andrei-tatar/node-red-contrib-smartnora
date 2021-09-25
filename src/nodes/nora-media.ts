@@ -166,7 +166,7 @@ module.exports = function (RED: any) {
                 Object.assign(deviceConfig.attributes, appSelectorAttributes);
 
                 const appSelectorState: Omit<AppSelectorDevice['state'], 'online'> = {
-                    currentApplication: (mediaApps.find(i => i.d) ?? mediaApps[0]).v,
+                    currentApplication: mediaApps.find(i => i.d)?.v ?? 'unknown',
                 };
                 Object.assign(deviceConfig.state, appSelectorState);
             }
