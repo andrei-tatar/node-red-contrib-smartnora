@@ -4,7 +4,10 @@ import { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { DatabaseReference, get, getDatabase, onValue, ref, remove, set } from 'firebase/database';
 import fetch, { Response } from 'node-fetch';
-import { BehaviorSubject, concat, defer, merge, Observable, of, Subject, timer } from 'rxjs';
+import {
+    BehaviorSubject, concat, defer, merge, Observable,
+    of, Subject, throwError, timer
+} from 'rxjs';
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
     map,
@@ -43,6 +46,10 @@ export class FirebaseSync {
         ),
         retryWhen(err$ => err$.pipe(
             delayWhen(err => {
+                if (err instanceof UnauthenticatedError) {
+                    return throwError(() => err);
+                }
+
                 const seconds = Math.round(Math.random() * 1200) / 20 + 30;
                 this.logger?.warn(`nora: ${this.group} - unhandled error (trying again in ${seconds} sec): ${err.message}\n${err.stack}`);
                 return timer(seconds * 1000);
@@ -275,7 +282,11 @@ export class FirebaseSync {
         tries?: number;
     }) {
         while (tries--) {
-            const token = await getAuth(this.app).currentUser?.getIdToken();
+            const user = getAuth(this.app).currentUser;
+            if (!user) {
+                throw new UnauthenticatedError();
+            }
+            const token = await user.getIdToken();
             const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
             const response = await fetch(url, {
                 method: method,
@@ -315,6 +326,12 @@ export class HttpError extends Error {
         public readonly statusCode: number,
         public readonly content: string) {
         super(`HTTP response (${statusCode} ${content})`);
+    }
+}
+
+export class UnauthenticatedError extends Error {
+    constructor() {
+        super('No user authenticated');
     }
 }
 

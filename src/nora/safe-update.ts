@@ -27,8 +27,14 @@ const roundTo = new Map<string, number>([
 ]);
 
 const keepPathsIfSameValue: RegExp[] = [
-    /^openState\.\d+\.openDirection$/
+    /^openState\.\d+\.openDirection$/,
+    /^currentSensorStateData\.\d+\.name$/
 ];
+
+const arrayItemKeyMap = new Map<string, string>([
+    ['openState', 'openDirection'],
+    ['currentSensorStateData', 'name'],
+]);
 
 export function getSafeUpdate({
     update,
@@ -49,7 +55,14 @@ export function getSafeUpdate({
         const updateKey = mapping?.find(m => m.from === key)?.to ?? key;
         const currentStatePath = statePath ? `${statePath}.${String(updateKey)}` : String(updateKey);
 
-        const previousValue = currentState[updateKey];
+        let previousValue: any;
+        const keyName = statePath && arrayItemKeyMap.get(statePath);
+        if (keyName && Array.isArray(currentState)) {
+            const keyValue = (v as any)[keyName];
+            previousValue = currentState.find(pv => pv[keyName] === keyValue);
+        } else {
+            previousValue = currentState[updateKey];
+        }
         if (typeof previousValue !== typeof updateValue) {
             if (typeof previousValue === 'number') {
                 updateValue = +updateValue;
@@ -88,6 +101,17 @@ export function getSafeUpdate({
 
         const skipRemove = keepPathsIfSameValue.some(t => t.test(currentStatePath));
         if (!skipRemove && updateValue === previousValue) {
+            // if the value hasn't changed, don't append
+            updateValue = undefined;
+        }
+
+        if (statePath && updateValue && arrayItemKeyMap.has(statePath) && Object.keys(updateValue).length === 1) {
+            // if the parrent is an array item and the only item in the object is the key, there are no changes
+            updateValue = undefined;
+        }
+
+        if (Array.isArray(updateValue) && updateValue.length === 0) {
+            // if this is an empty array, there are no changes
             updateValue = undefined;
         }
 

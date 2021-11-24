@@ -7,6 +7,11 @@ Node attributes:
 - `Temperature` - if checked, the sensor will report temperature
 - `Temperature Unit` - select between C and F
 - `Humidity` - if checked, the sensor will report relative humidity
+- `Sensor` - if checked, the sensor will support the [sensor state trait](https://developers.google.com/assistant/smarthome/traits/sensorstate)
+  - `Type` - type of sensor ([List of supported sensors](https://developers.google.com/assistant/smarthome/traits/sensorstate#supported-sensors))
+  - `Numeric capability` - if checked, sensor will support numeric capability.
+  - `Supported states` - the checked states will be reported to Google as supported.
+  - if both `Numeric capability` and `Supported states` are missing, the sensor will support only numeric capability as a requirement.
 
 Input payload will be an object that follow the payload defined in the attributes.
 
@@ -14,6 +19,8 @@ Input payload will be an object that follow the payload defined in the attribute
 - `online` - boolean, default: true
 - `temperature` - number - the temperature to report (in Celsius)
 - `humidity` - number - the relative humidity to report (in %)
+- `state` - string - the current state of the sensor descriptive capability if supported (Eg: *healthy*/*no carbon monoxide detected*/etc.)
+- `value` - number - the current numeric sensor value (if supported)
 
 Example flow:
 ```
