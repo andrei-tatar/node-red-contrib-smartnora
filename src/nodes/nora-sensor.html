@@ -1,4 +1,54 @@
 <script type="text/javascript">
+    const SENSOR_TRAIT_AVAILABLE_SENSORS = [{
+        name: 'AirQuality',
+        states: [
+            'healthy', 'moderate', 'unhealthy', 'unhealthy for sensitive groups',
+            'very unhealthy', 'hazardous', 'good', 'fair', 'poor', 'very poor',
+            'severe'
+        ],
+        numeric: 'AQI'
+    }, {
+        name: 'CarbonMonoxideLevel',
+        states: ['carbon monoxide detected', 'high', 'no carbon monoxide detected'],
+        numeric: 'PARTS_PER_MILLION',
+    }, {
+        name: 'SmokeLevel',
+        states: ['smoke detected', 'high', 'no smoke detected'],
+        numeric: 'PARTS_PER_MILLION',
+    }, {
+        name: 'FilterCleanliness',
+        states: ['clean', 'dirty', 'needs replacement'],
+        numeric: null,
+    }, {
+        name: 'WaterLeak',
+        states: ['leak', 'no leak'],
+        numeric: null,
+    }, {
+        name: 'RainDetection',
+        states: ['rain detected', 'no rain detected'],
+        numeric: null,
+    }, {
+        name: 'FilterLifeTime',
+        states: ['new', 'good', 'replace soon', 'replace now'],
+        numeric: 'PERCENTAGE',
+    }, {
+        name: ['PreFilterLifeTime', 'HEPAFilterLifeTime', 'Max2FilterLifeTime'],
+        states: null,
+        numeric: 'PERCENTAGE',
+    }, {
+        name: 'CarbonDioxideLevel',
+        states: null,
+        numeric: 'PARTS_PER_MILLION',
+    }, {
+        name: ['PM2.5', 'PM10'],
+        states: null,
+        numeric: 'MICROGRAMS_PER_CUBIC_METER',
+    }, {
+        name: 'VolatileOrganicCompounds',
+        states: null,
+        numeric: 'PARTS_PER_MILLION',
+    }];
+
     RED.nodes.registerType('noraf-sensor', {
         category: 'nora',
         color: 'rgb(235, 227, 141)',
@@ -19,7 +69,9 @@
             },
             unit: {
                 value: 'C',
-                validate: function (v) { return v === 'C' || v === 'F'; },
+                validate: function (v) {
+                    return v === 'C' || v === 'F';
+                },
             },
             humidity: {
                 value: false,
@@ -37,6 +89,18 @@
             filter: {
                 value: false,
             },
+            sensorSupport: {
+                value: false,
+            },
+            sensorType: {
+                value: 'AirQuality',
+            },
+            sensorStates: {
+                value: [],
+            },
+            sensorNumeric: {
+                value: true,
+            }
         },
         inputs: 1,
         outputs: 0,
@@ -58,14 +122,88 @@
                     $('.temperature-unit-row').hide();
                 }
             });
+
+            $('#node-input-sensorSupport').change(function () {
+                if ($(this).is(':checked')) {
+                    $('.sensor-support').show();
+                } else {
+                    $('.sensor-support').hide();
+                }
+            });
+
+            const sensorType = $('#node-input-sensorType');
+            for (const sensor of SENSOR_TRAIT_AVAILABLE_SENSORS) {
+                const subTypes = typeof sensor.name === 'string' ? [sensor.name] : sensor.name;
+                for (const subType of subTypes) {
+                    const text = subType.replace(/[a-z][A-Z0-9]/g, ([p1, p2]) => `${p1} ${p2}`);
+                    $('<option/>', {
+                            value: subType
+                        }).text(text)
+                        .appendTo(sensorType);
+                }
+            }
+
+            const selectedStates = this.sensorStates || [];
+            $('#node-input-sensorType').change(function () {
+                const selectedType = $(this).val();
+                const found = SENSOR_TRAIT_AVAILABLE_SENSORS.find(s =>
+                    s.name === selectedType || s.name.includes(selectedType));
+
+                $('#states-container > *').remove();
+                $('.sensor-states')[found.states ? 'show' : 'hide']();
+                $('.sensor-numeric')[found.states && found.numeric ? 'show' : 'hide']();
+
+                if (!found.states) return;
+                for (const [index, state] of found.states.entries()) {
+                    const stateContainer = $('<div/>').appendTo('#states-container');
+
+                    $('<input/>', {
+                            id: `state-${index}`,
+                            type: 'checkbox',
+                            'data-state': state,
+                            class: 'sensor-state',
+                            checked: selectedStates.includes(state),
+                            state,
+                        })
+                        .text(state)
+                        .appendTo(stateContainer);
+
+                    $('<label/>', {
+                        for: `state-${index}`,
+                    }).text(state).appendTo(stateContainer);
+                }
+            });
         },
         oneditsave: function () {
             this.unit = $('#unit-celsius').prop('checked') ? 'C' : 'F';
+
+            const sensorStates = [];
+            $('.sensor-state:checked').each(function () {
+                sensorStates.push($(this).attr('data-state'));
+            });
+            this.sensorStates = sensorStates;
         },
     });
 </script>
 
 <script type="text/x-red" data-template-name="noraf-sensor">
+    <style>
+        #states-container input[type=checkbox] {
+            max-width: 50px;
+        }
+        #states-container label {
+            width: unset;
+        }
+
+        .sensor-support {
+            margin-left: 5px;
+            border-left: 1px solid lightgray;
+            padding-left: 10px;
+            padding-top: 10px;
+            margin-top: -15px;
+            margin-bottom: 5px;
+        }
+    </style>
     <div class="form-row">
         <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
         <input type="text" id="node-input-nora">
@@ -93,9 +231,25 @@
     </div>
 
     <div class="form-row">
-        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
-        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+        <label style="width:auto" for="node-input-sensorSupport"><i class="fa fa-thermometer-half"></i> Sensor </label>
+        <input type="checkbox" id="node-input-sensorSupport" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
+    <div class="sensor-support">
+        <div class="form-row">
+            <label for="node-input-sensorType"><i class="fa fa-i-cursor"></i> Type</label>
+            <select id="node-input-sensorType">
+            </select>
+        </div>
+        <div class="form-row sensor-numeric">
+            <label style="width:auto" for="node-input-sensorNumeric"><i class="fa fa-thermometer-half"></i> Numeric capability </label>
+            <input type="checkbox" id="node-input-sensorNumeric" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+        <div class="form-row sensor-states">
+            <label style="width:100%"><i class="fa fa-cog"></i> Supported states</label>
+            <div id="states-container"></div>
+        </div>
+    </div>
+
     <div class="form-row">
         <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
         <input type="text" id="node-input-roomhint">
@@ -111,7 +265,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="noraf-sensor">
-<p>
+    <p>
     <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sensor/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sensor/README.md</a>
 </p>
 </script>
