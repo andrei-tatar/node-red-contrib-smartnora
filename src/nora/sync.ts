@@ -92,7 +92,7 @@ export class FirebaseSync {
         singleton(),
     );
 
-    readonly uid: string | undefined;
+    readonly uid: string;
     readonly states: DatabaseReference;
     readonly noraSpecific: DatabaseReference;
     readonly groupHeartbeat: DatabaseReference;
@@ -103,7 +103,11 @@ export class FirebaseSync {
         private readonly group: string = '<default>',
         private logger: Logger | null,
     ) {
-        this.uid = getAuth(this.app).currentUser?.uid;
+        const user = getAuth(this.app).currentUser;
+        if (!user) {
+            throw new UnauthenticatedError();
+        }
+        this.uid = user.uid;
         this.db = getDatabase(app);
         this.states = ref(this.db, `device_states/${this.uid}/${this.group}`);
         this.noraSpecific = ref(this.db, `device_nora/${this.uid}/${this.group}`);
@@ -295,6 +299,7 @@ export class FirebaseSync {
                     'authorization': `Bearer ${token}`,
                     'content-type': 'application/json',
                     'user-agent': this.userAgent,
+                    'uid': this.uid,
                 },
                 body: body ? JSON.stringify(body) : undefined,
             });
