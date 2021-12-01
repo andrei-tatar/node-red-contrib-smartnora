@@ -24,11 +24,9 @@
                 },
                 title: {
                     value: 'Sample Title',
-                    required: true,
                 },
                 body: {
                     value: '',
-                    required: true,
                 },
                 icon: {
                     value: undefined,
@@ -54,12 +52,16 @@
                         vt: 'str',
                     }]
                 },
+                closeNotification: {
+                    value: false,
+                },
             },
             inputs: 1,
             outputs: 1,
             paletteLabel: 'notify',
             label: function () {
-                return this.name || this.title || 'notify';
+                return this.name || (this.closeNotification ? 'Close ' + this.tag : this.title) ||
+                    'notify';
             },
             oneditresize: resizeDialog,
             oneditprepare: function () {
@@ -67,6 +69,10 @@
                     if (ev.target.classList.contains('node-input-action-default')) {
                         $('.node-input-action-default').not(ev.target).prop('checked', false);
                     }
+                });
+
+                $('#node-input-closeNotification').change(function () {
+                    $('.hide-if-close')[this.checked ? 'hide' : 'show']();
                 });
 
                 $('#node-input-action-container').css('min-height', '120px').css('min-width', '450px')
@@ -196,22 +202,26 @@
         <input type="text" id="node-input-tag">
     </div>
     <div class="form-row">
+        <label style="width:auto" for="node-input-closeNotification"><i class="fa fa-arrow-right"></i> Close notification: </label>
+        <input type="checkbox" id="node-input-closeNotification" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row hide-if-close">
         <label for="node-input-title"><i class="fa fa-i-cursor"></i> Title</label>
         <input type="text" id="node-input-title">
     </div>
-    <div class="form-row">
+    <div class="form-row hide-if-close">
         <label for="node-input-body"><i class="fa fa-i-cursor"></i> Body</label>
         <input type="text" id="node-input-body">
     </div>
-    <div class="form-row">
+    <div class="form-row hide-if-close">
         <label for="node-input-icon" style="padding-left:25px; margin-right:-25px">Icon</label>
         <input type="text" id="node-input-icon">
     </div>
-    <label><i class="fa fa-tag"></i> <span>Actions:</span></label>
-    <div class="form-row node-input-action-container-row">
+    <label class="hide-if-close"><i class="fa fa-tag"></i> <span>Actions:</span></label>
+    <div class="form-row node-input-action-container-row hide-if-close">
         <ol id="node-input-action-container"></ol>
     </div>
-    <div class="form-row">
+    <div class="form-row hide-if-close">
         <label for="node-input-topic" style="padding-left:15px; margin-right:-15px">Topic</label>
         <input type="text" id="node-input-topic" style="width:70%">
     </div>

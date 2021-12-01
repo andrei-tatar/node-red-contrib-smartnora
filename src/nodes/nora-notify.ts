@@ -76,8 +76,13 @@ module.exports = function (RED: any) {
                     body: config.body,
                     icon: config.icon,
                     tag: config.tag || undefined,
-                    actions: undefined,
+                    actions: [],
+                    data: {
+                        close: (config.closeNotification || msg.payload?.close) ?? undefined,
+                    },
                 };
+
+                delete msg?.payload?.close;
 
                 getSafeUpdate({
                     update: msg.payload ?? {},

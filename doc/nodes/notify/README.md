@@ -7,7 +7,8 @@ Node attributes:
 - `Tag` - [optional] used to identify a notification. A notification with the same tag will override a previos one.
 - `Title` - title of the notification
 - `Body` - body message of the notification
-- `Icon` - [optional] web link to an image that will be used as the notification icon.
+- `Icon` - [optional] web link to an image that will be used as the notification icon
+- `Close notification` - when checked, injecting this message will remove a notification (identified by `Tag`). Closing the notification results in another notification because browsers don't allow silent messages to be sent to service workers ([more detailed explanation](https://stackoverflow.com/questions/33092065/google-chrome-silent-push-notifications)).
 
 **Actions** are optional but can be used to inject actions into the flow from the notification using buttons
 - `Label` - the message that will appear on the notification button
@@ -18,6 +19,7 @@ Any of the node attributes can be overriden by the message `payload` properties:
 - `body` - overrides the body 
 - `icon` - overrides the icon
 - `tag` - overrides the tag
+- `close` - boolean: true/false, overrides the close option
 
 ### Example flow:
 ```
