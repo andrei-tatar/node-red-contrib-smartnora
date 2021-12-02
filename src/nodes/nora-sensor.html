@@ -131,18 +131,6 @@
                 }
             });
 
-            const sensorType = $('#node-input-sensorType');
-            for (const sensor of SENSOR_TRAIT_AVAILABLE_SENSORS) {
-                const subTypes = typeof sensor.name === 'string' ? [sensor.name] : sensor.name;
-                for (const subType of subTypes) {
-                    const text = subType.replace(/[a-z][A-Z0-9]/g, ([p1, p2]) => `${p1} ${p2}`);
-                    $('<option/>', {
-                            value: subType
-                        }).text(text)
-                        .appendTo(sensorType);
-                }
-            }
-
             const selectedStates = this.sensorStates || [];
             $('#node-input-sensorType').change(function () {
                 const selectedType = $(this).val();
@@ -238,6 +226,20 @@
         <div class="form-row">
             <label for="node-input-sensorType"><i class="fa fa-i-cursor"></i> Type</label>
             <select id="node-input-sensorType">
+                <option value="AirQuality">Air Quality</option>
+                <option value="CarbonDioxideLevel">Carbon Dioxide Level</option>
+                <option value="CarbonMonoxideLevel">Carbon Monoxide Level</option>
+                <option value="FilterCleanliness">Filter Cleanliness</option>
+                <option value="FilterLifeTime">Filter Life Time</option>
+                <option value="PreFilterLifeTime">Filter Life Time (Pre)</option>
+                <option value="HEPAFilterLifeTime">Filter Life Time (HEPA)</option>
+                <option value="Max2FilterLifeTime">Filter Life Time (Max 2)</option>
+                <option value="PM2.5">PM2.5</option>
+                <option value="PM10">PM10</option>
+                <option value="RainDetection">Rain Detection</option>
+                <option value="SmokeLevel">Smoke Level</option>
+                <option value="VolatileOrganicCompounds">Volatile Organic Compounds</option>
+                <option value="WaterLeak">Water Leak</option>
             </select>
         </div>
         <div class="form-row sensor-numeric">

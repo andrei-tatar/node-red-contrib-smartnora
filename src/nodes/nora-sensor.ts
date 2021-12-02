@@ -74,6 +74,7 @@ module.exports = function (RED: any) {
             deviceConfig.traits.push('action.devices.traits.SensorState');
             if (isSensorDevice(deviceConfig)) {
                 const numericType = NUMERIC.find(n => n[1].includes(config.sensorType))?.[0];
+                const numericSupport = numericType && (config.sensorNumeric || !config.sensorStates?.length);
                 deviceConfig.attributes.sensorStatesSupported = [{
                     name: config.sensorType,
                     ...(config.sensorStates?.length ? {
@@ -81,7 +82,7 @@ module.exports = function (RED: any) {
                             availableStates: config.sensorStates,
                         },
                     } : {}),
-                    ...(numericType && (config.sensorNumeric || !config.sensorStates?.length) ? {
+                    ...(numericSupport ? {
                         numericCapabilities: {
                             rawValueUnit: numericType,
                         },
@@ -89,7 +90,12 @@ module.exports = function (RED: any) {
                 }];
                 deviceConfig.state.currentSensorStateData = [{
                     name: config.sensorType,
-                    currentSensorState: 'unknown',
+                    ...(config.sensorStates?.length ? {
+                        currentSensorState: 'unknown',
+                    } : {}),
+                    ...(numericSupport ? {
+                        rawValue: 0,
+                    } : {}),
                 }];
             }
         }
