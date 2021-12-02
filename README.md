@@ -19,6 +19,18 @@ This module provides a set of nodes in Node-RED for Google smart home Action int
 
 [Here's a short guide](./doc/setup/README.md) on how to get started with Smart NORA.
 
+## Price
+
+Yes, starting with the 1st of December, a paid subscription is required to have more than 5 devices synchronized with Google Home. This was added to cover the cloud costs of the service, the business overhead (starting and owning a business, accounting, taxes, VAT, payment processor fees, etc.), offer a bit of support to the ongoing development and hopefully a beer or two at the end of the month 🍻.
+
+There are two ways of using the service:
+1. Free. This will limit the devices synced with Google to **5**. There is no way to determine which will be synced if you have more than 5 devices defined in node-red (note that not all nodes are a device).
+2. Subscription based (monthly or yearly recurring payment) integration via Stripe. 
+
+Once you create a subscription, you can cancel/change it at any time from https://smart-nora.eu/my-nora. You will see a *Manage subscription* button that will take you to Stripe Customer Portal where you can cancel, change the plan (monthly vs yearly), change billing information, etc.
+
+Canceling a subscription maintains it active until the end of the paid period, it's not immediate. So if you pay for one year and don't want a recurring payment, you can just cancel it and the subscription will remain active for the rest of the year. 
+
 ## Supported nodes
 
 [Here's a list](./doc/nodes) and documentation on the supported nodes. 
