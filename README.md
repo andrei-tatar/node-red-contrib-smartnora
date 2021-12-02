@@ -19,7 +19,7 @@ This module provides a set of nodes in Node-RED for Google smart home Action int
 
 [Here's a short guide](./doc/setup/README.md) on how to get started with Smart NORA.
 
-## Price
+## Subscription
 
 Yes, starting with the 1st of December, a paid subscription is required to have more than 5 devices synchronized with Google Home. This was added to cover the cloud costs of the service, the business overhead (starting and owning a business, accounting, taxes, VAT, payment processor fees, etc.), offer a bit of support to the ongoing development and hopefully a beer or two at the end of the month 🍻.
 
