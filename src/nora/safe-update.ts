@@ -60,6 +60,11 @@ export function getSafeUpdate({
         if (keyName && Array.isArray(currentState)) {
             const keyValue = (v as any)[keyName];
             previousValue = currentState.find(pv => pv[keyName] === keyValue);
+            if (!previousValue) {
+                // there is no previous item with this key, we don't add a new one on updates
+                warn?.(`${path}${key}.${keyName}[${keyValue}]`);
+                continue;
+            }
         } else {
             previousValue = currentState[updateKey];
         }

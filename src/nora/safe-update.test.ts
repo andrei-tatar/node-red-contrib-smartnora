@@ -329,6 +329,38 @@ describe('getSafeUpdate', () => {
             expect(safeUpdate).to.deep.equal({});
             expect(warnings).to.be.empty;
         });
+
+        it('should return empty object if no change on sensor state', () => {
+            const safeUpdate = {};
+            const warnings: string[] = [];
+
+            getSafeUpdate({
+                update: {
+                    currentSensorStateData: [{
+                        name: 'CarbonMonoxideLevel',
+                        currentSensorState: 'unknown',
+                        rawValue: 150,
+                    }]
+                },
+                currentState: {
+                    online: true,
+                    currentSensorStateData: [{
+                        name: 'AirQuality',
+                        currentSensorState: 'healthy',
+                    }]
+                },
+                isValid: () => validate([
+                    'action.devices.traits.SensorState',
+                ], 'state-update', safeUpdate).valid,
+                warn: prop => warnings.push(prop),
+                safeUpdateObject: safeUpdate,
+            });
+
+            expect(safeUpdate).to.deep.equal({});
+            expect(warnings).to.have.members([
+                'msg.payload.currentSensorStateData.0.name[CarbonMonoxideLevel]',
+            ]);
+        });
     });
 });
 
