@@ -30,6 +30,8 @@ Once you create a subscription, you can cancel/change it at any time from https:
 
 Canceling a subscription maintains it active until the end of the paid period, it's not immediate. So if you pay for one year and don't want a recurring payment, you can just cancel it and the subscription will remain active for the rest of the year. 
 
+**Please use first the free subscription**, check that NORA works on your setup, play with the devices you may want to use. 
+
 ## Supported nodes
 
 [Here's a list](./doc/nodes) and documentation on the supported nodes. 
