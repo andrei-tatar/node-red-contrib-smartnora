@@ -135,13 +135,14 @@
             $('#node-input-sensorType').change(function () {
                 const selectedType = $(this).val();
                 const found = SENSOR_TRAIT_AVAILABLE_SENSORS.find(s =>
-                    s.name === selectedType || s.name.includes(selectedType));
+                    s.name === selectedType || s.name.includes(selectedType)) || {};
 
                 $('#states-container > *').remove();
                 $('.sensor-states')[found.states ? 'show' : 'hide']();
                 $('.sensor-numeric')[found.states && found.numeric ? 'show' : 'hide']();
 
-                if (!found.states) return;
+                if (!Array.isArray(found.states)) return;
+
                 for (const [index, state] of found.states.entries()) {
                     const stateContainer = $('<div/>').appendTo('#states-container');
 
