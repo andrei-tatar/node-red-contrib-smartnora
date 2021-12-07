@@ -100,7 +100,13 @@
             },
             sensorNumeric: {
                 value: true,
-            }
+            },
+            openCloseSupport: {
+                value: false,
+            },
+            openCloseDiscrete: {
+                value: false,
+            },
         },
         inputs: 1,
         outputs: 0,
@@ -116,19 +122,15 @@
             }
 
             $('#node-input-temperature').change(function () {
-                if ($(this).is(':checked')) {
-                    $('.temperature-unit-row').show();
-                } else {
-                    $('.temperature-unit-row').hide();
-                }
+                $('.temperature-support')[$(this).is(':checked') ? 'show' : 'hide']();
             });
 
             $('#node-input-sensorSupport').change(function () {
-                if ($(this).is(':checked')) {
-                    $('.sensor-support').show();
-                } else {
-                    $('.sensor-support').hide();
-                }
+                $('.sensor-support')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-openCloseSupport').change(function () {
+                $('.openclose-support')[$(this).is(':checked') ? 'show' : 'hide']();
             });
 
             const selectedStates = this.sensorStates || [];
@@ -147,13 +149,13 @@
                     const stateContainer = $('<div/>').appendTo('#states-container');
 
                     $('<input/>', {
-                            id: `state-${index}`,
-                            type: 'checkbox',
-                            'data-state': state,
-                            class: 'sensor-state',
-                            checked: selectedStates.includes(state),
-                            state,
-                        })
+                        id: `state-${index}`,
+                        type: 'checkbox',
+                        'data-state': state,
+                        class: 'sensor-state',
+                        checked: selectedStates.includes(state),
+                        state,
+                    })
                         .text(state)
                         .appendTo(stateContainer);
 
@@ -184,7 +186,7 @@
             width: unset;
         }
 
-        .sensor-support {
+        .trait-support {
             margin-left: 5px;
             border-left: 1px solid lightgray;
             padding-left: 10px;
@@ -209,10 +211,12 @@
         <label style="width:auto" for="node-input-temperature"><i class="fa fa-thermometer-half"></i> Temperature </label>
         <input type="checkbox" id="node-input-temperature" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
-    <div class="form-row temperature-unit-row">
-        <label style="width:auto"><i class="fa fa-thermometer-half"></i> Temperature Unit: </label>
-        <input style="width:auto;margin:0" id="unit-celsius" type="radio" name="unit" value="C"><label style="width:40px" for="unit-celsius">&nbsp;C</label>
-        <input style="width:auto;margin:0" id="unit-fahrenheit" type="radio" name="unit" value="F"><label  style="width:40px" for="unit-fahrenheit">&nbsp;F</label>
+    <div class="temperature-support trait-support">
+        <div class="form-row">
+            <label style="width:auto"><i class="fa fa-thermometer-half"></i> Temperature Unit: </label>
+            <input style="width:auto;margin:0" id="unit-celsius" type="radio" name="unit" value="C"><label style="width:40px" for="unit-celsius">&nbsp;C</label>
+            <input style="width:auto;margin:0" id="unit-fahrenheit" type="radio" name="unit" value="F"><label  style="width:40px" for="unit-fahrenheit">&nbsp;F</label>
+        </div>
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-humidity"><i class="fa fa-percent"></i> Humidity </label>
@@ -220,10 +224,21 @@
     </div>
 
     <div class="form-row">
+        <label style="width:auto" for="node-input-openCloseSupport"><i class="fa fa-folder-open-o"></i> Open/close </label>
+        <input type="checkbox" id="node-input-openCloseSupport" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="openclose-support trait-support">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-openCloseDiscrete"><i class="fa fa-arrow-right"></i> Discrete only open/close: </label>
+            <input type="checkbox" id="node-input-openCloseDiscrete" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+    </div>
+
+    <div class="form-row">
         <label style="width:auto" for="node-input-sensorSupport"><i class="fa fa-thermometer-half"></i> Sensor </label>
         <input type="checkbox" id="node-input-sensorSupport" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
-    <div class="sensor-support">
+    <div class="sensor-support trait-support">
         <div class="form-row">
             <label for="node-input-sensorType"><i class="fa fa-i-cursor"></i> Type</label>
             <select id="node-input-sensorType">

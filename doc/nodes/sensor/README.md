@@ -5,8 +5,10 @@ Represents a [Google Home Sensor](https://developers.google.com/assistant/smarth
 Node attributes:
 - [Common](../common.md)
 - `Temperature` - if checked, the sensor will report temperature
-- `Temperature Unit` - select between C and F
+  - `Temperature Unit` - select between C and F
 - `Humidity` - if checked, the sensor will report relative humidity
+- `Open/close` - if checked, the sensor will support open/close, query only, trait
+  - `Discrete only open/close` - When checked, this indicates that the device must either be fully open or fully closed (that is, it does not support values between 0% and 100%).
 - `Sensor` - if checked, the sensor will support the [sensor state trait](https://developers.google.com/assistant/smarthome/traits/sensorstate)
   - `Type` - type of sensor ([List of supported sensors](https://developers.google.com/assistant/smarthome/traits/sensorstate#supported-sensors))
   - `Numeric capability` - if checked, sensor will support numeric capability.
@@ -17,10 +19,11 @@ Input payload will be an object that follow the payload defined in the attribute
 
 **Note:** you can also send messages with the state properties to the input of the node:
 - `online` - boolean, default: true
-- `temperature` - number - the temperature to report (in Celsius)
-- `humidity` - number - the relative humidity to report (in %)
-- `state` - string - the current state of the sensor descriptive capability if supported (Eg: *healthy*/*no carbon monoxide detected*/etc.)
-- `value` - number - the current numeric sensor value (if supported)
+- `temperature` - number [used if `Temperature` is checked] - the temperature to report (in Celsius)
+- `humidity` - number [used if `Humidity` is checked] - the relative humidity to report (in %)
+- `open` - number/boolean [used if `Open/close` is checked] - the open percentaget (0 to 100) or true/false
+- `state` - string [used if `Sensor` is checked]- the current state of the sensor descriptive capability if supported (Eg: *healthy*/*no carbon monoxide detected*/etc.)
+- `value` - number [used if `Sensor` is checked]- the current numeric sensor value (if supported)
 
 Example flow:
 ```

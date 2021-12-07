@@ -1,6 +1,6 @@
 import {
-    Device, HumiditySettingDevice, isHumiditySetting, isSensorState as isSensorDevice,
-    isTemperatureControl, SensorStateDevice, TemperatureControlDevice
+    Device, HumiditySettingDevice, isHumiditySetting, isOpenClose, isSensorState as isSensorDevice,
+    isTemperatureControl, OpenCloseDevice, SensorStateDevice, TemperatureControlDevice
 } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { registerNoraDevice } from './util';
@@ -100,12 +100,33 @@ module.exports = function (RED: any) {
             }
         }
 
+        if (config.openCloseSupport) {
+            deviceConfig.traits.push('action.devices.traits.OpenClose');
+            if (isOpenClose(deviceConfig)) {
+                deviceConfig.attributes.queryOnlyOpenClose = true;
+                deviceConfig.attributes.discreteOnlyOpenClose = !!config.openCloseDiscrete;
+
+                const openCloseState: Omit<OpenCloseDevice['state'], 'online'> = {
+                    openPercent: 0,
+                };
+                deviceConfig.state = {
+                    ...deviceConfig.state,
+                    ...openCloseState,
+                };
+            }
+        }
+
         registerNoraDevice(this, RED, config, {
             deviceConfig,
             updateStatus: ({ state, update }) => {
                 const statuses: string[] = [];
                 if (isHumidityState(state)) {
                     statuses.push(`H:${state.humidityAmbientPercent}%`);
+                }
+                if (isOpenCloseState(state) && 'openPercent' in state) {
+                    statuses.push(config.openCloseDiscrete
+                        ? (state.openPercent ? 'opened' : 'closed')
+                        : `open:${state.openPercent}%`);
                 }
                 if (isTemperatureState(state)) {
                     statuses.push(`T:${state.temperatureAmbientCelsius}C`);
@@ -149,7 +170,18 @@ module.exports = function (RED: any) {
                     }
                 }
 
+                if (typeof update.open === 'boolean') {
+                    update.open = update.open ? 100 : 0;
+                }
+
+                if (config.openCloseDiscrete) {
+                    update.open = +update.open ? 100 : 0;
+                }
+
                 await updateState(update, [{
+                    from: 'open',
+                    to: 'openPercent',
+                }, {
                     from: 'temperature',
                     to: 'temperatureAmbientCelsius',
                 }, {
@@ -169,6 +201,10 @@ module.exports = function (RED: any) {
 
         function isSensorState(state: any): state is SensorStateDevice['state'] {
             return isSensorDevice(deviceConfig) && 'currentSensorStateData' in state;
+        }
+
+        function isOpenCloseState(state: any): state is OpenCloseDevice['state'] {
+            return isOpenClose(deviceConfig);
         }
     });
 };
