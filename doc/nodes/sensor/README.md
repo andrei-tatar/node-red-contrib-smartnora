@@ -7,6 +7,7 @@ Node attributes:
 - `Temperature` - if checked, the sensor will report temperature
   - `Temperature Unit` - select between C and F
 - `Humidity` - if checked, the sensor will report relative humidity
+- `On/Off` - if checked, the sensor will support on/off, query only, trait
 - `Open/close` - if checked, the sensor will support open/close, query only, trait
   - `Discrete only open/close` - When checked, this indicates that the device must either be fully open or fully closed (that is, it does not support values between 0% and 100%).
 - `Sensor` - if checked, the sensor will support the [sensor state trait](https://developers.google.com/assistant/smarthome/traits/sensorstate)
@@ -19,6 +20,7 @@ Input payload will be an object that follow the payload defined in the attribute
 
 **Note:** you can also send messages with the state properties to the input of the node:
 - `online` - boolean, default: true
+- `on` - boolean [user if `On/Off` is checked] - on/off state (true = on, false = off)
 - `temperature` - number [used if `Temperature` is checked] - the temperature to report (in Celsius)
 - `humidity` - number [used if `Humidity` is checked] - the relative humidity to report (in %)
 - `open` - number/boolean [used if `Open/close` is checked] - the open percentaget (0 to 100) or true/false
