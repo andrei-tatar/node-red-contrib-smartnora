@@ -25,7 +25,7 @@ module.exports = function (RED: any) {
                 },
             },
             updateStatus: ({ state, update }) => {
-                update(`(${'openPercent' in state && adjustPercent(state.openPercent)}%)`);
+                update(`${'openPercent' in state && adjustPercent(state.openPercent)}%`);
             },
             stateChanged: (state) => {
                 if ('openPercent' in state) {

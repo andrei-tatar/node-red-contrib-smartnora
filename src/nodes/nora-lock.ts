@@ -43,9 +43,9 @@ module.exports = function (RED: any) {
             },
             updateStatus: ({ state, update }) => {
                 if (state.isJammed) {
-                    update('(jammed)');
+                    update('jammed');
                 } else {
-                    update(`(${state.isLocked ? 'locked' : 'unlocked'})`);
+                    update(`${state.isLocked ? 'locked' : 'unlocked'}`);
                 }
             },
             stateChanged: state => {

@@ -49,7 +49,7 @@ module.exports = function (RED: any) {
                     `${state.thermostatTemperatureSetpoint}`;
 
                 update(
-                    `(${state.thermostatMode}/T:${state.thermostatTemperatureAmbient}/S:${setpoint})`
+                    `${state.thermostatMode}/T:${state.thermostatTemperatureAmbient}/S:${setpoint}`
                 );
             },
             stateChanged: state => {

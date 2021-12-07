@@ -83,7 +83,7 @@ module.exports = function (RED: any) {
                     `F:${speed}`,
                 ];
 
-                update(`(${statuses.join('/')})`);
+                update(statuses.join('/'));
             },
             stateChanged: state => {
                 this.send({

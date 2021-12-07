@@ -35,7 +35,7 @@ module.exports = function (RED: any) {
                 },
             },
             updateStatus: ({ state, update }) => {
-                update(`(${state.on ? 'on' : 'off'}:${state.currentVolume})`);
+                update(`${state.on ? 'on' : 'off'}:${state.isMuted ? 'mute' : state.currentVolume}`);
             },
             stateChanged: state => {
                 this.send({

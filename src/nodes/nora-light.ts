@@ -116,9 +116,10 @@ module.exports = function (RED: any) {
                 }
 
                 if (isHsvColor(deviceConfig, state) && 'spectrumHsv' in state?.color) {
-                    statuses.push(`hue: ${state.color.spectrumHsv.hue}°`);
-                    statuses.push(`sat: ${(state.color.spectrumHsv.saturation ?? 0) * 100}%`);
-                    statuses.push(`val: ${(state.color.spectrumHsv.value ?? 0) * 100}%`);
+                    const hue = state.color.spectrumHsv.hue;
+                    const saturation = (state.color.spectrumHsv.saturation ?? 0) * 100;
+                    const value = (state.color.spectrumHsv.value ?? 0) * 100;
+                    statuses.push(round`H:${hue}° S:${saturation}% V:${value}%`);
                 }
 
                 if (isRgbColor(deviceConfig, state) && 'spectrumRgb' in state?.color) {
@@ -130,7 +131,7 @@ module.exports = function (RED: any) {
                     statuses.push(`${state.color.temperatureK}K`);
                 }
 
-                update(`(${statuses.join(' ')})`);
+                update(statuses.join(' '));
             },
             stateChanged: state => {
                 if (!brightnessControl && !colorControl) {
@@ -211,6 +212,16 @@ module.exports = function (RED: any) {
 
         function isTemperatureColor<T extends Device>(device: Pick<T, 'traits'>, state: any): state is ColorSettingDevice['state'] {
             return isColorSetting(device) && 'colorTemperatureRange' in device.attributes && state?.color;
+        }
+
+        function round(parts: TemplateStringsArray, ...substitutions: any[]) {
+            const rounded = substitutions.map(sub => {
+                if (typeof sub === 'number') {
+                    return Math.round(sub);
+                }
+                return sub;
+            });
+            return String.raw(parts, ...rounded);
         }
     });
 };

@@ -58,7 +58,7 @@ module.exports = function (RED: any) {
                 const speed = 'currentFanSpeedPercent' in state
                     ? `${state.currentFanSpeedPercent}%`
                     : state.currentFanSpeedSetting;
-                update(`(${state.on ? 'on' : 'off'} - ${speed})`);
+                update(`${state.on ? 'on' : 'off'} - ${speed}`);
             },
             stateChanged: (state) => {
                 this.send({

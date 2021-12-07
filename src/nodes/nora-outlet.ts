@@ -35,7 +35,7 @@ module.exports = function (RED: any) {
                 },
             },
             updateStatus: ({ state, update }) => {
-                update(`(${state.on ? 'on' : 'off'})`);
+                update(`${state.on ? 'on' : 'off'}`);
             },
             stateChanged: state => {
                 const value = state.on;
