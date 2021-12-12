@@ -98,6 +98,9 @@
             sensorStates: {
                 value: [],
             },
+            sensorStatesThatNotify: {
+                value: [],
+            },
             sensorNumeric: {
                 value: true,
             },
@@ -137,6 +140,7 @@
             });
 
             const selectedStates = this.sensorStates || [];
+            const selectedSensorStatesThatNotify = this.sensorStatesThatNotify || [];
             $('#node-input-sensorType').change(function () {
                 const selectedType = $(this).val();
                 const found = SENSOR_TRAIT_AVAILABLE_SENSORS.find(s =>
@@ -148,8 +152,9 @@
 
                 if (!Array.isArray(found.states)) return;
 
+                const stateContainer = $('#states-container');
+                stateContainer.html('<strong>On</strong><strong>Value</strong><strong>Notification</strong>');
                 for (const [index, state] of found.states.entries()) {
-                    const stateContainer = $('<div/>').appendTo('#states-container');
 
                     $('<input/>', {
                         id: `state-${index}`,
@@ -164,7 +169,18 @@
 
                     $('<label/>', {
                         for: `state-${index}`,
-                    }).text(state).appendTo(stateContainer);
+                    }).html(`<code>${state}</code>`).appendTo(stateContainer);
+
+                    $('<input/>', {
+                        id: `state-${index}`,
+                        type: 'checkbox',
+                        'data-notification-state': state,
+                        class: 'sensor-notification-state',
+                        checked: selectedSensorStatesThatNotify.includes(state),
+                        state,
+                    })
+                        .text(state)
+                        .appendTo(stateContainer);
                 }
             });
         },
@@ -172,21 +188,37 @@
             this.unit = $('#unit-celsius').prop('checked') ? 'C' : 'F';
 
             const sensorStates = [];
+            const sensorStatesThatNotify = [];
             $('.sensor-state:checked').each(function () {
                 sensorStates.push($(this).attr('data-state'));
             });
+            $('.sensor-notification-state:checked').each(function () {
+                sensorStatesThatNotify.push($(this).attr('data-notification-state'));
+            });
             this.sensorStates = sensorStates;
+            this.sensorStatesThatNotify = sensorStatesThatNotify;
         },
     });
 </script>
 
 <script type="text/x-red" data-template-name="noraf-sensor">
     <style>
+        #states-container {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 5px 15px;
+            align-items: center;
+        }
         #states-container input[type=checkbox] {
-            max-width: 50px;
+            width: unset;
+            margin: 0;
+        }
+        #states-container input[data-notification-state] {
+            justify-self: end;
         }
         #states-container label {
             width: unset;
+            margin: 0;
         }
 
         .trait-support {
@@ -243,7 +275,7 @@
     </div>
 
     <div class="form-row">
-        <label style="width:auto" for="node-input-sensorSupport"><i class="fa fa-thermometer-half"></i> Sensor </label>
+        <label style="width:auto" for="node-input-sensorSupport"><i class="fa fa-barcode"></i> Sensor </label>
         <input type="checkbox" id="node-input-sensorSupport" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="sensor-support trait-support">
@@ -267,7 +299,7 @@
             </select>
         </div>
         <div class="form-row sensor-numeric">
-            <label style="width:auto" for="node-input-sensorNumeric"><i class="fa fa-thermometer-half"></i> Numeric capability </label>
+            <label style="width:auto" for="node-input-sensorNumeric"><i class="fa fa-sort-numeric-desc"></i> Numeric capability </label>
             <input type="checkbox" id="node-input-sensorNumeric" style="display:inline-block; width:auto; vertical-align:top;">
         </div>
         <div class="form-row sensor-states">

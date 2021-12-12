@@ -1,6 +1,6 @@
 import {
     Device, HumiditySettingDevice, isHumiditySetting, isOnOff, isOpenClose, isSensorState as isSensorDevice,
-    isTemperatureControl, OnOffDevice, OpenCloseDevice, SensorStateDevice, TemperatureControlDevice
+    isTemperatureControl, OnOffDevice, OpenCloseDevice, SensorStateDevice, TemperatureControlDevice, SENSOR_TYPE_NOTIFICATION_SUPPORT
 } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { registerNoraDevice } from './util';
@@ -75,6 +75,15 @@ module.exports = function (RED: any) {
             if (isSensorDevice(deviceConfig)) {
                 const numericType = NUMERIC.find(n => n[1].includes(config.sensorType))?.[0];
                 const numericSupport = numericType && (config.sensorNumeric || !config.sensorStates?.length);
+                const typeSupportsNotifications = SENSOR_TYPE_NOTIFICATION_SUPPORT.includes(config.sensorType);
+
+                deviceConfig.noraSpecific.sensorCapabilitiesThatReportNotifications =
+                    typeSupportsNotifications && config.sensorStatesThatNotify?.length
+                        ? config.sensorStatesThatNotify
+                        : undefined;
+                deviceConfig.notificationSupportedByAgent =
+                    !!deviceConfig.noraSpecific.sensorCapabilitiesThatReportNotifications?.length;
+
                 deviceConfig.attributes.sensorStatesSupported = [{
                     name: config.sensorType,
                     ...(config.sensorStates?.length ? {
