@@ -14,7 +14,7 @@
     "node": ">=12.19"
   },
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.6.2",
+    "@andrei-tatar/nora-firebase-common": "^1.7.0",
     "cbor": "^8.0.2",
     "firebase": "^9.6.1",
     "node-fetch": "^2.6.6",
@@ -62,6 +62,7 @@
       "noraf-scene": "build/nodes/nora-scene.js",
       "noraf-security": "build/nodes/nora-security.js",
       "noraf-sensor": "build/nodes/nora-sensor.js",
+      "noraf-sousvide": "build/nodes/nora-sousvide.js",
       "noraf-speaker": "build/nodes/nora-speaker.js",
       "noraf-switch": "build/nodes/nora-switch.js",
       "noraf-thermostat": "build/nodes/nora-thermostat.js",

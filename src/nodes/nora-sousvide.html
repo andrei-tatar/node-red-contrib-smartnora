@@ -1,0 +1,130 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-sousvide', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'sous vide',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            unit: {
+                value: 'C',
+                validate: function (v) { return v === 'C' || v === 'F'; },
+            },
+            rangeMin: {
+                value: '',
+                validate: function (v) { return !v || RED.validators.number()(v) },
+            },
+            rangeMax: {
+                value: '',
+                validate: function (v) { return !v || RED.validators.number()(v) },
+            },
+            stepSize: {
+                required: false,
+                validate: function (v) { return !v || RED.validators.number()(v) },
+            },
+            topic: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            commandOnly: {
+                value: false,
+            },
+            queryOnly: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            }
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'sousvide',
+        label: function () {
+            return this.name || this.devicename || 'sous vide';
+        },
+        oneditprepare: function () {
+            var row;
+            if ((this.unit || 'C') === 'C') {
+                $('#unit-celsius').prop('checked', true);
+            } else {
+                $('#unit-fahrenheit').prop('checked', true);
+            }
+        },
+        oneditsave: function () {
+            this.unit = $('#unit-celsius').prop('checked') ? 'C' : 'F';
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="noraf-sousvide">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Sous Vide</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto"><i class="fa fa-thermometer-half"></i> Temperature </label>
+    </div>
+    <div class="form-row">
+        <label style="width:auto">Display Unit: </label>
+        <input style="width:auto;margin:0" id="unit-celsius" type="radio" name="unit" value="C"><label style="width:40px" for="unit-celsius">&nbsp;C</label>
+        <input style="width:auto;margin:0" id="unit-fahrenheit" type="radio" name="unit" value="F"><label  style="width:40px" for="unit-fahrenheit">&nbsp;F</label>
+    </div>
+    <div class="form-row d-flex flex-column">
+        <label for="node-input-devicename" style="width: 100%">Allowable Range (Celsius)</label>
+        <br>
+        <label for="node-input-rangeMin" style="text-align:right"><i class="fa fa-thermometer-empty"></i> Min</label>
+        <input style="margin-bottom:5px" type="text" id="node-input-rangeMin" placeholder="minimum temp">
+        <br>
+        <label for="node-input-rangeMax" style="text-align:right"><i class="fa fa-thermometer-full"></i> Max</label>
+        <input type="text" id="node-input-rangeMax" placeholder="maximum temp">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-commandOnly"><i class="fa fa-exchange"></i>  Command only: </label>
+        <input type="checkbox" id="node-input-commandOnly" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-queryOnly"><i class="fa fa-question"></i>  Query only (sensor): </label>
+        <input type="checkbox" id="node-input-queryOnly" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="noraf-sousvide">
+<p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sousvide/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sousevide/README.md</a>
+</p>
+</script>
