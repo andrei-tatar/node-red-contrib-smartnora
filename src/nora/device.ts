@@ -58,10 +58,11 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
     );
 
     readonly error$ = new Observable<string | null>(observer => {
-        const ref = child(this.noraSpecific, 'error/msg');
+        const ref = child(this.noraSpecific, 'error');
         return onValue(ref, s => {
-            const value: string | null = s.val();
-            observer.next(value ?? null);
+            const value: { msg: string; details: any } | null = s.val();
+            this.logger?.trace(`[nora][${this.device.id}] error syncing device: ${JSON.stringify(value?.details ?? {})}`);
+            observer.next(value?.msg ?? null);
         });
     });
 
