@@ -1,4 +1,4 @@
-import { TemperatureControlDevice } from '@andrei-tatar/nora-firebase-common';
+import { Device, isOnOff, isTemperatureControl, OnOffDevice, TemperatureControlDevice } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { registerNoraDevice } from './util';
 
@@ -11,46 +11,84 @@ module.exports = function (RED: any) {
             return;
         }
 
-        const deviceConfig: Omit<TemperatureControlDevice, 'id'> = {
+        const deviceConfig: Omit<Device, 'id'> = {
             type: 'action.devices.types.SOUS_VIDE',
             name: { name: config.devicename },
-            traits: ['action.devices.traits.TemperatureControl'],
+            traits: [] as never,
+            roomHint: config.roomhint,
             state: {
                 online: true,
-                temperatureSetpointCelsius: 50,
-                temperatureAmbientCelsius: 25,
             },
-            attributes: {
-                queryOnlyTemperatureControl: config.queryOnlyTemperatureControl,
-                temperatureUnitForUX: config.temperatureUnitForUX,
-                temperatureRange: {
-                    minThresholdCelsius: parseInt(config.rangeMin, 10) || 0,
-                    maxThresholdCelsius: parseInt(config.rangeMax, 10) || 100,
-                }
-            },
+            attributes: {},
             willReportState: true,
             noraSpecific: {}
         };
 
-        registerNoraDevice<TemperatureControlDevice>(this, RED, config, {
+        deviceConfig.traits.push('action.devices.traits.OnOff');
+        if (isOnOff(deviceConfig)) {
+            const onOffAttributes: OnOffDevice['attributes'] = {
+                commandOnlyOnOff: config.commandOnly,
+                queryOnlyOnOff: config.queryOnly,
+            };
+            deviceConfig.attributes = {
+                ...deviceConfig.attributes,
+                ...onOffAttributes,
+            };
+            const onOffState: Partial<OnOffDevice['state']> = {
+                on: false,
+            };
+            deviceConfig.state = {
+                ...deviceConfig.state,
+                ...onOffState,
+            };
+        };
+
+        if (config.temperature) {
+            deviceConfig.traits.push('action.devices.traits.TemperatureControl');
+            if (isTemperatureControl(deviceConfig)) {
+                const temperatureControlAttributes: TemperatureControlDevice['attributes'] = {
+                    temperatureUnitForUX: config.unit || 'C',
+                    temperatureRange: {
+                        minThresholdCelsius: parseInt(config.rangeMin, 10) || 0,
+                        maxThresholdCelsius: parseInt(config.rangeMax, 10) || 100,
+                    }
+                };
+                deviceConfig.attributes = {
+                    ...deviceConfig.attributes,
+                    ...temperatureControlAttributes,
+                };
+            }
+        }
+
+        registerNoraDevice(this, RED, config, {
             deviceConfig,
             updateStatus: ({ state, update }) => {
-                update(
-                    `T:${state.temperatureAmbientCelsius}S:${state.temperatureSetpointCelsius}`
-                );
+                const statuses: string[] = [];
+                if (isTemperatureControlState(state)) {
+                    statuses.push(`T:${state.temperatureAmbientCelsius}S:${state.temperatureSetpointCelsius}`);
+                }
+                update(statuses.join(' '));
             },
             stateChanged: state => {
-                this.send({
-                    payload: {
-                        setpoint: state.temperatureSetpointCelsius,
-                        ambient: state.temperatureAmbientCelsius,
-                    },
-                    topic: config.topic,
-                });
+                if (isTemperatureControlState(state)) {
+                    this.send({
+                        payload: {
+                            setpoint: state.temperatureSetpointCelsius,
+                            ambient: state.temperatureAmbientCelsius,
+                        },
+                        topic: config.topic
+                    });
+                };
+
             },
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg?.payload, []);
-            },
+            }
         });
+
+        function isTemperatureControlState(state: any): state is TemperatureControlDevice['state'] {
+            return isTemperatureControl(deviceConfig) && 'temperatureAmbientCelsius' in state;
+        }
+
     });
 };
