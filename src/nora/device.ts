@@ -61,7 +61,9 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
         const ref = child(this.noraSpecific, 'error');
         return onValue(ref, s => {
             const value: { msg: string; details: any } | null = s.val();
-            this.logger?.trace(`[nora][${this.device.id}] error syncing device: ${JSON.stringify(value?.details ?? {})}`);
+            if (value) {
+                this.logger?.trace(`[nora][${this.device.id}] error syncing device: ${JSON.stringify(value?.details ?? {})}`);
+            }
             observer.next(value?.msg ?? null);
         });
     });
