@@ -14,31 +14,55 @@
             name: {
                 value: ''
             },
-            temperature: {
-                value: false
+            onOffSupported: {
+                value: true,
             },
-            unit: {
+            onOffMode: {
+                value: 'cq'
+            },
+            temperatureSupported: {
+                value: true
+            },
+            temperatureMode: {
+                value: 'cq'
+            },
+            temperatureUnit: {
                 value: 'C',
                 validate: function (v) { return v === 'C' || v === 'F'; },
             },
-            rangeMin: {
+            temperatureStepSize: {
+                value: 1,
+                validate: RED.validators.number()
+            },
+            temperatureRangeMin: {
+                value: '',
+                validate: function (v) { return !v || RED.validators.number()(v) }
+            },
+            temperatureRangeMax: {
                 value: '',
                 validate: function (v) { return !v || RED.validators.number()(v) },
             },
-            rangeMax: {
-                value: '',
-                validate: function (v) { return !v || RED.validators.number()(v) },
+            startStopSupported: {
+                value: false
+            },
+            startStopPausable: {
+                value: false
+            },
+            timerSupported: {
+                value: false
+            },
+            timerMaxLimitSeconds: {
+                value: 3600,
+                required: true,
+                validate: RED.validators.number()
+            },
+            timerMode: {
+                value: 'cq'
             },
             topic: {
                 value: ''
             },
             passthru: {
-                value: false,
-            },
-            commandOnly: {
-                value: false,
-            },
-            queryOnly: {
                 value: false,
             },
             nora: {
@@ -53,20 +77,26 @@
             return this.name || this.devicename || 'sous vide';
         },
         oneditprepare: function () {
-            var row;
-            if ((this.unit || 'C') === 'C') {
+            $('#node-input-onOffSupported').change(function () {
+                $('#onOff-support')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+            $('#node-input-temperatureSupported').change(function () {
+                $('#temperature-support')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+            if ((this.temperatureUnit || 'C') === 'C') {
                 $('#unit-celsius').prop('checked', true);
             } else {
                 $('#unit-fahrenheit').prop('checked', true);
             }
-            $('#node-input-temperature').change(function () {
-                $('.temperature-support')[$(this).is(':checked') ? 'show' : 'hide']();
+            $('#node-input-startStopSupported').change(function () {
+                $('#startStop-support')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+            $('#node-input-timerSupported').change(function () {
+                $('#timer-support')[$(this).is(':checked') ? 'show' : 'hide']();
             });
         },
         oneditsave: function () {
-            this.unit = $('#unit-celsius').prop('checked') ? 'C' : 'F';
-            this.commandOnly = $('#onoff-options').val() == 'c';
-            this.queryOnly = $('#onoff-options').val() == 'q';
+            this.temperatureUnit = $('#unit-celsius').prop('checked') ? 'C' : 'F';
         },
     });
 </script>
@@ -87,7 +117,7 @@
         <input type="text" id="node-input-nora">
     </div>
     <div class="form-row">
-        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Sous Vide</label>
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Sous Vide Name</label>
         <input type="text" id="node-input-devicename">
     </div>
     <div class="form-row">
@@ -99,33 +129,79 @@
         <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
-        <label for="onoff-options"><i class="fa fa-i-cursor"></i> On / Off</label>
-        <select id="onoff-options">
-            <option value="cq">command & query</option>
-            <option value="c">command only</option>
-            <option value="q">query only</option>
-        </select>
+        <label style="width:auto" for="node-input-onOffSupported"><i class="fa fa-power-off"></i> On / Off</label>
+        <input type="checkbox" id="node-input-onOffSupported" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div id="onOff-support" class="trait-support">
+        <div class="form-row">
+            <label for="node-input-onOffMode"> Mode</label>
+            <select id="node-input-onOffMode">
+                <option value="cq">command & query</option>
+                <option value="c">command only</option>
+                <option value="q">query only</option>
+            </select>
+        </div>
     </div>
     <div class="form-row">
-        <label style="width:auto" for="node-input-temperature"><i class="fa fa-thermometer-half"></i> Temperature Control </label>
-        <input type="checkbox" id="node-input-temperature" style="display:inline-block; width:auto; vertical-align:top;">
+        <label style="width:auto" for="node-input-temperatureSupported"><i class="fa fa-thermometer-half"></i> Temperature</label>
+        <input type="checkbox" id="node-input-temperatureSupported" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
-    <div class="temperature-support trait-support">
+    <div id="temperature-support" class="trait-support">
         <div class="form-row">
-            <label style="width:auto">Display Unit: </label>
+            <label for="node-input-temperatureMode"> Mode</label>
+            <select id="node-input-temperatureMode">
+                <option value="cq">command & query</option>
+                <option value="c">command only</option>
+                <option value="q">query only</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label style="width:auto">Display Unit </label>
             <input style="width:auto;margin:0" id="unit-celsius" type="radio" name="unit" value="C"><label style="width:40px" for="unit-celsius">&nbsp;C</label>
             <input style="width:auto;margin:0" id="unit-fahrenheit" type="radio" name="unit" value="F"><label  style="width:40px" for="unit-fahrenheit">&nbsp;F</label>
         </div>
+        <div class="form-row">
+            <label style="width:auto">Step Size (Celcius) </label>
+            <input style="margin-bottom:5px" type="text" id="node-input-temperatureStepSize" placeholder="step size">
+        </div>
         <div class="form-row d-flex flex-column">
-            <label for="node-input-devicename" style="width: 100%">Allowable Range (Celsius)</label>
+            <label style="width: 100%">Allowable Range (Celsius)</label>
             <br>
-            <label for="node-input-rangeMin" style="text-align:right"><i class="fa fa-thermometer-empty"></i> Min</label>
-            <input style="margin-bottom:5px" type="text" id="node-input-rangeMin" placeholder="minimum temp">
+            <label for="node-input-temperatureRangeMin" style="text-align:right"><i class="fa fa-thermometer-empty"></i> Min</label>
+            <input style="margin-bottom:5px" type="text" id="node-input-temperatureRangeMin" placeholder="minimum temp">
             <br>
-            <label for="node-input-rangeMax" style="text-align:right"><i class="fa fa-thermometer-full"></i> Max</label>
-            <input type="text" id="node-input-rangeMax" placeholder="maximum temp">
+            <label for="node-input-temperatureRangeMax" style="text-align:right"><i class="fa fa-thermometer-full"></i> Max</label>
+            <input type="text" id="node-input-temperatureRangeMax" placeholder="maximum temp">
         </div>
     </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-startStopSupported"><i class="fa fa-play"></i> Start / Sto </label>
+        <input type="checkbox" id="node-input-startStopSupported" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div id="startStop-support" class="trait-support">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-startStopPausable"> Pausable </label>
+            <input type="checkbox" id="node-input-startStopPausable" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-timerSupported"><i class="fa fa-clock-o"></i> Timer</label>
+        <input type="checkbox" id="node-input-timerSupported" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div id="timer-support" class="trait-support">
+            <div class="form-row">
+        <label for="node-input-timerMode"> Mode</label>
+        <select id="node-input-timerMode">
+            <option value="cq">command & query</option>
+            <option value="c">command only</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-timerMaxLimitSeconds"> Max Time (secs)</label>
+        <input type="text" id="node-input-timerMaxLimitSeconds" placeholder="maximum time (seconds)">
+    </div>
+    </div>
+
     <div class="form-row">
         <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
         <input type="text" id="node-input-roomhint">
@@ -142,6 +218,6 @@
 
 <script type="text/html" data-help-name="noraf-sousvide">
 <p>
-    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sousvide/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sousevide/README.md</a>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sousvide/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sousvide/README.md</a>
 </p>
 </script>
