@@ -14,7 +14,7 @@
     "node": ">=12.19"
   },
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.7.0",
+    "@andrei-tatar/nora-firebase-common": "^1.7.1",
     "cbor": "^8.0.2",
     "firebase": "^9.6.1",
     "node-fetch": "^2.6.6",
