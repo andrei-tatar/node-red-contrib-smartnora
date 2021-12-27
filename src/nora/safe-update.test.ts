@@ -140,10 +140,10 @@ describe('getSafeUpdate', () => {
                         shouldRound: 4.1234,
                     },
                 },
-                thermostatTemperatureAmbient: 22.4,
+                thermostatTemperatureAmbient: 22.34,
                 thermostatHumidityAmbient: 33.123,
                 shouldRound: 33.345,
-                temperatureAmbientCelsius: 22.3,
+                temperatureAmbientCelsius: 22.36,
                 humidityAmbientPercent: 50.1,
             },
             currentState: {
@@ -172,10 +172,10 @@ describe('getSafeUpdate', () => {
                     shouldRound: 4.1,
                 },
             },
-            thermostatTemperatureAmbient: 22.5,
+            thermostatTemperatureAmbient: 22.3,
             thermostatHumidityAmbient: 33,
             shouldRound: 33.3,
-            temperatureAmbientCelsius: 22.5,
+            temperatureAmbientCelsius: 22.4,
             humidityAmbientPercent: 50,
         });
     });
