@@ -16,13 +16,8 @@ const skipRoundingStatePaths = new Set<string>([
 ]);
 
 const roundTo = new Map<string, number>([
-    ['thermostatTemperatureSetpointLow', 2],
-    ['thermostatTemperatureSetpointHigh', 2],
-    ['thermostatTemperatureSetpoint', 2],
-    ['thermostatTemperatureAmbient', 2],
     ['thermostatHumidityAmbient', 1],
     ['humidityAmbientPercent', 1],
-    ['temperatureAmbientCelsius', 2],
     ['currentFanSpeedPercent', 1],
 ]);
 

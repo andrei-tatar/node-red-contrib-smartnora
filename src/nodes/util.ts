@@ -208,6 +208,16 @@ export function handleNodeInput(opts: {
     });
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export function R(template: TemplateStringsArray, ...substiutions: any[]): string {
+    return String.raw(template, ...substiutions.map(v => {
+        if (typeof v === 'number') {
+            return Math.round(v * 10) / 10;
+        }
+        return v;
+    }));
+}
+
 function withLocalExecution<T>(config: ConfigNode): MonoTypeOperatorFunction<T> {
     return source => source.pipe(
         switchMap(device => {

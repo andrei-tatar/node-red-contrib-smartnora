@@ -1,7 +1,7 @@
 import { TemperatureSettingDevice } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { TEMPERATURE_SETTING_STATE_MAPPING } from './mapping';
-import { registerNoraDevice } from './util';
+import { R, registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-thermostat', function (this: NodeInterface, config: any) {
@@ -13,6 +13,8 @@ module.exports = function (RED: any) {
         }
 
         const availableModes = config.modes.split(',');
+        const rangeMin = parseInt(config.rangeMin, 10);
+        const rangeMax = parseInt(config.rangeMax, 10);
 
         registerNoraDevice<TemperatureSettingDevice>(this, RED, config, {
             deviceConfig: {
@@ -29,10 +31,12 @@ module.exports = function (RED: any) {
                     bufferRangeCelsius: parseInt(config.bufferRangeCelsius, 10) || undefined,
                     commandOnlyTemperatureSetting: config.commandOnly ?? undefined,
                     queryOnlyTemperatureSetting: config.queryOnly ?? undefined,
-                    thermostatTemperatureRange: {
-                        minThresholdCelsius: parseInt(config.rangeMin, 10) || 10,
-                        maxThresholdCelsius: parseInt(config.rangeMax, 10) || 32,
-                    },
+                    thermostatTemperatureRange: !isNaN(rangeMin) && !isNaN(rangeMax)
+                        ? {
+                            minThresholdCelsius: rangeMin,
+                            maxThresholdCelsius: rangeMax,
+                        }
+                        : undefined,
                 },
                 state: {
                     online: true,
@@ -45,11 +49,11 @@ module.exports = function (RED: any) {
             },
             updateStatus: ({ state, update }) => {
                 const setpoint = state.thermostatMode === 'heatcool' ?
-                    `${state.thermostatTemperatureSetpointLow}-${state.thermostatTemperatureSetpointHigh}` :
-                    `${state.thermostatTemperatureSetpoint}`;
+                    R`${state.thermostatTemperatureSetpointLow}-${state.thermostatTemperatureSetpointHigh}` :
+                    R`${state.thermostatTemperatureSetpoint}`;
 
                 update(
-                    `${state.thermostatMode}/T:${state.thermostatTemperatureAmbient}/S:${setpoint}`
+                    R`${state.thermostatMode}/T:${state.thermostatTemperatureAmbient}/S:${setpoint}`
                 );
             },
             stateChanged: state => {

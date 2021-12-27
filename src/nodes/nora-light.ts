@@ -4,7 +4,7 @@ import {
     isBrightness, isColorSetting, OnOffDevice
 } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
-import { convertValueType, getNumberOrDefault, getValue, registerNoraDevice } from './util';
+import { convertValueType, getNumberOrDefault, getValue, R, registerNoraDevice } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-light', function (this: NodeInterface, config: any) {
@@ -119,7 +119,7 @@ module.exports = function (RED: any) {
                     const hue = state.color.spectrumHsv.hue;
                     const saturation = (state.color.spectrumHsv.saturation ?? 0) * 100;
                     const value = (state.color.spectrumHsv.value ?? 0) * 100;
-                    statuses.push(round`H:${hue}° S:${saturation}% V:${value}%`);
+                    statuses.push(R`H:${hue}° S:${saturation}% V:${value}%`);
                 }
 
                 if (isRgbColor(deviceConfig, state) && 'spectrumRgb' in state?.color) {
@@ -212,16 +212,6 @@ module.exports = function (RED: any) {
 
         function isTemperatureColor<T extends Device>(device: Pick<T, 'traits'>, state: any): state is ColorSettingDevice['state'] {
             return isColorSetting(device) && 'colorTemperatureRange' in device.attributes && state?.color;
-        }
-
-        function round(parts: TemplateStringsArray, ...substitutions: any[]) {
-            const rounded = substitutions.map(sub => {
-                if (typeof sub === 'number') {
-                    return Math.round(sub);
-                }
-                return sub;
-            });
-            return String.raw(parts, ...rounded);
         }
     });
 };
