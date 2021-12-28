@@ -184,7 +184,7 @@
             }
 
             function toHummanCase(command) {
-                return command.substr(0, 1) + command.substr(1)
+                return command.substring(0, 1) + command.substring(1)
                     .toLowerCase()
                     .replace(/_(\w)/mg, (_, g) => ' ' + g.toUpperCase());
             }

@@ -58,7 +58,7 @@ export class FirebaseMediaDevice<T extends (TransportControlDevice | ChannelDevi
 
     override async executeCommand(command: string, params: any) {
         if (command.startsWith(TRANSPORT_CONTROL_COMMAND_PREFIX)) {
-            const mediaCommand = command.substr(TRANSPORT_CONTROL_COMMAND_PREFIX.length);
+            const mediaCommand = command.substring(TRANSPORT_CONTROL_COMMAND_PREFIX.length);
             this.localCommand$.next({
                 command: mediaCommand.toUpperCase(),
                 ...params,

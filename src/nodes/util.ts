@@ -136,7 +136,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
                 {
                     _asyncCommandId: id,
                     payload: {
-                        command: command.command.substr(command.command.lastIndexOf('.') + 1),
+                        command: command.command.substring(command.command.lastIndexOf('.') + 1),
                         ...command.params,
                     },
                 },

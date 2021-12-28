@@ -101,7 +101,7 @@
                     (directions.indexOf(direction) >= 0 ? 'checked ' : '') +
                     (direction === 'off' ? 'disabled ' : '') +
                     'class="open-close-direction" data-direction="' + direction + '" id="direction-' + direction + '">' +
-                    '<label for="direction-' + direction + '">' + direction.substr(0, 1) + direction.substr(1).toLowerCase() + '</label>' +
+                    '<label for="direction-' + direction + '">' + direction.substring(0, 1) + direction.substring(1).toLowerCase() + '</label>' +
                     '</div>'
                 );
             });
