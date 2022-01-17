@@ -1,5 +1,5 @@
 ## Notify
-Node used to send web notifications to the subscribed devices. In order to get notifications on a device, you need to browse to https://smart-nora.eu/my-nora, login and click the button to subscribe to notfications.
+Node used to send web notifications to the subscribed devices. In order to get notifications on a device, you need to browse to https://smart-nora.eu/my-nora/notifications, login and click the button to subscribe to notifications.
 
 **Note:** Not all devices/browsers support the [Push API](https://www.w3.org/TR/push-api/) for  web notifications (https://caniuse.com/push-api).
 
