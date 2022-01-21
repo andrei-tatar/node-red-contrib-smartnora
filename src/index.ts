@@ -54,32 +54,12 @@ export interface ConfigNode {
 }
 
 export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperatorFunction<T> {
-    return source => {
-        const connectable$ = connectable(source, { connector: () => new ReplaySubject<T>(1) });
-
-        let refCount = 0;
-        let timeout: any;
-        let subscription: Subscription | null = null;
-
-        return new Observable(observer => {
-            connectable$.subscribe(observer);
-            refCount++;
-            clearTimeout(timeout);
-            if (refCount === 1 && subscription === null) {
-                subscription = connectable$.connect();
-            }
-
-            return () => {
-                refCount--;
-                if (refCount === 0) {
-                    timeout = setTimeout(() => {
-                        subscription?.unsubscribe();
-                        subscription = null;
-                    }, delay);
-                }
-            };
-        });
-    };
+    return share({
+        connector: () => new ReplaySubject(1),
+        resetOnComplete: true,
+        resetOnError: true,
+        resetOnRefCountZero: () => timer(delay),
+    });
 }
 
 const NO_EVENT: unknown = Symbol('no-event');
