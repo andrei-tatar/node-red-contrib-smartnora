@@ -16,8 +16,8 @@
   "dependencies": {
     "@andrei-tatar/nora-firebase-common": "^1.7.1",
     "cbor": "^8.0.2",
-    "firebase": "^9.6.4",
-    "node-fetch": "^2.6.6",
+    "firebase": "^9.6.5",
+    "node-fetch": "^2.6.7",
     "rxjs": "^7.5.2"
   },
   "devDependencies": {
