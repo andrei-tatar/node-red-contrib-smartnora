@@ -64,6 +64,7 @@
       "noraf-sensor": "build/nodes/nora-sensor.js",
       "noraf-sousvide": "build/nodes/nora-sousvide.js",
       "noraf-speaker": "build/nodes/nora-speaker.js",
+      "noraf-sprinkler": "build/nodes/nora-sprinkler.js",
       "noraf-switch": "build/nodes/nora-switch.js",
       "noraf-thermostat": "build/nodes/nora-thermostat.js",
       "noraf-async": "build/nodes/nora-async.js"
