@@ -1,0 +1,183 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-sprinkler', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'sprinkler',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            startStopSupported: {
+                value: true
+            },
+            startStopPausable: {
+                value: false
+            },
+            startStopZones: {
+                value: []
+            },
+            timerSupported: {
+                value: false
+            },
+            timerMaxLimitSeconds: {
+                value: 3600,
+                required: true,
+                validate: RED.validators.number()
+            },
+            timerMode: {
+                value: 'cq'
+            },
+            topic: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            }
+        },
+        inputs: 1,
+        outputs: 1,
+        paletteLabel: 'sprinkler',
+        label: function () {
+            return this.name || this.devicename || 'sprinkler';
+        },
+        oneditprepare: function () {
+            $('#node-input-startStopSupported').change(function () {
+                $('#startStop-support')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+            $('#node-input-timerSupported').change(function () {
+                $('#timer-support')[$(this).is(':checked') ? 'show' : 'hide']();
+            });
+
+            $('#node-input-zones-container').css('min-height', '120px').css('min-width', '450px')
+                .editableList({
+                    addItem: function (container, index, zoneName) {
+                        container.css({
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                        });
+                        var row = $('<div/>').appendTo(container);
+
+                        $('<input/>', {
+                            type: "text",
+                            class: "node-input-zone",
+                            placeholder: 'zone name',
+                            required: true,
+                        })
+                            .css("width", "90%")
+                            .val(zoneName)
+                            .appendTo(row);
+                    },
+                    removable: true,
+                    sortable: true
+                });
+
+            if (!this.zones) {
+                this.zones = [];
+            }
+
+            for (var i = 0; i < this.startStopZones.length; i++) {
+                var zone = this.startStopZones[i];
+                $("#node-input-zones-container").editableList('addItem', zone);
+            }
+        },
+        oneditsave: function () {
+            var zones = $("#node-input-zones-container").editableList('items');
+            var node = this;
+            node.startStopZones = [];
+            zones.each(function (i) {
+                zone = zones[i];
+                console.log(zone);
+                node.startStopZones.push(zone.find(".node-input-zone").val().trim());
+            });
+        }
+    })
+</script>
+
+<script type="text/html" data-template-name="noraf-sprinkler">
+    <style>
+        .trait-support {
+            margin-left: 5px;
+            border-left: 1px solid lightgray;
+            padding-left: 10px;
+            padding-top: 10px;
+            margin-top: -15px;
+            margin-bottom: 5px;
+        }
+    </style>
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Sprinkler Name</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-startStopSupported"><i class="fa fa-play"></i> Start / Stop</label>
+        <input type="checkbox" id="node-input-startStopSupported" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div id="startStop-support" class="trait-support">
+        <div class="form-row">
+            <label style="width:auto" for="node-input-startStopPausable"> Pausable </label>
+            <input type="checkbox" id="node-input-startStopPausable" style="display:inline-block; width:auto; vertical-align:top;">
+        </div>
+    </div>
+    <label class="node-input-speeds"><i class="fa fa-tag"></i> <span>Zones:</span></label>
+    <div class="form-row node-input-zones-container-row node-input-zones">
+        <ol id="node-input-zones-container"></ol>
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-timerSupported"><i class="fa fa-clock-o"></i> Timer</label>
+        <input type="checkbox" id="node-input-timerSupported" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div id="timer-support" class="trait-support">
+            <div class="form-row">
+        <label for="node-input-timerMode"> Mode</label>
+        <select id="node-input-timerMode">
+            <option value="cq">command & query</option>
+            <option value="c">command only</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-timerMaxLimitSeconds"> Max Time (secs)</label>
+        <input type="text" id="node-input-timerMaxLimitSeconds" placeholder="maximum time (seconds)">
+    </div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="noraf-sprinkler">
+<p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sprinkler/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/sprikler/README.md</a>
+</p>
+</script>
