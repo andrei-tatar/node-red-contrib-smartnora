@@ -14,6 +14,10 @@ This module provides a set of nodes in Node-RED for Google smart home Action int
 - web push notifications to mobile devices so you don't need yet another service to be informed about the important things
 - better performance with capability of scaling up for tens of thousands of users
 
+## Smart NORA is NOT
+- a way to directly interface to your devices added to Google Home. If you already have devices linked to your Google Home from other providers, there is no way for NORA to control them. This package only provides new virtual devices in Node-RED and it's your job to link them together with the real devices you may want to control.
+- a way to create custom conversations with Google. Smart NORA implements the [Google Smart Home](https://developers.google.com/assistant/smarthome/overview) API which comes with predefined device types/traits/commands/responses. Everything that falls outside of this API can't be done with Smart NORA.
+
 ## Setup
 
 [Here's a short guide](./doc/setup/README.md) on how to get started with Smart NORA.
