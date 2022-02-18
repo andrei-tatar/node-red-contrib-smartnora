@@ -23,7 +23,8 @@ const roundTo = new Map<string, number>([
 
 const keepPathsIfSameValue: RegExp[] = [
     /^openState\.\d+\.openDirection$/,
-    /^currentSensorStateData\.\d+\.name$/
+    /^currentSensorStateData\.\d+\.name$/,
+    /^(?:capacityRemaining|capacityUntilFull)\..*$/,
 ];
 
 const arrayItemKeyMap = new Map<string, string>([

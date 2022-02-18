@@ -1,0 +1,140 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-charger', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Charger',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            passthru: {
+                value: false,
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            isRechargeable: {
+                value: true,
+            },
+            energyStorageDistanceUnitForUX: {
+                value: 'KILOMETERS',
+            },
+            topic: {
+                value: ''
+            },
+            twofactor: {
+                value: 'off',
+            },
+            twofactorpin: {
+                value: ''
+            },
+            filter: {
+                value: false,
+            },
+            asyncCmd: {
+                value: false,
+            },
+            outputs: {
+                value: 1,
+            },
+        },
+        inputs: 1,
+        outputs: 1,
+        outputLabels: ["state", "async command"],
+        paletteLabel: 'charger',
+        label: function () {
+            return this.name || this.devicename || 'charger';
+        },
+        oneditprepare: function () {
+            $('#node-input-twofactor').change(function () {
+                if ($(this).val() === 'pin') {
+                    $('#node-twofactor-pin').show();
+                } else {
+                    $('#node-twofactor-pin').hide();
+                }
+            });
+            $('#node-input-asyncCmd').change(function () {
+                $('.hide-when-async')[$(this).is(':checked') ? 'hide' : 'show']();
+            });
+        },
+        oneditsave: function () {
+            this.outputs = $('#node-input-asyncCmd').is(':checked') ? 2 : 1;
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-charger">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Charger</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-passthru"><i class="fa fa-arrow-right"></i> If <code>msg</code> arrives on input, pass through to output: </label>
+        <input type="checkbox" id="node-input-passthru" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-asyncCmd"><i class="fa fa-refresh"></i> Async command execution: </label>
+        <input type="checkbox" id="node-input-asyncCmd" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-isRechargeable"><i class="fa fa-battery-half"></i> Is rechargeable </label>
+        <input type="checkbox" id="node-input-isRechargeable" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-energyStorageDistanceUnitForUX" style="width:auto"><i class="fa fa-car"></i> Energy Distance Unit</label>
+        <select id="node-input-energyStorageDistanceUnitForUX">
+            <option value="KILOMETERS">kilometers</option>
+            <option value="MILES">miles</option>
+        </select>
+    </div>
+    <div class="form-row hide-when-async">
+        <label style="width:auto" for="node-input-errorifstateunchaged"><i class="fa fa-exclamation-triangle"></i> If state doesn't change via voice, warn user: </label>
+        <input type="checkbox" id="node-input-errorifstateunchaged" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-twofactor"><i class="fa fa-question-sign"></i> Two Factor</label>
+        <select id="node-input-twofactor">
+            <option value="off">None</option>
+            <option value="ack">Acknowledge</option>
+            <option value="pin">Pin</option>
+        </select>
+    </div>
+    <div id="node-twofactor-pin" class="form-row">
+        <label for="node-input-twofactorpin"><i class="fa fa-code"></i> Pin</label>
+        <input type="text" id="node-input-twofactorpin">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-charger">
+    <p>
+    <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/charger/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/charger/README.md</a>
+</p>
+</script>
