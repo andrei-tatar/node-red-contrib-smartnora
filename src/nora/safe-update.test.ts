@@ -361,6 +361,44 @@ describe('getSafeUpdate', () => {
                 'msg.payload.currentSensorStateData.0.name[CarbonMonoxideLevel]',
             ]);
         });
+
+        it('should update entire array of capacity remaining', () => {
+            const safeUpdate = {};
+            const warnings: string[] = [];
+
+            getSafeUpdate({
+                update: {
+                    capacityRemaining: [{
+                        rawValue: 50,
+                        unit: 'PERCENTAGE'
+                    }],
+                },
+                currentState: {
+                    online: true,
+                    descriptiveCapacityRemaining: 'MEDIUM',
+                    capacityRemaining: [{
+                        rawValue: 1,
+                        unit: 'PERCENTAGE'
+                    }, {
+                        rawValue: 2,
+                        unit: 'SECONDS'
+                    }],
+                },
+                isValid: () => validate([
+                    'action.devices.traits.EnergyStorage',
+                ], 'state-update', safeUpdate).valid,
+                warn: prop => warnings.push(prop),
+                safeUpdateObject: safeUpdate,
+            });
+
+            expect(safeUpdate).to.deep.equal({
+                capacityRemaining: [{
+                    rawValue: 50,
+                    unit: 'PERCENTAGE'
+                }],
+            });
+            expect(warnings).to.be.empty;
+        });
     });
 });
 

@@ -14,7 +14,7 @@
     "node": ">=12.19"
   },
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.8.0",
+    "@andrei-tatar/nora-firebase-common": "^1.9.1",
     "cbor": "^8.0.2",
     "firebase": "^9.6.5",
     "node-fetch": "^2.6.7",
@@ -50,6 +50,7 @@
       "noraf-airpurifier": "build/nodes/nora-airpurifier.js",
       "noraf-blinds": "build/nodes/nora-blinds.js",
       "noraf-camera": "build/nodes/nora-camera.js",
+      "noraf-charger": "build/nodes/nora-charger.js",
       "noraf-config": "build/nodes/nora-config.js",
       "noraf-fan": "build/nodes/nora-fan.js",
       "noraf-garage": "build/nodes/nora-garage.js",
