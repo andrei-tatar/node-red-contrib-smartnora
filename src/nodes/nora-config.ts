@@ -7,8 +7,9 @@ module.exports = function (RED: any) {
             RED.nodes.createNode(this, config);
             this.email = this.credentials && this.credentials.email;
             this.password = this.credentials && this.credentials.password;
+            this.sso = this.credentials && this.credentials.sso;
             this.group = (config.group || '<default>').trim();
-            this.valid = !!this.email?.length && !!this.password?.length;
+            this.valid = !!this.email?.length && (!!this.password?.length || !!this.sso?.length);
             this.localExecution = config.localexecution ?? true;
             this.storeStateInContext = config.storeStateInContext ?? false;
 
@@ -27,6 +28,7 @@ module.exports = function (RED: any) {
             credentials: {
                 email: { type: 'text' },
                 password: { type: 'text' },
+                sso: { type: 'text' },
             },
         });
 };
