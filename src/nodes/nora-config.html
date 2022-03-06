@@ -1,51 +1,85 @@
 <script type="text/javascript">
-    RED.nodes.registerType('noraf-config', {
-        category: 'config',
-        defaults: {
-            name: {
-                value: 'nora config'
-            },
-            group: {
-                value: '',
-            },
-            twofactor: {
-                value: 'off',
-            },
-            twofactorpin: {
-                value: ''
-            },
-            localexecution: {
-                value: true,
-            },
-            structure: {
-                value: ''
-            },
-            storeStateInContext: {
-                value: false,
-            }
-        },
-        credentials: {
-            email: {
-                type: 'text'
-            },
-            password: {
-                type: 'text'
-            },
-        },
-        paletteLabel: 'nora config',
-        label: function () {
-            return this.name || 'nora config';
-        },
-        oneditprepare: function () {
-            $('#node-config-input-twofactor').change(function () {
-                if ($(this).val() === 'pin') {
-                    $('#node-config-twofactor-pin').show();
-                } else {
-                    $('#node-config-twofactor-pin').hide();
+    (function () {
+        const noraOrigin = 'https://smart-nora.eu';
+        let ssoWindow = null;
+        let handler = null;
+        window.addEventListener('message', ev => {
+            if (ev.origin.startsWith(noraOrigin) && handler) handler(ev.data);
+        });
+        RED.nodes.registerType('noraf-config', {
+            category: 'config',
+            defaults: {
+                name: {
+                    value: 'nora config'
+                },
+                group: {
+                    value: '',
+                },
+                twofactor: {
+                    value: 'off',
+                },
+                twofactorpin: {
+                    value: ''
+                },
+                localexecution: {
+                    value: true,
+                },
+                structure: {
+                    value: ''
+                },
+                storeStateInContext: {
+                    value: false,
                 }
-            });
-        },
-    });
+            },
+            credentials: {
+                email: {
+                    type: 'text'
+                },
+                password: {
+                    type: 'text'
+                },
+                sso: {
+                    type: 'text'
+                }
+            },
+            paletteLabel: 'nora config',
+            label: function () {
+                return this.name || 'nora config';
+            },
+            oneditprepare: function () {
+                $('#node-config-input-twofactor').change(function () {
+                    if ($(this).val() === 'pin') {
+                        $('#node-config-twofactor-pin').show();
+                    } else {
+                        $('#node-config-twofactor-pin').hide();
+                    }
+                });
+
+                $('#sso-login').on('click', function () {
+                    const features = [
+                        'popup=yes',
+                        'scrollbars=yes',
+                        'resizable=yes',
+                        'width=410',
+                        'height=600',
+                    ].join(',');
+                    if (ssoWindow === null || ssoWindow.closed) {
+                        ssoWindow = window.open(`${noraOrigin}/my-nora/sso?ref=${encodeURIComponent(location.origin)}`, '_blank', features);
+                    } else {
+                        ssoWindow.focus();
+                    }
+                });
+
+                handler = (msg) => {
+                    if (msg.type === 'nora-sso-token') {
+                        $('#node-config-input-email').val(msg.email);
+                        $('#node-config-input-password').val('');
+                        $('#node-config-input-sso').val(msg.token);
+                    }
+                };
+            },
+        });
+    })();
 </script>
 
 <script type="text/x-red" data-template-name="noraf-config">
@@ -55,11 +89,12 @@
     </div>
     <div class="form-row">
         <label for="node-config-input-email"><i class="fa fa-envelope"></i> Email</label>
-        <input type="text" id="node-config-input-email">
+        <input type="text" id="node-config-input-email" readonly>
     </div>
     <div class="form-row">
-        <label for="node-config-input-password"><i class="fa fa-key"></i> Password</label>
-        <input type="password" id="node-config-input-password">
+        <button id="sso-login" class="ui-button ui-corner-all ui-widget primary">Login</button>
+        <input type="hidden" id="node-config-input-password">
+        <input type="hidden" id="node-config-input-sso">
     </div>
     <div class="form-row">
         <label for="node-config-input-structure"><i class="fa fa-home"></i> Home name</label>

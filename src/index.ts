@@ -1,9 +1,7 @@
 import { Device } from '@andrei-tatar/nora-firebase-common';
-import {
-    concat, connectable, EMPTY, MonoTypeOperatorFunction,
-    Observable, of, ReplaySubject, Subscription, timer
-} from 'rxjs';
+import { concat, EMPTY, MonoTypeOperatorFunction, of, ReplaySubject, timer } from 'rxjs';
 import { filter, map, scan, share, switchMap } from 'rxjs/operators';
+import type { Response as NodeFetchResponse } from 'node-fetch';
 
 export interface NodeMessage extends Record<string, any> {
     payload: any;
@@ -44,7 +42,8 @@ export interface Logger {
 
 export interface ConfigNode {
     email: string;
-    password: string;
+    password?: string;
+    sso?: string;
     group?: string;
     valid: boolean;
     localExecution: boolean;
@@ -125,4 +124,21 @@ export function singleton<T>(): MonoTypeOperatorFunction<T> {
             resetOnRefCountZero: true,
         })
     );
+}
+
+export function shouldRetryRequest(response: NodeFetchResponse) {
+    if (response.status === 429) {
+        return true;
+    }
+
+    const status = Math.floor(response.status / 100);
+    return status !== 2 && status !== 4;
+}
+
+export class HttpError extends Error {
+    constructor(
+        public readonly statusCode: number,
+        public readonly content: string) {
+        super(`HTTP response (${statusCode} ${content})`);
+    }
 }

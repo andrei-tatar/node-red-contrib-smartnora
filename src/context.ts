@@ -1,7 +1,7 @@
 import { deleteApp, initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { getDatabase, Database, ref, DatabaseReference, child, update, onValue, remove } from 'firebase/database';
-import { firebaseConfig } from './config';
+import { FIREBASE_CONFIG } from './config';
 
 interface ContextConfiguration {
     email: string;
@@ -42,7 +42,7 @@ class FirebaseContextStorage {
     async open() {
         await this.close();
 
-        const app = initializeApp(firebaseConfig, 'app-context');
+        const app = initializeApp(FIREBASE_CONFIG, 'app-context');
         const auth = getAuth(app);
         const { user } = await signInWithEmailAndPassword(auth, this.config.email, this.config.password);
         this.db = getDatabase(app);

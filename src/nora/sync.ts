@@ -13,8 +13,8 @@ import {
     map,
     mergeMap, retryWhen, switchMap, tap,
 } from 'rxjs/operators';
-import { Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
-import { apiEndpoint } from '../config';
+import { HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
+import { API_ENDPOINT, USER_AGENT } from '../config';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
 import { FirebaseMediaDevice } from './media-device';
@@ -22,7 +22,6 @@ import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
     private db;
-    private userAgent: string;
     private agent = new Agent({
         keepAlive: true,
         keepAliveMsecs: 15000,
@@ -113,8 +112,6 @@ export class FirebaseSync {
         this.noraSpecific = ref(this.db, `device_nora/${this.uid}/${this.group}`);
         this.groupHeartbeat = ref(this.db, `user/${this.uid}/version/${this.group}/heartbeat`);
         this.connected = ref(this.db, '.info/connected');
-        const { name, version } = require('../../package.json');
-        this.userAgent = `${name}/${version}`;
     }
 
     withDevice<T extends common.SceneDevice>(device: T, ctx?: DeviceContext): Observable<FirebaseSceneDevice<T>>;
@@ -291,14 +288,14 @@ export class FirebaseSync {
                 throw new UnauthenticatedError();
             }
             const token = await user.getIdToken();
-            const url = `${apiEndpoint}${path}?group=${encodeURIComponent(this.group)}&${query}`;
+            const url = `${API_ENDPOINT}/client/${path}?group=${encodeURIComponent(this.group)}&${query}`;
             const response = await fetch(url, {
                 method: method,
                 agent: this.agent,
                 headers: {
                     'authorization': `Bearer ${token}`,
                     'content-type': 'application/json',
-                    'user-agent': this.userAgent,
+                    'user-agent': USER_AGENT,
                     'uid': this.uid,
                 },
                 body: body ? JSON.stringify(body) : undefined,
@@ -323,14 +320,6 @@ export class FirebaseSync {
 
         const status = Math.floor(response.status / 100);
         return status !== 2 && status !== 4;
-    }
-}
-
-export class HttpError extends Error {
-    constructor(
-        public readonly statusCode: number,
-        public readonly content: string) {
-        super(`HTTP response (${statusCode} ${content})`);
     }
 }
 
