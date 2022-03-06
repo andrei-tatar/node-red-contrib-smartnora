@@ -43,10 +43,17 @@
             nora: {
                 type: 'noraf-config',
                 required: true
-            }
+            },
+            asyncCmd: {
+                value: false,
+            },
+            outputs: {
+                value: 1,
+            },
         },
         inputs: 1,
         outputs: 1,
+        outputLabels: ["state", "async command"],
         paletteLabel: 'sprinkler',
         label: function () {
             return this.name || this.devicename || 'sprinkler';
@@ -94,6 +101,7 @@
         oneditsave: function () {
             var zones = $("#node-input-zones-container").editableList('items');
             var node = this;
+            node.outputs = $('#node-input-asyncCmd').is(':checked') ? 2 : 1;
             node.startStopZones = [];
             zones.each(function (i) {
                 zone = zones[i];
@@ -130,6 +138,10 @@
     <div class="form-row">
         <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
         <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-asyncCmd"><i class="fa fa-refresh"></i> Async command execution: </label>
+        <input type="checkbox" id="node-input-asyncCmd" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
         <label style="width:auto" for="node-input-startStopSupported"><i class="fa fa-play"></i> Start / Stop</label>
