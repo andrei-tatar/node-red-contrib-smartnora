@@ -23,7 +23,9 @@ module.exports = function (RED: any) {
             },
             attributes: {},
             willReportState: true,
-            noraSpecific: {}
+            noraSpecific: {
+                asyncCommandExecution: !!config.asyncCmd,
+            },
         };
 
         if (config.startStopSupported) {
