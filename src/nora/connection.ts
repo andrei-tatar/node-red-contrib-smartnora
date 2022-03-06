@@ -33,7 +33,7 @@ export class FirebaseConnection {
     static fromConfig(
         config: NoraConfig,
         ctx: DeviceContext) {
-        const key = this.getHash(`${config.email}:${config.group}:${config.password || config.sso}`);
+        const key = this.getHash(`${config.email}:${config.group}`);
         let cached = this.configs[key];
         if (!cached) {
             cached = this.configs[key] = this.getAppFromConfig(config)
@@ -61,7 +61,7 @@ export class FirebaseConnection {
     }
 
     private static getAppFromConfig(config: NoraConfig) {
-        const key = this.getHash(`${config.email}:${config.password || config.sso}`);
+        const key = this.getHash(`${config.email}`);
         let cached = this.apps[key];
         if (!cached) {
             cached = this.apps[key] = this.createFirebaseApp().pipe(
