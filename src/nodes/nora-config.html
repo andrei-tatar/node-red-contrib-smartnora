@@ -64,7 +64,7 @@
                         'height=600',
                     ].join(',');
                     if (ssoWindow === null || ssoWindow.closed) {
-                        ssoWindow = window.open(`${noraOrigin}/my-nora/sso?ref=${encodeURIComponent(location.origin)}`, '_blank', features);
+                        ssoWindow = window.open(`${noraOrigin}/my-nora/sso`, '_blank', features);
                     } else {
                         ssoWindow.focus();
                     }
