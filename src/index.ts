@@ -127,15 +127,6 @@ export function singleton<T>(): MonoTypeOperatorFunction<T> {
     );
 }
 
-export function shouldRetryRequest(response: NodeFetchResponse) {
-    if (response.status === 429) {
-        return true;
-    }
-
-    const status = Math.floor(response.status / 100);
-    return status !== 2 && status !== 4;
-}
-
 export class HttpError extends Error {
     constructor(
         public readonly statusCode: number,
