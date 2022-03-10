@@ -1,11 +1,10 @@
-import { createHash } from 'crypto';
 import { deleteApp, FirebaseApp, initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, UserCredential } from 'firebase/auth';
 import { merge, Observable, of, timer } from 'rxjs';
 import { delayWhen, finalize, ignoreElements, map, retryWhen, switchMap, tap } from 'rxjs/operators';
 import fetch from 'node-fetch';
 
-import { HttpError, Logger, publishReplayRefCountWithDelay, shouldRetryRequest } from '..';
+import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, shouldRetryRequest } from '..';
 import { API_ENDPOINT, FIREBASE_CONFIG, NoraConfig, USER_AGENT } from '../config';
 import { AsyncCommandsRegistry } from './async-commands.registry';
 import { DeviceContext } from './device-context';
@@ -33,7 +32,7 @@ export class FirebaseConnection {
     static fromConfig(
         config: NoraConfig,
         ctx: DeviceContext) {
-        const key = this.getHash(`${config.email}:${config.group}`);
+        const key = getHash(`${config.email}:${config.group}`);
         let cached = this.configs[key];
         if (!cached) {
             cached = this.configs[key] = this.getAppFromConfig(config)
@@ -61,7 +60,7 @@ export class FirebaseConnection {
     }
 
     private static getAppFromConfig(config: NoraConfig) {
-        const key = this.getHash(`${config.email}`);
+        const key = getHash(`${config.email}`);
         let cached = this.apps[key];
         if (!cached) {
             cached = this.apps[key] = this.createFirebaseApp().pipe(
@@ -75,10 +74,6 @@ export class FirebaseConnection {
             );
         }
         return cached;
-    }
-
-    private static getHash(input: string): string {
-        return createHash('md5').update(input).digest('base64');
     }
 
     private static async authenticate(app: FirebaseApp, config: NoraConfig): Promise<UserCredential> {

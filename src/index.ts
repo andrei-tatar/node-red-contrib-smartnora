@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { Device } from '@andrei-tatar/nora-firebase-common';
 import { concat, EMPTY, MonoTypeOperatorFunction, of, ReplaySubject, timer } from 'rxjs';
 import { filter, map, scan, share, switchMap } from 'rxjs/operators';
@@ -141,4 +142,8 @@ export class HttpError extends Error {
         public readonly content: string) {
         super(`HTTP response (${statusCode} ${content})`);
     }
+}
+
+export function getHash(input: string): string {
+    return createHash('sha256').update(input).digest('base64');
 }

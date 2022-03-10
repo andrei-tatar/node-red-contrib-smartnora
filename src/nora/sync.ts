@@ -13,7 +13,7 @@ import {
     map,
     mergeMap, retryWhen, switchMap, tap,
 } from 'rxjs/operators';
-import { HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
+import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
@@ -27,8 +27,9 @@ export class FirebaseSync {
         keepAliveMsecs: 15000,
     });
 
-    private devices$ = new BehaviorSubject<FirebaseDevice<any>[]>([]);
+    private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
     private jobQueue$ = new Subject<JobInQueue>();
+    private lastSyncHash = '~';
 
     private sync$ = this.devices$.pipe(
         debounceTime(500),
@@ -39,7 +40,7 @@ export class FirebaseSync {
         }),
         switchMap(devices =>
             concat(
-                defer(() => this.syncDevices()),
+                defer(() => this.syncDevices(devices.map(d => d.device))),
                 merge(...devices.map(d => d.connectedAndSynced$)),
             )
         ),
@@ -125,7 +126,7 @@ export class FirebaseSync {
                     ? new FirebaseMediaDevice(cloudId, this, device, this.logger)
                     : new FirebaseDevice<T>(cloudId, this, device, this.logger);
             observer.next(firebaseDevice);
-            this.devices$.next(this.devices$.value.concat(firebaseDevice));
+            this.devices$.next(this.devices$.value.concat(firebaseDevice as any));
             return () => this.devices$.next(this.devices$.value.filter(d => d !== firebaseDevice));
         }).pipe(
             switchMap(d => ctx
@@ -179,8 +180,18 @@ export class FirebaseSync {
         return !!tokens?.length;
     }
 
-    private async syncDevices() {
-        await this.queueJob({ type: 'sync' });
+    private async syncDevices(devices: common.Device[]) {
+        const hash = getHash(JSON.stringify(devices));
+        if (this.lastSyncHash === hash) {
+            this.logger?.info(`nora: ${this.group} - no device changes`);
+            return;
+        }
+
+        await this.queueJob({
+            type: 'sync',
+            devices,
+        });
+        this.lastSyncHash = hash;
         this.logger?.info(`nora: ${this.group} - synced ${this.devices$.value.length} device(s)`);
     }
 
@@ -230,10 +241,9 @@ export class FirebaseSync {
         try {
             switch (job.type) {
                 case 'sync':
-                    const devices = this.devices$.value;
                     await this.doHttpCall({
                         path: 'sync',
-                        body: devices.map(d => d.device),
+                        body: job.devices,
                     });
                     break;
 
@@ -331,6 +341,7 @@ export class UnauthenticatedError extends Error {
 
 interface SyncJob {
     type: 'sync';
+    devices: common.Device[];
 }
 
 interface ReportStateJob {
