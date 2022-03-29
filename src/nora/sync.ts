@@ -310,12 +310,12 @@ export class FirebaseSync {
                 },
                 body: body ? JSON.stringify(body) : undefined,
             });
-            if (response.status !== 200) {
+            if (!response.ok) {
                 const shouldRetry = this.shouldRetryRequest(response);
                 if (!shouldRetry || !tries) {
                     throw new HttpError(response.status, await response.text());
                 }
-                const delay = Math.round(Math.random() * 20) * 50 + 300;
+                const delay = Math.round(Math.random() * 20) * 100 + 300;
                 await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
             }
