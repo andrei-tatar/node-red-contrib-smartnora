@@ -115,16 +115,17 @@ export class FirebaseSync {
         this.connected = ref(this.db, '.info/connected');
     }
 
-    withDevice<T extends common.SceneDevice>(device: T, ctx?: DeviceContext): Observable<FirebaseSceneDevice<T>>;
-    withDevice<T extends common.Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>>;
-    withDevice<T extends common.Device>(device: T, ctx?: DeviceContext): Observable<FirebaseDevice<T>> {
+    withDevice<T extends common.SceneDevice>(device: T, p?: DeviceParams): Observable<FirebaseSceneDevice<T>>;
+    withDevice<T extends common.Device>(device: T, p?: DeviceParams): Observable<FirebaseDevice<T>>;
+    withDevice<T extends common.Device>(device: T,
+        { ctx, disableValidationErrors = false }: DeviceParams = {}): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
             const cloudId = `${this.group}|${device.id}`;
             const firebaseDevice = common.isScene(device)
-                ? new FirebaseSceneDevice(cloudId, this, device, this.logger)
+                ? new FirebaseSceneDevice(cloudId, this, device, this.logger, disableValidationErrors)
                 : common.isTransportControlDevice(device) || common.isChannelDevice(device)
-                    ? new FirebaseMediaDevice(cloudId, this, device, this.logger)
-                    : new FirebaseDevice<T>(cloudId, this, device, this.logger);
+                    ? new FirebaseMediaDevice(cloudId, this, device, this.logger, disableValidationErrors)
+                    : new FirebaseDevice<T>(cloudId, this, device, this.logger, disableValidationErrors);
             observer.next(firebaseDevice);
             this.devices$.next(this.devices$.value.concat(firebaseDevice as any));
             return () => this.devices$.next(this.devices$.value.filter(d => d !== firebaseDevice));
@@ -361,4 +362,9 @@ interface JobInQueue {
     job: Job;
     resolve: (value?: any) => void;
     reject: (err: any) => void;
+}
+
+interface DeviceParams {
+    ctx?: DeviceContext;
+    disableValidationErrors?: boolean;
 }

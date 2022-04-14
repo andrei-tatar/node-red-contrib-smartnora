@@ -91,7 +91,10 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         .withLogger(RED.log)
         .fromConfig(noraConfig, ctx)
         .pipe(
-            switchMap(connection => connection.withDevice(deviceConfig, ctx)),
+            switchMap(connection => connection.withDevice(deviceConfig, {
+                ctx,
+                disableValidationErrors: noraConfig.disableValidationErrors,
+            })),
             withLocalExecution(noraConfig),
             singleton(),
             takeUntil(close$),

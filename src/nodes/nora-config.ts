@@ -12,6 +12,7 @@ module.exports = function (RED: any) {
             this.valid = !!this.email?.length && (!!this.password?.length || !!this.sso?.length);
             this.localExecution = config.localexecution ?? true;
             this.storeStateInContext = config.storeStateInContext ?? false;
+            this.disableValidationErrors = config.disableValidationErrors ?? false;
 
             let structureHint: string | undefined;
             if (typeof config.structure === 'string') {

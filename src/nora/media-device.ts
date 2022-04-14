@@ -22,8 +22,9 @@ export class FirebaseMediaDevice<T extends (TransportControlDevice | ChannelDevi
         sync: FirebaseSync,
         device: T,
         logger: Logger | null,
+        disableValidationErrors: boolean,
     ) {
-        super(cloudId, sync, device, logger);
+        super(cloudId, sync, device, logger, disableValidationErrors);
     }
 
     private readonly transportControlCommand = child(this.noraSpecific, 'pendingTransportControlCommand');

@@ -29,6 +29,9 @@
                 },
                 storeStateInContext: {
                     value: false,
+                },
+                disableValidationErrors: {
+                    value: false,
                 }
             },
             credentials: {
@@ -47,6 +50,12 @@
                 return this.name || 'nora config';
             },
             oneditprepare: function () {
+                if (typeof this.disableValidationErrors !== 'boolean') {
+                    $('#node-config-input-disableValidationErrors').prop('checked', false);
+                }
+                if (typeof this.storeStateInContext !== 'boolean') {
+                    $('#node-config-input-storeStateInContext').prop('checked', false);
+                }
                 $('#node-config-input-twofactor').change(function () {
                     if ($(this).val() === 'pin') {
                         $('#node-config-twofactor-pin').show();
@@ -123,6 +132,10 @@
     <div class="form-row">
         <label style="width:auto" for="node-config-input-storeStateInContext"><i class="fa fa-refresh"></i> Store state in node context: </label>
         <input type="checkbox" checked id="node-config-input-storeStateInContext" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-config-input-disableValidationErrors"><i class="fa fa-list"></i> Disable validation warnings: </label>
+        <input type="checkbox" checked id="node-config-input-disableValidationErrors" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
 </script>
 

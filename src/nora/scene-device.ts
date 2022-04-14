@@ -12,8 +12,9 @@ export class FirebaseSceneDevice<T extends SceneDevice> extends FirebaseDevice<T
         sync: FirebaseSync,
         device: T,
         logger: Logger | null,
+        disableValidationErrors: boolean,
     ) {
-        super(cloudId, sync, device, logger);
+        super(cloudId, sync, device, logger, disableValidationErrors);
     }
 
     private readonly pendingScene = child(this.noraSpecific, 'pendingScene');

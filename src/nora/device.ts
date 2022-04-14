@@ -81,6 +81,7 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
         private sync: FirebaseSync,
         public readonly device: T,
         private logger: Logger | null,
+        private disableValidationErrors: boolean,
     ) {
     }
 
@@ -150,7 +151,7 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
             safeUpdateObject: safeUpdate,
             isValid: () => common.validate(this.device.traits, 'state-update', safeUpdate).valid,
             mapping,
-            warn: (msg) => this?.logger?.warn(`[${this.device.name.name}] ignoring property ${msg}`),
+            warn: (msg) => !this.disableValidationErrors && this?.logger?.warn(`[${this.device.name.name}] ignoring property ${msg}`),
         });
 
         const { hasChanges, state } = common.updateState(safeUpdate, this.device.state);
