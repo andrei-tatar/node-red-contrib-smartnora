@@ -1,6 +1,7 @@
-import { deleteApp, initializeApp } from 'firebase/app';
+import { deleteApp, initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { getDatabase, Database, ref, DatabaseReference, child, update, onValue, remove } from 'firebase/database';
+import { delayWhen, firstValueFrom, Observable, retryWhen, share, switchMap, timer } from 'rxjs';
 import { FIREBASE_CONFIG } from './config';
 
 interface ContextConfiguration {
@@ -31,7 +32,7 @@ const DECODE_MAP = new Map([
 class FirebaseContextStorage {
     private db!: Database;
     private contextReferece!: DatabaseReference;
-    private cleanup?: () => Promise<void>;
+    private cleanup?: () => void;
     private context: {
         [scope: string]: Record<string, any>;
     } = {};
@@ -40,31 +41,41 @@ class FirebaseContextStorage {
     }
 
     async open() {
-        await this.close();
+        this.close();
 
-        const app = initializeApp(FIREBASE_CONFIG, 'app-context');
-        const auth = getAuth(app);
-        const { user } = await signInWithEmailAndPassword(auth, this.config.email, this.config.password);
-        this.db = getDatabase(app);
-        this.contextReferece = ref(this.db, `context_store/${user.uid}/${this.encode(this.config.group ?? 'default')}`);
-        let firstLoadResolve: null | ((...args: any[]) => void);
-        const firstLoadPromise = new Promise(resolve => firstLoadResolve = resolve);
-        const unsubscribe = onValue(this.contextReferece, data => {
-            this.context = data.val() ?? {};
-            firstLoadResolve?.();
-        });
+        const get$ = new Observable<FirebaseApp>(observer => {
+            const app = initializeApp(FIREBASE_CONFIG, 'app-context');
+            observer.next(app);
+            return () => deleteApp(app);
+        }).pipe(
+            switchMap(async app => {
+                const auth = getAuth(app);
+                const { user } = await signInWithEmailAndPassword(auth, this.config.email, this.config.password);
+                this.db = getDatabase(app);
+                this.contextReferece = ref(this.db, `context_store/${user.uid}/${this.encode(this.config.group ?? 'default')}`);
+                return this.contextReferece;
+            }),
+            switchMap(ctxRef => new Observable(observer =>
+                onValue(ctxRef, data => {
+                    this.context = data.val() ?? {};
+                    observer.next(this.context);
+                })
+            )),
+            retryWhen(err$ => err$.pipe(
+                delayWhen(_err => timer(5000)),
+            )),
+            share(),
+        );
 
-        await firstLoadPromise;
-        firstLoadResolve = null;
+        const subscription = get$.subscribe();
 
-        this.close = async () => {
-            unsubscribe();
-            await deleteApp(app);
-        };
+        await firstValueFrom(get$);
+
+        this.cleanup = () => subscription.unsubscribe();
     }
 
-    async close() {
-        await this?.cleanup?.();
+    close() {
+        this?.cleanup?.();
         delete this.cleanup;
     }
 
