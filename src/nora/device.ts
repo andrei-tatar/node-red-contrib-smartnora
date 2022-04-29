@@ -1,4 +1,5 @@
 import * as common from '@andrei-tatar/nora-firebase-common';
+import { ObjectDetectionNotification } from '@andrei-tatar/nora-firebase-common';
 import { child, onValue } from 'firebase/database';
 import { firstValueFrom, merge, Observable, Subject } from 'rxjs';
 import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
@@ -89,6 +90,10 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
         update: TPayload,
         mapping?: { from: keyof TPayload; to: keyof TState }[]) {
         return this.updateStateInternal(update, { mapping });
+    }
+
+    async sendNotification(notification: ObjectDetectionNotification) {
+        await this.sync.sendGoogleHomeNotification(this.device.id, notification);
     }
 
     async executeCommand(command: string, params: any): Promise<T['state']> {

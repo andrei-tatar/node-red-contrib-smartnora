@@ -54,6 +54,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
     handleNodeInput?: (opts: {
         msg: NodeMessage;
         updateState: FirebaseDevice<T>['updateState'];
+        device$: Observable<FirebaseDevice<T>>;
         state$: Observable<T['state']>;
     }) => Promise<void> | void;
     customRegistration?: (device$: Observable<FirebaseDevice<T>>) => Observable<any>;
@@ -158,6 +159,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
                     const device = await firstValueFrom(device$);
                     return await device.updateState(...args);
                 },
+                device$,
                 state$: device$.pipe(switchMap(d => d.state$)),
             }),
         });

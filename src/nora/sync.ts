@@ -158,6 +158,16 @@ export class FirebaseSync {
         }
     }
 
+    async sendGoogleHomeNotification(deviceId: string, notification: common.ObjectDetectionNotification) {
+        if (await this.hasDeviceTokens()) {
+            await this.queueJob({
+                type: 'notify-home',
+                deviceId,
+                notification,
+            });
+        }
+    }
+
     watchForActions(identifier: string): Observable<string> {
         const actionRef = ref(this.db, `user/${this.uid}/actions/${identifier}`);
         return new Observable<string>(observer =>
@@ -208,9 +218,6 @@ export class FirebaseSync {
     private mergeJob(current: JobInQueue, previous: JobInQueue): JobInQueue {
         switch (current.job.type) {
             case 'sync':
-                if (previous.job.type !== 'sync') {
-                    throw new Error('can\'t merge jobs with different types');
-                }
                 previous.resolve();
                 return current;
 
@@ -234,6 +241,10 @@ export class FirebaseSync {
 
             case 'notify':
                 previous.reject(new Error('too many notifications per sec'));
+                return current;
+
+            case 'notify-home':
+                previous.resolve();
                 return current;
         }
     }
@@ -260,6 +271,14 @@ export class FirebaseSync {
                     await this.doHttpCall({
                         path: 'notify',
                         body: job.notification,
+                    });
+                    break;
+
+                case 'notify-home':
+                    await this.doHttpCall({
+                        path: 'home-notify',
+                        body: job.notification,
+                        query: `id=${encodeURIComponent(job.deviceId)}`,
                     });
                     break;
             }
@@ -356,7 +375,13 @@ interface SendNotificationJob {
     notification: common.WebpushNotification;
 }
 
-type Job = SyncJob | ReportStateJob | SendNotificationJob;
+interface SendHomeNotificationJob {
+    type: 'notify-home';
+    notification: common.ObjectDetectionNotification;
+    deviceId: string;
+}
+
+type Job = SyncJob | ReportStateJob | SendNotificationJob | SendHomeNotificationJob;
 
 interface JobInQueue {
     job: Job;

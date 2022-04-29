@@ -1,0 +1,68 @@
+<script type="text/javascript">
+    RED.nodes.registerType('noraf-doorbell', {
+        category: 'nora',
+        color: 'rgb(235, 227, 141)',
+        icon: 'assistant.png',
+        defaults: {
+            devicename: {
+                value: 'Doorbell',
+                required: true,
+            },
+            roomhint: {
+                value: ''
+            },
+            name: {
+                value: ''
+            },
+            nora: {
+                type: 'noraf-config',
+                required: true
+            },
+            topic: {
+                value: ''
+            },
+            filter: {
+                value: false,
+            },
+        },
+        inputs: 1,
+        outputs: 0,
+        paletteLabel: 'doorbell',
+        label: function () {
+            return this.name || this.devicename || 'doorbell';
+        },
+    });
+</script>
+
+<script type="text/x-red" data-template-name="noraf-doorbell">
+    <div class="form-row">
+        <label for="node-input-nora"><i class="fa fa-table"></i> Config</label>
+        <input type="text" id="node-input-nora">
+    </div>
+    <div class="form-row">
+        <label for="node-input-devicename"><i class="fa fa-i-cursor"></i> Doorbell</label>
+        <input type="text" id="node-input-devicename">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-filter"><i class="fa fa-filter"></i> Ignore input messages that don't match the <code>topic</code> value: </label>
+        <input type="checkbox" id="node-input-filter" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label for="node-input-roomhint"><i class="fa fa-i-cursor"></i> Room Hint</label>
+        <input type="text" id="node-input-roomhint">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic" style="padding-left:25px; margin-right:-25px">Topic</label>
+        <input type="text" id="node-input-topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="noraf-doorbell">
+    <p>
+        <a href="https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/doorbell/README.md">https://github.com/andrei-tatar/node-red-contrib-smartnora/blob/master/doc/nodes/doorbell/README.md</a>
+    </p>
+</script>
