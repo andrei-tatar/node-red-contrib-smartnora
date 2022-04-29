@@ -1,9 +1,11 @@
-## Fan
+## Doorbell
 
 Represents a [Google Home Doorbell](https://developers.google.com/assistant/smarthome/guides/doorbell) device.
 
 Node attributes:
 - [Common](../common.md)
+
+**Notice:** Make sure the device has `Voice notifications` set to `On` in the Google Home app, otherwise you won't receive any notifications.
 
 Input payload is an object with the following properties:
 - `online` - boolean: true/false, default: true. Flag that indicates if a device is online.
