@@ -5,7 +5,7 @@ Represents a [Google Home Doorbell](https://developers.google.com/assistant/smar
 Node attributes:
 - [Common](../common.md)
 
-**Notice:** Make sure the device has `Voice notifications` set to `On` in the Google Home app, otherwise you won't receive any notifications.
+**Notice:** Make sure the device has `Voice notifications` set to `On` and is assigned to a Home/Room in the Google Home app, otherwise you won't receive any notifications.
 
 Input payload is an object with the following properties:
 - `online` - boolean: true/false, default: true. Flag that indicates if a device is online.
