@@ -1,6 +1,6 @@
 import { Device, updateState, validate } from '@andrei-tatar/nora-firebase-common';
 import { EMPTY, firstValueFrom, merge, MonoTypeOperatorFunction, Observable, of, Subject } from 'rxjs';
-import { retryWhen, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { retry, switchMap, takeUntil } from 'rxjs/operators';
 import { ConfigNode, NodeInterface, NodeMessage, singleton } from '..';
 import { FirebaseConnection } from '../nora/connection';
 import { FirebaseDevice } from '../nora/device';
@@ -171,7 +171,12 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
 
     options?.customRegistration?.(device$)?.pipe(
         takeUntil(close$),
-        retryWhen(err$ => err$.pipe(tap(err => node.warn(err)))),
+        retry({
+            delay: err => {
+                node.warn(err);
+                return of(err);
+            },
+        }),
     )?.subscribe();
 }
 

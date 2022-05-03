@@ -21,16 +21,17 @@
     "node": ">=12.19"
   },
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.10.1",
-    "cbor": "^8.0.2",
-    "firebase": "^9.6.5",
-    "node-fetch": "^2.6.7",
-    "rxjs": "^7.5.2"
+    "@andrei-tatar/nora-firebase-common": "^1.10.2",
+    "cbor": "^8.1.0",
+    "firebase": "^9.7.0",
+    "node-fetch": "^3.2.4",
+    "rxjs": "^7.5.5",
+    "tslib": "^2.4.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.0.0",
-    "@types/node-fetch": "^2.5.12",
+    "@types/node-fetch": "^2.6.1",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
     "chai": "^4.3.4",

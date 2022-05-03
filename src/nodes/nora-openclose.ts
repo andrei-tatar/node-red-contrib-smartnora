@@ -194,7 +194,7 @@ module.exports = function (RED: any) {
             }
         }
 
-        function isLockUnlockState(device: Pick<Device, 'traits'>, state: Device['state']): state is LockUnlockDevice['state'] {
+        function isLockUnlockState(device: Pick<Device, 'traits'>, _state: Device['state']): _state is LockUnlockDevice['state'] {
             return isLockUnlock(device);
         }
     });

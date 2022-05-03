@@ -1,0 +1,161 @@
+[
+    {
+        "id": "43e4d3e7.b408bc",
+        "type": "noraf-light",
+        "z": "15d66f47.1c0181",
+        "devicename": "Light",
+        "lightcolor": false,
+        "brightnesscontrol": false,
+        "commandonlycolor": false,
+        "turnonwhenbrightnesschanges": false,
+        "passthru": false,
+        "statepayload": false,
+        "brightnessoverride": "",
+        "roomhint": "",
+        "name": "",
+        "colortype": "rgb",
+        "nora": "c38ae3d9.b9765",
+        "topic": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "temperaturemin": "2700",
+        "temperaturemax": "5500",
+        "twofactor": "off",
+        "twofactorpin": "",
+        "x": 840,
+        "y": 280,
+        "wires": [
+            [
+                "cfca929e.e531"
+            ]
+        ]
+    },
+    {
+        "id": "3fc16ca9.e4f834",
+        "type": "inject",
+        "z": "15d66f47.1c0181",
+        "name": "On",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "true",
+        "payloadType": "bool",
+        "x": 670,
+        "y": 220,
+        "wires": [
+            [
+                "43e4d3e7.b408bc"
+            ]
+        ]
+    },
+    {
+        "id": "9d02fb5b.39b7a8",
+        "type": "inject",
+        "z": "15d66f47.1c0181",
+        "name": "Off",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "false",
+        "payloadType": "bool",
+        "x": 670,
+        "y": 260,
+        "wires": [
+            [
+                "43e4d3e7.b408bc"
+            ]
+        ]
+    },
+    {
+        "id": "26ba3509.cd2d3a",
+        "type": "inject",
+        "z": "15d66f47.1c0181",
+        "name": "Offline",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"online\":false}",
+        "payloadType": "json",
+        "x": 670,
+        "y": 300,
+        "wires": [
+            [
+                "43e4d3e7.b408bc"
+            ]
+        ]
+    },
+    {
+        "id": "a62a9a3b.7de8d8",
+        "type": "inject",
+        "z": "15d66f47.1c0181",
+        "name": "Online",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"online\":true}",
+        "payloadType": "json",
+        "x": 670,
+        "y": 340,
+        "wires": [
+            [
+                "43e4d3e7.b408bc"
+            ]
+        ]
+    },
+    {
+        "id": "cfca929e.e531",
+        "type": "debug",
+        "z": "15d66f47.1c0181",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1020,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "c38ae3d9.b9765",
+        "type": "noraf-config",
+        "name": "Firebase [test group]",
+        "group": "test",
+        "twofactor": "off",
+        "twofactorpin": "",
+        "localexecution": true,
+        "structure": ""
+    }
+]

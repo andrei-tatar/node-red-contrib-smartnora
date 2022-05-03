@@ -1,7 +1,7 @@
 import { deleteApp, initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { getDatabase, Database, ref, DatabaseReference, child, update, onValue, remove } from 'firebase/database';
-import { delayWhen, firstValueFrom, Observable, retryWhen, share, switchMap, timer } from 'rxjs';
+import { firstValueFrom, Observable, retry, share, switchMap, timer } from 'rxjs';
 import { FIREBASE_CONFIG } from './config';
 
 interface ContextConfiguration {
@@ -61,9 +61,9 @@ class FirebaseContextStorage {
                     observer.next(this.context);
                 })
             )),
-            retryWhen(err$ => err$.pipe(
-                delayWhen(_err => timer(5000)),
-            )),
+            retry({
+                delay: _err => timer(5000),
+            }),
             share(),
         );
 

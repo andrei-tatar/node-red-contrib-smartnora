@@ -1,8 +1,7 @@
 import { deleteApp, FirebaseApp, initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, UserCredential } from 'firebase/auth';
 import { firstValueFrom, merge, NEVER, Observable, of, timer } from 'rxjs';
-import { delayWhen, finalize, ignoreElements, map, retryWhen, switchMap, tap } from 'rxjs/operators';
-import fetch from 'node-fetch';
+import { finalize, ignoreElements, map, retry, switchMap, tap } from 'rxjs/operators';
 
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay } from '..';
 import { API_ENDPOINT, FIREBASE_CONFIG, NoraConfig, USER_AGENT } from '../config';
@@ -39,14 +38,14 @@ export class FirebaseConnection {
                 .pipe(
                     map(app => new FirebaseSync(app, config.group, this.logger)),
                     finalize(() => delete this.configs[key]),
-                    retryWhen(err$ => err$.pipe(
-                        delayWhen(err => {
+                    retry({
+                        delay: err => {
                             const seconds = Math.round(Math.random() * 120) / 2 + 30;
                             this.logger?.error(`nora: ${err}`);
                             this.logger?.warn(`nora: trying again in ${seconds} sec`);
                             return timer(seconds * 1000);
-                        }),
-                    )),
+                        }
+                    }),
                     publishReplayRefCountWithDelay(5000),
                 );
         }
@@ -91,6 +90,8 @@ export class FirebaseConnection {
     }
 
     private static async exchangeToken(ssoToken: string): Promise<string> {
+        // eslint-disable-next-line no-eval
+        const { default: fetch } = await eval('import(\'node-fetch\')');
         const url = `${API_ENDPOINT}/sso/exchange`;
         const response = await fetch(url, {
             method: 'POST',
@@ -104,7 +105,7 @@ export class FirebaseConnection {
         });
 
         if (response.status === 200) {
-            const { token } = await response.json();
+            const { token } = await response.json() as any;
             return token;
         }
 

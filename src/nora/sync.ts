@@ -3,7 +3,6 @@ import * as common from '@andrei-tatar/nora-firebase-common';
 import { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { DatabaseReference, get, getDatabase, onValue, ref, remove, set } from 'firebase/database';
-import fetch, { Response } from 'node-fetch';
 import {
     BehaviorSubject, concat, defer, merge, Observable,
     of, Subject, throwError, timer
@@ -11,7 +10,7 @@ import {
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
     map,
-    mergeMap, retryWhen, switchMap, tap,
+    mergeMap, retry, switchMap, tap,
 } from 'rxjs/operators';
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
@@ -44,8 +43,8 @@ export class FirebaseSync {
                 merge(...devices.map(d => d.connectedAndSynced$)),
             )
         ),
-        retryWhen(err$ => err$.pipe(
-            delayWhen(err => {
+        retry({
+            delay: err => {
                 if (err instanceof UnauthenticatedError) {
                     return throwError(() => err);
                 }
@@ -53,8 +52,8 @@ export class FirebaseSync {
                 const seconds = Math.round(Math.random() * 1200) / 20 + 30;
                 this.logger?.warn(`nora: ${this.group} - unhandled error (trying again in ${seconds} sec): ${err.message}\n${err.stack}`);
                 return timer(seconds * 1000);
-            })
-        )),
+            }
+        }),
         ignoreElements(),
         singleton(),
     );
@@ -75,11 +74,12 @@ export class FirebaseSync {
 
     private groupUpdateHeartbeat$ = timer(0, common.HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
         switchMap(_ => set(this.groupHeartbeat, new Date().getTime())),
-        retryWhen(err$ =>
-            err$.pipe(tap(err => {
+        retry({
+            delay: err => {
                 this.logger?.warn(`nora: while sending heartbeat: ${err.message}\n${err.stack}`);
-            }))
-        ),
+                return of(err);
+            }
+        }),
     ).pipe(ignoreElements());
 
     readonly connected$ = new Observable<boolean>(observer => onValue(this.connected, s => observer.next(!!s.val()))).pipe(
@@ -312,6 +312,8 @@ export class FirebaseSync {
         body: any;
         tries?: number;
     }) {
+        // eslint-disable-next-line no-eval
+        const { default: fetch } = await eval('import(\'node-fetch\')');
         while (tries--) {
             const user = getAuth(this.app).currentUser;
             if (!user) {
@@ -343,7 +345,7 @@ export class FirebaseSync {
         }
     }
 
-    private shouldRetryRequest(response: Response) {
+    private shouldRetryRequest(response: import('node-fetch').Response) {
         if (response.status === 429) {
             return true;
         }

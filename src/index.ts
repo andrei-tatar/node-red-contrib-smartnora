@@ -2,7 +2,6 @@ import { createHash } from 'crypto';
 import { Device } from '@andrei-tatar/nora-firebase-common';
 import { concat, EMPTY, MonoTypeOperatorFunction, of, ReplaySubject, timer } from 'rxjs';
 import { filter, map, scan, share, switchMap } from 'rxjs/operators';
-import type { Response as NodeFetchResponse } from 'node-fetch';
 
 export interface NodeMessage extends Record<string, any> {
     payload: any;
