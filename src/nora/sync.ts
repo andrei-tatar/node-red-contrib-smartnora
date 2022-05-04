@@ -12,6 +12,7 @@ import {
     map,
     mergeMap, retry, switchMap, tap,
 } from 'rxjs/operators';
+import fetch from 'node-fetch';
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
 import { FirebaseDevice } from './device';
@@ -312,8 +313,6 @@ export class FirebaseSync {
         body: any;
         tries?: number;
     }) {
-        // eslint-disable-next-line no-eval
-        const { default: fetch } = await eval('import(\'node-fetch\')');
         while (tries--) {
             const user = getAuth(this.app).currentUser;
             if (!user) {

@@ -2,6 +2,7 @@ import { deleteApp, FirebaseApp, initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, UserCredential } from 'firebase/auth';
 import { firstValueFrom, merge, NEVER, Observable, of, timer } from 'rxjs';
 import { finalize, ignoreElements, map, retry, switchMap, tap } from 'rxjs/operators';
+import fetch from 'node-fetch';
 
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay } from '..';
 import { API_ENDPOINT, FIREBASE_CONFIG, NoraConfig, USER_AGENT } from '../config';
@@ -90,8 +91,6 @@ export class FirebaseConnection {
     }
 
     private static async exchangeToken(ssoToken: string): Promise<string> {
-        // eslint-disable-next-line no-eval
-        const { default: fetch } = await eval('import(\'node-fetch\')');
         const url = `${API_ENDPOINT}/sso/exchange`;
         const response = await fetch(url, {
             method: 'POST',

@@ -24,7 +24,7 @@
     "@andrei-tatar/nora-firebase-common": "^1.10.3",
     "cbor": "^8.1.0",
     "firebase": "^9.7.0",
-    "node-fetch": "^3.2.4",
+    "node-fetch": "^2.6.7",
     "rxjs": "^7.5.5",
     "tslib": "^2.4.0"
   },
