@@ -96,7 +96,9 @@ export class FirebaseConnection {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'content-type': 'application/json',
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'user-agent': USER_AGENT,
             },
             body: JSON.stringify({

@@ -145,6 +145,7 @@ export class LocalExecution {
 
     private sendJson(res: ServerResponse, body: object) {
         res.writeHead(200, {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'content-type': 'application/json'
         });
         res.write(JSON.stringify(body));

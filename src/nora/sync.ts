@@ -326,7 +326,9 @@ export class FirebaseSync {
                 agent: this.agent,
                 headers: {
                     'authorization': `Bearer ${token}`,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'content-type': 'application/json',
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'user-agent': USER_AGENT,
                     'uid': this.uid,
                 },
