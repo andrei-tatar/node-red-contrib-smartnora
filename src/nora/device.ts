@@ -1,4 +1,7 @@
-import * as common from '@andrei-tatar/nora-firebase-common';
+import {
+    Device, AsyncCommand, Changes, ExecuteCommandError,
+    executeCommand, validate, updateState
+} from '@andrei-tatar/nora-firebase-common';
 import { ObjectDetectionNotification } from '@andrei-tatar/nora-firebase-common';
 import { child, onValue } from 'firebase/database';
 import { firstValueFrom, merge, Observable, Subject } from 'rxjs';
@@ -8,7 +11,7 @@ import { AsyncCommandsRegistry } from './async-commands.registry';
 import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
 
-export class FirebaseDevice<T extends common.Device = common.Device> {
+export class FirebaseDevice<T extends Device = Device> {
     private connectedAndSynced = false;
 
     private readonly _state$ = new Observable<{
@@ -35,7 +38,7 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
     );
 
     private readonly _localStateUpdate$ = new Subject<T['state']>();
-    private readonly _localAsyncCommand$ = new Subject<{ id: string; command: common.AsyncCommand }>();
+    private readonly _localAsyncCommand$ = new Subject<{ id: string; command: AsyncCommand }>();
 
     readonly state$ = this._state$.pipe(
         map(({ state }) => state),
@@ -99,7 +102,7 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
     async executeCommand(command: string, params: any): Promise<T['state']> {
         this.local$.next(true);
 
-        let updates: common.Changes | null = null;
+        let updates: Changes | null = null;
         if (this.device.noraSpecific?.asyncCommandExecution === true ||
             Array.isArray(this.device.noraSpecific.asyncCommandExecution) &&
             this.device.noraSpecific.asyncCommandExecution.includes(command)) {
@@ -112,7 +115,7 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
 
             const result = await firstValueFrom(response);
             if (result.errorCode) {
-                throw new common.ExecuteCommandError(result.errorCode as any);
+                throw new ExecuteCommandError(result.errorCode as any);
             } else {
                 updates = {
                     updateState: result.state,
@@ -120,7 +123,7 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
                 };
             }
         } else {
-            updates = common.executeCommand({ command, params, device: this.device });
+            updates = executeCommand({ command, params, device: this.device });
             this.logger?.trace(`[nora][local-execution][${this.device.id}] executed ${command}`);
         }
 
@@ -154,14 +157,14 @@ export class FirebaseDevice<T extends common.Device = common.Device> {
             update,
             currentState,
             safeUpdateObject: safeUpdate,
-            isValid: () => common.validate(this.device.traits, 'state-update', safeUpdate).valid,
+            isValid: () => validate(this.device.traits, 'state-update', safeUpdate).valid,
             mapping,
             warn: (msg) => !this.disableValidationErrors && this?.logger?.warn(`[${this.device.name.name}] ignoring property ${msg}`),
         });
 
-        const { hasChanges, state } = common.updateState(safeUpdate, this.device.state);
+        const { hasChanges, state } = updateState(safeUpdate, this.device.state);
         if (hasChanges) {
-            const { valid } = common.validate(this.device.traits, 'state', state);
+            const { valid } = validate(this.device.traits, 'state', state);
             if (!valid) {
                 const name = this.device.name.name;
                 const safeStr = JSON.stringify(safeUpdate);

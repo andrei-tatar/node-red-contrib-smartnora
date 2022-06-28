@@ -8,7 +8,7 @@ import { filter, ignoreElements, switchMap } from 'rxjs/operators';
 import { Logger, publishReplayRefCountWithDelay } from '..';
 import { FirebaseDevice } from './device';
 
-const DISCOVERY_PACKET = '021dfa122e51acb0b9ea5fbce02741ba69a37a203bd91027978cf29557cbb5b6';
+const DISCOVERY_PACKET = Buffer.from('021dfa122e51acb0b9ea5fbce02741ba69a37a203bd91027978cf29557cbb5b6', 'hex');
 const DISCOVERY_PORT = 6988;
 const DISCOVERY_REPLY_PORT = 6989;
 const HTTP_PORT = 6987;
@@ -26,7 +26,7 @@ export class LocalExecution {
         socket.bind(DISCOVERY_PORT);
         return () => socket.close();
     }).pipe(
-        filter(msg => msg.data.compare(Buffer.from(DISCOVERY_PACKET, 'hex')) === 0),
+        filter(msg => msg.data.compare(DISCOVERY_PACKET) === 0),
         switchMap(async ({ socket, from }) => {
             LocalExecution.logger?.trace('[nora][local-execution] Received discovery packet, sending reply');
             const responsePacket = await encodeAsync({

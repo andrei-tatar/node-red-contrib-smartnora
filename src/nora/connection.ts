@@ -2,7 +2,7 @@ import { deleteApp, FirebaseApp, initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, UserCredential } from 'firebase/auth';
 import { firstValueFrom, merge, NEVER, Observable, of, timer } from 'rxjs';
 import { finalize, ignoreElements, map, retry, switchMap, tap } from 'rxjs/operators';
-import fetch from 'node-fetch';
+import { fetch } from 'undici';
 
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay } from '..';
 import { API_ENDPOINT, FIREBASE_CONFIG, NoraConfig, USER_AGENT } from '../config';

@@ -1,5 +1,7 @@
-import { Agent } from 'https';
-import * as common from '@andrei-tatar/nora-firebase-common';
+import {
+    HEARTBEAT_TIMEOUT_SEC, SceneDevice, Device, isScene, isTransportControlDevice,
+    isChannelDevice, WebpushNotification, ObjectDetectionNotification
+} from '@andrei-tatar/nora-firebase-common';
 import { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { DatabaseReference, get, getDatabase, onValue, ref, remove, set } from 'firebase/database';
@@ -12,7 +14,7 @@ import {
     map,
     mergeMap, retry, switchMap, tap,
 } from 'rxjs/operators';
-import fetch from 'node-fetch';
+import { fetch, Response } from 'undici';
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
 import { FirebaseDevice } from './device';
@@ -22,11 +24,6 @@ import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
     private db;
-    private agent = new Agent({
-        keepAlive: true,
-        keepAliveMsecs: 15000,
-    });
-
     private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
     private jobQueue$ = new Subject<JobInQueue>();
     private lastSyncHash = '~';
@@ -73,7 +70,7 @@ export class FirebaseSync {
         publishReplayRefCountWithDelay(1000),
     );
 
-    private groupUpdateHeartbeat$ = timer(0, common.HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
+    private groupUpdateHeartbeat$ = timer(0, HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
         switchMap(_ => set(this.groupHeartbeat, new Date().getTime())),
         retry({
             delay: err => {
@@ -116,15 +113,15 @@ export class FirebaseSync {
         this.connected = ref(this.db, '.info/connected');
     }
 
-    withDevice<T extends common.SceneDevice>(device: T, p?: DeviceParams): Observable<FirebaseSceneDevice<T>>;
-    withDevice<T extends common.Device>(device: T, p?: DeviceParams): Observable<FirebaseDevice<T>>;
-    withDevice<T extends common.Device>(device: T,
+    withDevice<T extends SceneDevice>(device: T, p?: DeviceParams): Observable<FirebaseSceneDevice<T>>;
+    withDevice<T extends Device>(device: T, p?: DeviceParams): Observable<FirebaseDevice<T>>;
+    withDevice<T extends Device>(device: T,
         { ctx, disableValidationErrors = false }: DeviceParams = {}): Observable<FirebaseDevice<T>> {
         return new Observable<FirebaseDevice<T>>(observer => {
             const cloudId = `${this.group}|${device.id}`;
-            const firebaseDevice = common.isScene(device)
+            const firebaseDevice = isScene(device)
                 ? new FirebaseSceneDevice(cloudId, this, device, this.logger, disableValidationErrors)
-                : common.isTransportControlDevice(device) || common.isChannelDevice(device)
+                : isTransportControlDevice(device) || isChannelDevice(device)
                     ? new FirebaseMediaDevice(cloudId, this, device, this.logger, disableValidationErrors)
                     : new FirebaseDevice<T>(cloudId, this, device, this.logger, disableValidationErrors);
             observer.next(firebaseDevice);
@@ -142,7 +139,7 @@ export class FirebaseSync {
         );
     }
 
-    async updateState(deviceId: string, state: Partial<common.Device['state']>) {
+    async updateState(deviceId: string, state: Partial<Device['state']>) {
         await this.queueJob({
             type: 'report-state',
             deviceId,
@@ -150,7 +147,7 @@ export class FirebaseSync {
         });
     }
 
-    async sendNotification(notification: common.WebpushNotification) {
+    async sendNotification(notification: WebpushNotification) {
         if (await this.hasDeviceTokens()) {
             await this.queueJob({
                 type: 'notify',
@@ -159,7 +156,7 @@ export class FirebaseSync {
         }
     }
 
-    async sendGoogleHomeNotification(deviceId: string, notification: common.ObjectDetectionNotification) {
+    async sendGoogleHomeNotification(deviceId: string, notification: ObjectDetectionNotification) {
         if (await this.hasDeviceTokens()) {
             await this.queueJob({
                 type: 'notify-home',
@@ -192,7 +189,7 @@ export class FirebaseSync {
         return !!tokens?.length;
     }
 
-    private async syncDevices(devices: common.Device[]) {
+    private async syncDevices(devices: Device[]) {
         const hash = getHash(JSON.stringify(devices));
         if (this.lastSyncHash === hash) {
             this.logger?.info(`nora: ${this.group} - no device changes`);
@@ -322,7 +319,6 @@ export class FirebaseSync {
             const url = `${API_ENDPOINT}/client/${path}?group=${encodeURIComponent(this.group)}&${query}`;
             const response = await fetch(url, {
                 method: method,
-                agent: this.agent,
                 headers: {
                     'authorization': `Bearer ${token}`,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -346,7 +342,7 @@ export class FirebaseSync {
         }
     }
 
-    private shouldRetryRequest(response: import('node-fetch').Response) {
+    private shouldRetryRequest(response: Response) {
         if (response.status === 429) {
             return true;
         }
@@ -364,7 +360,7 @@ export class UnauthenticatedError extends Error {
 
 interface SyncJob {
     type: 'sync';
-    devices: common.Device[];
+    devices: Device[];
 }
 
 interface ReportStateJob {
@@ -375,12 +371,12 @@ interface ReportStateJob {
 
 interface SendNotificationJob {
     type: 'notify';
-    notification: common.WebpushNotification;
+    notification: WebpushNotification;
 }
 
 interface SendHomeNotificationJob {
     type: 'notify-home';
-    notification: common.ObjectDetectionNotification;
+    notification: ObjectDetectionNotification;
     deviceId: string;
 }
 
