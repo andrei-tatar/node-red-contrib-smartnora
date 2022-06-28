@@ -60,7 +60,7 @@
         },
         oneditprepare: function () {
             $('#node-input-startStopSupported').change(function () {
-                $('#startStop-support')[$(this).is(':checked') ? 'show' : 'hide']();
+                $('.startStop-support')[$(this).is(':checked') ? 'show' : 'hide']();
             });
             $('#node-input-timerSupported').change(function () {
                 $('#timer-support')[$(this).is(':checked') ? 'show' : 'hide']();
@@ -69,6 +69,10 @@
             $('#node-input-zones-container').css('min-height', '120px').css('min-width', '450px')
                 .editableList({
                     addItem: function (container, index, zoneName) {
+                        if (typeof zoneName !== 'string') {
+                            zoneName = '';
+                        }
+
                         container.css({
                             overflow: 'hidden',
                             whiteSpace: 'nowrap'
@@ -146,14 +150,14 @@
         <label style="width:auto" for="node-input-startStopSupported"><i class="fa fa-play"></i> Start / Stop</label>
         <input type="checkbox" id="node-input-startStopSupported" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
-    <div id="startStop-support" class="trait-support">
+    <div class="trait-support startStop-support">
         <div class="form-row">
             <label style="width:auto" for="node-input-startStopPausable"> Pausable </label>
             <input type="checkbox" id="node-input-startStopPausable" style="display:inline-block; width:auto; vertical-align:top;">
         </div>
     </div>
-    <label class="node-input-speeds"><i class="fa fa-tag"></i> <span>Zones:</span></label>
-    <div class="form-row node-input-zones-container-row node-input-zones">
+    <label class="node-input-speeds startStop-support trait-support"><i class="fa fa-tag"></i> <span>Zones:</span></label>
+    <div class="form-row node-input-zones-container-row node-input-zones startStop-support trait-support">
         <ol id="node-input-zones-container"></ol>
     </div>
     <div class="form-row">

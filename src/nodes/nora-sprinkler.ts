@@ -39,7 +39,7 @@ module.exports = function (RED: any) {
                     ...deviceConfig.attributes,
                     ...startStopAttributes,
                 };
-                const startStopState: Partial<StartStopDevice['state']> = {
+                const startStopState: Omit<StartStopDevice['state'], 'online'> = {
                     isRunning: false
                 };
                 deviceConfig.state = {
@@ -60,7 +60,7 @@ module.exports = function (RED: any) {
                     ...deviceConfig.attributes,
                     ...timerAttributes,
                 };
-                const timerState: Partial<TimerDevice['state']> = {
+                const timerState: Omit<TimerDevice['state'], 'online'> = {
                     timerRemainingSec: -1,
                     timerPaused: false
                 };
@@ -75,19 +75,23 @@ module.exports = function (RED: any) {
             deviceConfig,
             updateStatus: ({ state, update }) => {
                 const statuses: string[] = [];
-                if (isStartStopState(state)) {
-                    if (state.isRunning) {
-                        statuses.push(state.isPaused ? 'paused' : 'running');
 
-                    }
-                } else {
-                    statuses.push('not running');
-                };
-                if (isTimerState(state)) {
-                    const remaining: string = (state.timerRemainingSec === -1 ? '' : state.timerRemainingSec.toString());
-                    const paused: string = (state.timerPaused ? 'paused' : '');
-                    statuses.push(`${remaining}s ${paused} `);
+                if (isStartStopState(state)) {
+                    statuses.push(state.isRunning
+                        ? (state.isPaused ? 'paused' : 'running')
+                        : 'not running');
                 }
+
+                if (isTimerState(state)) {
+                    if (state.timerRemainingSec !== -1) {
+                        statuses.push(`${state.timerRemainingSec}s`);
+                    }
+
+                    if (state.timerPaused) {
+                        statuses.push('paused');
+                    }
+                }
+
                 update(statuses.join(' '));
             },
             stateChanged: state => {
@@ -104,6 +108,7 @@ module.exports = function (RED: any) {
         function isStartStopState(state: any): state is StartStopDevice['state'] {
             return isStartStopDevice(deviceConfig) && 'isRunning' in state;
         }
+
         function isTimerState(state: any): state is TimerDevice['state'] {
             return isTimerDevice(deviceConfig) && 'timerRemainingSec' in state;
         }
