@@ -1,3 +1,4 @@
+import { Agent } from 'https';
 import {
     HEARTBEAT_TIMEOUT_SEC, SceneDevice, Device, isScene, isTransportControlDevice,
     isChannelDevice, WebpushNotification, ObjectDetectionNotification
@@ -14,7 +15,7 @@ import {
     map,
     mergeMap, retry, switchMap, tap,
 } from 'rxjs/operators';
-import { fetch, Response } from 'undici';
+import fetch from 'node-fetch';
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
 import { FirebaseDevice } from './device';
@@ -24,6 +25,11 @@ import { FirebaseSceneDevice } from './scene-device';
 
 export class FirebaseSync {
     private db;
+    private agent = new Agent({
+        keepAlive: true,
+        keepAliveMsecs: 15000,
+    });
+
     private devices$ = new BehaviorSubject<FirebaseDevice[]>([]);
     private jobQueue$ = new Subject<JobInQueue>();
     private lastSyncHash = '~';
@@ -319,6 +325,7 @@ export class FirebaseSync {
             const url = `${API_ENDPOINT}/client/${path}?group=${encodeURIComponent(this.group)}&${query}`;
             const response = await fetch(url, {
                 method: method,
+                agent: this.agent,
                 headers: {
                     'authorization': `Bearer ${token}`,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -342,7 +349,7 @@ export class FirebaseSync {
         }
     }
 
-    private shouldRetryRequest(response: Response) {
+    private shouldRetryRequest(response: import('node-fetch').Response) {
         if (response.status === 429) {
             return true;
         }
