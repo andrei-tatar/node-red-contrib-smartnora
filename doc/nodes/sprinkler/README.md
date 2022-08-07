@@ -13,7 +13,6 @@ Node attributes:
 
 
 Input/output payload is an object with the following properties:
-- `on` - boolean: true/false, default: false. Indicates if the fan is on
 - `online` - boolean: true/false, default: true. Flag that indicates if a device is online.
 
 When `Start/Stop` trait is enabled:
