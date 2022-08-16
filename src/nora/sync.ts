@@ -196,7 +196,10 @@ export class FirebaseSync {
     }
 
     private async syncDevices(devices: Device[]) {
-        const hash = getHash(JSON.stringify(devices));
+        const syncAttributes = devices.map(({ id, attributes, name }) => ({ id, attributes, name }));
+        syncAttributes.sort((a, b) => a.id.localeCompare(b.id));
+
+        const hash = getHash(JSON.stringify(syncAttributes));
         if (this.lastSyncHash === hash) {
             this.logger?.info(`nora: ${this.group} - no device changes`);
             return;
