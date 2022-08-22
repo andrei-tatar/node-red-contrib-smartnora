@@ -46,11 +46,11 @@ export function fetch<T = any>(url: string, { method, agent, headers, body }: Fe
                 });
             });
 
-            const status = res.statusCode ?? 0;
+            const status = res.statusCode || 0;
 
             resolve({
                 status,
-                ok: Math.floor(status / 100) < 4,
+                ok: Math.floor(status / 100) === 2,
                 text: () => responseText,
                 json: () => responseText.then(v => JSON.parse(v)),
             });
