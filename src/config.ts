@@ -8,8 +8,9 @@ export interface NoraConfig {
 
 export const API_ENDPOINT = 'https://api.smart-nora.eu';
 
-const { name, version } = require('../package.json');
-export const USER_AGENT = `${name}/${version}`;
+const { name, version }: { name: string; version: string } = require('../package.json');
+const USE_NAME = name.split('-').slice(-1)[0];
+export const USER_AGENT = `${USE_NAME}/${version}`;
 
 export const FIREBASE_CONFIG = {
     apiKey: 'AIzaSyCE4ogvmNJG8Vvkzf1wfWKhjzCALlLGLsw',

@@ -23,15 +23,13 @@
   "dependencies": {
     "@andrei-tatar/nora-firebase-common": "^1.11.1",
     "cbor": "^8.1.0",
-    "firebase": "^9.9.2",
-    "node-fetch": "^2.6.7",
+    "firebase": "^9.9.3",
     "rxjs": "^7.5.6",
     "tslib": "^2.4.0"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",
     "@types/mocha": "^9.1.1",
-    "@types/node-fetch": "^2.6.2",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
     "chai": "^4.3.6",

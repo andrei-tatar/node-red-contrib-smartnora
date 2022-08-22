@@ -2,10 +2,10 @@ import { deleteApp, FirebaseApp, initializeApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, UserCredential } from 'firebase/auth';
 import { firstValueFrom, merge, NEVER, Observable, of, timer } from 'rxjs';
 import { finalize, ignoreElements, map, retry, switchMap, tap } from 'rxjs/operators';
-import fetch from 'node-fetch';
 
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay } from '..';
 import { API_ENDPOINT, FIREBASE_CONFIG, NoraConfig, USER_AGENT } from '../config';
+import { fetch } from './fetch';
 import { AsyncCommandsRegistry } from './async-commands.registry';
 import { DeviceContext } from './device-context';
 import { LocalExecution } from './local-execution';
@@ -96,13 +96,11 @@ export class FirebaseConnection {
             method: 'POST',
             headers: {
                 // eslint-disable-next-line @typescript-eslint/naming-convention
-                'content-type': 'application/json',
-                // eslint-disable-next-line @typescript-eslint/naming-convention
                 'user-agent': USER_AGENT,
             },
-            body: JSON.stringify({
+            body: {
                 token: ssoToken
-            }),
+            },
         });
 
         if (response.status === 200) {

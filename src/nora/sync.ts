@@ -15,9 +15,9 @@ import {
     map,
     mergeMap, retry, switchMap, tap,
 } from 'rxjs/operators';
-import fetch from 'node-fetch';
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
+import { fetch } from './fetch';
 import { FirebaseDevice } from './device';
 import { DeviceContext } from './device-context';
 import { FirebaseMediaDevice } from './media-device';
@@ -309,14 +309,13 @@ export class FirebaseSync {
     private async doHttpCall({
         path,
         query = '',
-        method = 'POST',
         body,
         tries = 3,
     }: {
         path: string;
         query?: string;
         method?: string;
-        body: any;
+        body: {};
         tries?: number;
     }) {
         while (tries--) {
@@ -327,20 +326,17 @@ export class FirebaseSync {
             const token = await user.getIdToken();
             const url = `${API_ENDPOINT}/client/${path}?group=${encodeURIComponent(this.group)}&${query}`;
             const response = await fetch(url, {
-                method: method,
+                method: 'POST',
                 agent: this.agent,
                 headers: {
                     'authorization': `Bearer ${token}`,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'content-type': 'application/json',
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                    'user-agent': USER_AGENT,
-                    'uid': this.uid,
+                    'user-agent': `${USER_AGENT}:${this.uid}`,
                 },
-                body: body ? JSON.stringify(body) : undefined,
+                body,
             });
             if (!response.ok) {
-                const shouldRetry = this.shouldRetryRequest(response);
+                const shouldRetry = this.shouldRetryRequest(response.status);
                 if (!shouldRetry || !tries) {
                     throw new HttpError(response.status, await response.text());
                 }
@@ -352,13 +348,13 @@ export class FirebaseSync {
         }
     }
 
-    private shouldRetryRequest(response: import('node-fetch').Response) {
-        if (response.status === 429) {
+    private shouldRetryRequest(status: number) {
+        if (status === 429) {
             return true;
         }
 
-        const status = Math.floor(response.status / 100);
-        return status !== 2 && status !== 4;
+        const h = Math.floor(status / 100);
+        return h !== 2 && h !== 4;
     }
 }
 
