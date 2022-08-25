@@ -49,6 +49,7 @@ export interface ConfigNode {
     localExecution: boolean;
     storeStateInContext: boolean;
     disableValidationErrors: boolean;
+    sendDeviceNameAndLocation: boolean;
 
     setCommon<T extends Device>(device: T, deviceConfig?: any): T;
 }

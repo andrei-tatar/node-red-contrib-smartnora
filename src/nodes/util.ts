@@ -50,7 +50,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         state: T['state'];
         update: (state: string) => void;
     }) => void;
-    mapStateToOutput?: (state: T['state']) => object | null | undefined;
+    mapStateToOutput?: (state: T['state']) => NodeMessage | null | undefined;
     handleNodeInput?: (opts: {
         msg: NodeMessage;
         updateState: FirebaseDevice<T>['updateState'];
@@ -72,6 +72,15 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         id: getId(nodeConfig),
         ...options.deviceConfig,
     } as T, nodeConfig);
+
+    const configureOutputMessage = (msg: NodeMessage) => ({
+        ...msg,
+        topic: nodeConfig.topic,
+        ... (noraConfig.sendDeviceNameAndLocation ? {
+            device: deviceConfig.name.name,
+            location: deviceConfig.roomHint,
+        } : null),
+    });
 
     if (noraConfig.storeStateInContext) {
         const contextState = node.context().get<T['state']>('state');
@@ -126,10 +135,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         ).subscribe(state => {
             const output = options?.mapStateToOutput?.(state);
             if (output) {
-                node.send({
-                    ...output,
-                    topic: nodeConfig.topic,
-                });
+                node.send(configureOutputMessage(output));
             }
         });
         subscriptions++;
@@ -161,6 +167,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         handleNodeInput({
             node,
             nodeConfig,
+            configure: msg => configureOutputMessage(msg),
             handler: msg => options?.handleNodeInput?.({
                 msg,
                 updateState: async (...args) => {
@@ -201,6 +208,7 @@ export function handleNodeInput(opts: {
     node: NodeInterface;
     nodeConfig?: any;
     handler: (msg: NodeMessage) => void | Promise<void>;
+    configure?: (msg: NodeMessage) => NodeMessage;
 }) {
     opts.node.on('input', async (msg, send, done) => {
         if (opts.nodeConfig?.filter && `${opts.nodeConfig?.topic}` !== `${msg.topic}`) {
@@ -210,7 +218,8 @@ export function handleNodeInput(opts: {
 
         if (opts.nodeConfig?.passthru) {
             const sendMessage = send ?? opts.node.send.bind(opts.node);
-            sendMessage(msg);
+            const output = opts.configure?.(msg) ?? msg;
+            sendMessage(output);
         }
 
         try {

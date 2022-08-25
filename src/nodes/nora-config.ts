@@ -13,6 +13,7 @@ module.exports = function (RED: any) {
             this.localExecution = config.localexecution ?? true;
             this.storeStateInContext = config.storeStateInContext ?? false;
             this.disableValidationErrors = config.disableValidationErrors ?? false;
+            this.sendDeviceNameAndLocation = config.sendDeviceNameAndLocation ?? false;
 
             let structureHint: string | undefined;
             if (typeof config.structure === 'string') {
