@@ -99,18 +99,16 @@ module.exports = function (RED: any) {
 
                 update(stateString);
             },
-            stateChanged: state => {
+            mapStateToOutput: state => {
                 if (useOpenCloseDefinedValues && 'openPercent' in state) {
                     if (state.openPercent === 0) {
-                        this.send({
+                        return {
                             payload: getValue(RED, this, closeValue, closeType),
-                            topic: config.topic
-                        });
+                        };
                     } else {
-                        this.send({
+                        return {
                             payload: getValue(RED, this, openValue, openType),
-                            topic: config.topic
-                        });
+                        };
                     }
                 } else {
                     const payload: any = { online: state.online };
@@ -122,20 +120,18 @@ module.exports = function (RED: any) {
 
                     if ('openPercent' in state) {
                         payload.open = state.openPercent;
-                        this.send({
+                        return {
                             payload,
-                            topic: config.topic,
-                        });
+                        };
                     } else {
                         for (const directionState of state.openState) {
-                            this.send({
+                            return {
                                 payload: {
                                     ...payload,
                                     open: directionState.openPercent,
                                     direction: directionState.openDirection,
                                 },
-                                topic: config.topic,
-                            });
+                            };
                         }
                     }
                 }

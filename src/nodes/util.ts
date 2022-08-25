@@ -50,7 +50,7 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         state: T['state'];
         update: (state: string) => void;
     }) => void;
-    stateChanged?: (state: T['state']) => void;
+    mapStateToOutput?: (state: T['state']) => object | null | undefined;
     handleNodeInput?: (opts: {
         msg: NodeMessage;
         updateState: FirebaseDevice<T>['updateState'];
@@ -119,11 +119,19 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
         subscriptions++;
     }
 
-    if (options.stateChanged) {
+    if (options.mapStateToOutput) {
         device$.pipe(
             switchMap(d => d.stateUpdates$),
             takeUntil(close$),
-        ).subscribe(state => options?.stateChanged?.(state));
+        ).subscribe(state => {
+            const output = options?.mapStateToOutput?.(state);
+            if (output) {
+                node.send({
+                    ...output,
+                    topic: nodeConfig.topic,
+                });
+            }
+        });
         subscriptions++;
     }
 

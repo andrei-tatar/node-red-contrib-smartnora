@@ -48,13 +48,12 @@ module.exports = function (RED: any) {
                     update(`${state.isLocked ? 'locked' : 'unlocked'}`);
                 }
             },
-            stateChanged: state => {
+            mapStateToOutput: state => {
                 const lvalue = state.isLocked;
                 if (!state.isJammed) {
-                    this.send({
+                    return {
                         payload: getValue(RED, this, lvalue ? lockValue : unlockValue, lvalue ? lockType : unlockType),
-                        topic: config.topic,
-                    });
+                    };
                 } else {
                     this.error('Lock is jammed');
                 }

@@ -27,14 +27,13 @@ module.exports = function (RED: any) {
             updateStatus: ({ state, update }) => {
                 update(`${'openPercent' in state && adjustPercent(state.openPercent)}%`);
             },
-            stateChanged: (state) => {
+            mapStateToOutput: (state) => {
                 if ('openPercent' in state) {
-                    this.send({
+                    return {
                         payload: {
                             openPercent: adjustPercent(state.openPercent),
                         },
-                        topic: config.topic
-                    });
+                    };
                 }
             },
             handleNodeInput: async ({ msg, updateState }) => {

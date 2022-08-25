@@ -53,12 +53,9 @@ module.exports = function (RED: any) {
 
                 update(states.join(','));
             },
-            stateChanged: state => {
-                this.send({
-                    payload: { ...state },
-                    topic: config.topic
-                });
-            },
+            mapStateToOutput: state => ({
+                payload: { ...state },
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg.payload);
             },

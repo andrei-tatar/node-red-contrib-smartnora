@@ -233,28 +233,25 @@ module.exports = function (RED: any) {
                 }
                 update(states.join(','));
             },
-            stateChanged: state => {
-                this.send({
-                    payload: {
-                        ...(isOnOffState(state) ? { on: state.on } : null),
-                        ...(isVolumeState(state) ? {
-                            volume: state.currentVolume,
-                            mute: state.isMuted,
-                        } : null),
-                        ...(isMediaStateDeviceState(state) ? {
-                            activity: state.activityState,
-                            playback: state.playbackState,
-                        } : null),
-                        ...(isInputSelectorState(state) ? {
-                            input: state.currentInput,
-                        } : null),
-                        ...(isAppSelectorState(state) ? {
-                            application: state.currentApplication,
-                        } : null)
-                    },
-                    topic: config.topic,
-                });
-            },
+            mapStateToOutput: state => ({
+                payload: {
+                    ...(isOnOffState(state) ? { on: state.on } : null),
+                    ...(isVolumeState(state) ? {
+                        volume: state.currentVolume,
+                        mute: state.isMuted,
+                    } : null),
+                    ...(isMediaStateDeviceState(state) ? {
+                        activity: state.activityState,
+                        playback: state.playbackState,
+                    } : null),
+                    ...(isInputSelectorState(state) ? {
+                        input: state.currentInput,
+                    } : null),
+                    ...(isAppSelectorState(state) ? {
+                        application: state.currentApplication,
+                    } : null)
+                },
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg?.payload, [{
                     from: 'volume',

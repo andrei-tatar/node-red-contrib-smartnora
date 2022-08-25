@@ -147,23 +147,9 @@ module.exports = function (RED: any) {
                 }
                 update(statuses.join(' '));
             },
-            stateChanged: state => {
-                this.send({
-                    payload: state,
-                    topic: config.topic
-                });
-
-                // if (isTemperatureControlState(state)) {
-                //    this.send({
-                //        payload: {
-                //            setpoint: state.temperatureSetpointCelsius,
-                //            ambient: state.temperatureAmbientCelsius,
-                //        },
-                //        topic: config.topic
-                //    });
-                // };
-
-            },
+            mapStateToOutput: state => ({
+                payload: state,
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg?.payload, []);
             }

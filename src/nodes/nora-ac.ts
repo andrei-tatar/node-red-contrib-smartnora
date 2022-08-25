@@ -85,21 +85,18 @@ module.exports = function (RED: any) {
 
                 update(statuses.join('/'));
             },
-            stateChanged: state => {
-                this.send({
-                    payload: {
-                        mode: state.thermostatMode,
-                        activeMode: state.activeThermostatMode,
-                        setpoint: state.thermostatTemperatureSetpoint,
-                        setpointLow: state.thermostatTemperatureSetpointLow,
-                        setpointHigh: state.thermostatTemperatureSetpointHigh,
-                        speed: 'currentFanSpeedPercent' in state
-                            ? state.currentFanSpeedPercent
-                            : state.currentFanSpeedSetting,
-                    },
-                    topic: config.topic,
-                });
-            },
+            mapStateToOutput: state => ({
+                payload: {
+                    mode: state.thermostatMode,
+                    activeMode: state.activeThermostatMode,
+                    setpoint: state.thermostatTemperatureSetpoint,
+                    setpointLow: state.thermostatTemperatureSetpointLow,
+                    setpointHigh: state.thermostatTemperatureSetpointHigh,
+                    speed: 'currentFanSpeedPercent' in state
+                        ? state.currentFanSpeedPercent
+                        : state.currentFanSpeedSetting,
+                },
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 if (!config.percentcontrol &&
                     (msg?.payload?.speed ?? undefined) !== undefined &&

@@ -45,18 +45,16 @@ module.exports = function (RED: any) {
                     }
                 }
             },
-            stateChanged: state => {
+            mapStateToOutput: state => {
                 if ('openPercent' in state) {
                     if (state.openPercent === 0) {
-                        this.send({
+                        return {
                             payload: getValue(RED, this, closeValue, closeType),
-                            topic: config.topic
-                        });
+                        };
                     } else {
-                        this.send({
+                        return {
                             payload: getValue(RED, this, openValue, openType),
-                            topic: config.topic
-                        });
+                        };
                     }
                 }
             },

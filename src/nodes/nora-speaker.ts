@@ -37,15 +37,12 @@ module.exports = function (RED: any) {
             updateStatus: ({ state, update }) => {
                 update(`${state.on ? 'on' : 'off'}:${state.isMuted ? 'mute' : state.currentVolume}`);
             },
-            stateChanged: state => {
-                this.send({
-                    payload: {
-                        on: state.on,
-                        volume: state.currentVolume,
-                    },
-                    topic: config.topic
-                });
-            },
+            mapStateToOutput: state => ({
+                payload: {
+                    on: state.on,
+                    volume: state.currentVolume,
+                },
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg?.payload, [{
                     from: 'volume',

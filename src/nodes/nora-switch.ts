@@ -37,12 +37,11 @@ module.exports = function (RED: any) {
             updateStatus: ({ state, update }) => {
                 update(`${state.on ? 'on' : 'off'}`);
             },
-            stateChanged: state => {
+            mapStateToOutput: state => {
                 const value = state.on;
-                this.send({
+                return {
                     payload: getValue(RED, this, value ? onValue : offValue, value ? onType : offType),
-                    topic: config.topic
-                });
+                };
             },
             handleNodeInput: async ({ msg, updateState }) => {
                 const myOnValue = getValue(RED, this, onValue, onType);

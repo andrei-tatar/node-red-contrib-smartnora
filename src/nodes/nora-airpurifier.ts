@@ -60,17 +60,14 @@ module.exports = function (RED: any) {
                     : state.currentFanSpeedSetting;
                 update(`${state.on ? 'on' : 'off'} - ${speed}`);
             },
-            stateChanged: (state) => {
-                this.send({
-                    payload: {
-                        on: state.on,
-                        speed: 'currentFanSpeedPercent' in state
-                            ? state.currentFanSpeedPercent
-                            : state.currentFanSpeedSetting,
-                    },
-                    topic: config.topic
-                });
-            },
+            mapStateToOutput: (state) => ({
+                payload: {
+                    on: state.on,
+                    speed: 'currentFanSpeedPercent' in state
+                        ? state.currentFanSpeedPercent
+                        : state.currentFanSpeedSetting,
+                },
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 if (!config.percentcontrol &&
                     (msg?.payload?.speed ?? undefined) !== undefined &&

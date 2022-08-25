@@ -133,24 +133,21 @@ module.exports = function (RED: any) {
 
                 update(statuses.join(' '));
             },
-            stateChanged: state => {
+            mapStateToOutput: state => {
                 if (!brightnessControl && !colorControl) {
                     const value = state.on;
-                    this.send({
+                    return {
                         payload: getValue(RED, this, value ? onValue : offValue, value ? onType : offType),
-                        topic: config.topic
-                    });
+                    };
                 } else {
                     if (statepayload || colorControl) {
-                        this.send({
+                        return {
                             payload: { ...state },
-                            topic: config.topic
-                        });
+                        };
                     } else {
-                        this.send({
+                        return {
                             payload: state.on && isBrightnessState(deviceConfig, state) ? state.brightness : 0,
-                            topic: config.topic
-                        });
+                        };
                     }
                 }
             },

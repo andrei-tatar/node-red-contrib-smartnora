@@ -56,18 +56,15 @@ module.exports = function (RED: any) {
                     R`${state.thermostatMode}/T:${state.thermostatTemperatureAmbient}/S:${setpoint}`
                 );
             },
-            stateChanged: state => {
-                this.send({
-                    payload: {
-                        mode: state.thermostatMode,
-                        activeMode: state.activeThermostatMode,
-                        setpoint: state.thermostatTemperatureSetpoint,
-                        setpointLow: state.thermostatTemperatureSetpointLow,
-                        setpointHigh: state.thermostatTemperatureSetpointHigh,
-                    },
-                    topic: config.topic,
-                });
-            },
+            mapStateToOutput: state => ({
+                payload: {
+                    mode: state.thermostatMode,
+                    activeMode: state.activeThermostatMode,
+                    setpoint: state.thermostatTemperatureSetpoint,
+                    setpointLow: state.thermostatTemperatureSetpointLow,
+                    setpointHigh: state.thermostatTemperatureSetpointHigh,
+                },
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 await updateState(msg?.payload, [
                     ...TEMPERATURE_SETTING_STATE_MAPPING,

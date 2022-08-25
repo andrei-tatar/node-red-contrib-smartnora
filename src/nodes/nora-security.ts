@@ -72,12 +72,9 @@ module.exports = function (RED: any) {
 
                 update(statuses.join(','));
             },
-            stateChanged: (state) => {
-                this.send({
-                    payload: state,
-                    topic: config.topic
-                });
-            },
+            mapStateToOutput: (state) => ({
+                payload: state,
+            }),
             handleNodeInput: async ({ msg, updateState }) => {
                 if ((msg?.payload?.currentArmLevel ?? undefined) !== undefined &&
                     !armLevels?.find(s => s.v === msg.payload.currentArmLevel)) {
