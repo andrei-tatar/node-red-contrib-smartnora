@@ -75,7 +75,9 @@ export function registerNoraDevice<T extends Device>(node: NodeInterface, RED: a
 
     const configureOutputMessage = (msg: NodeMessage) => ({
         ...msg,
-        topic: nodeConfig.topic,
+        ... (nodeConfig.topic ? {
+            topic: nodeConfig.topic,
+        } : null),
         ... (noraConfig.sendDeviceNameAndLocation ? {
             device: deviceConfig.name.name,
             location: deviceConfig.roomHint,
