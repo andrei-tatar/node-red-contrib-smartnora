@@ -32,6 +32,7 @@ export async function fetch<T = any>(url: string, { method, agent, headers, body
         const req = request({
             hostname: uri.hostname,
             path: uri.pathname + uri.search,
+            port: uri.port,
             method,
             agent,
             headers:
