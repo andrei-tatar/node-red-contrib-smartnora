@@ -1,4 +1,5 @@
 import { Agent, request } from 'https';
+import { gzip } from 'zlib';
 
 interface FetchOptions {
     method: 'POST';
@@ -14,10 +15,20 @@ export interface FetchResponse<T> {
     text(): Promise<string>;
 }
 
-export function fetch<T = any>(url: string, { method, agent, headers, body }: FetchOptions): Promise<FetchResponse<T>> {
+export async function fetch<T = any>(url: string, { method, agent, headers, body }: FetchOptions): Promise<FetchResponse<T>> {
+    const bodyContent = await new Promise<Buffer>((resolve, reject) => {
+        const jsonContent = Buffer.from(JSON.stringify(body));
+        gzip(jsonContent, (err, result) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(result);
+            }
+        });
+    });
+
     return new Promise<FetchResponse<T>>((resolve, reject) => {
         const uri = new URL(url);
-        const bodyContent = JSON.stringify(body);
         const req = request({
             hostname: uri.hostname,
             path: uri.pathname + uri.search,
@@ -30,6 +41,8 @@ export function fetch<T = any>(url: string, { method, agent, headers, body }: Fe
                 'content-type': 'application/json',
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 'content-length': bodyContent.length,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                'content-encoding': 'gzip'
             },
         }, res => {
             const responseText = new Promise<string>((resolveResponse, rejectResponse) => {
@@ -60,7 +73,6 @@ export function fetch<T = any>(url: string, { method, agent, headers, body }: Fe
             reject(error);
         });
 
-        req.write(bodyContent);
-        req.end();
+        req.end(bodyContent);
     });
 }
