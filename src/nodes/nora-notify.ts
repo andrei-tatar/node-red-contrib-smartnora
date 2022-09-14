@@ -7,6 +7,9 @@ import { DeviceContext } from '../nora/device-context';
 import { getSafeUpdate } from '../nora/safe-update';
 import { getClose, getId, getValue, handleNodeInput } from './util';
 
+const JSON_ACTION_PREFIX = 'json:';
+const LINK_ACTION_PREFIX = 'https://';
+
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-notify', function (this: NodeInterface, config: any) {
         RED.nodes.createNode(this, config);
@@ -21,7 +24,7 @@ module.exports = function (RED: any) {
         const actions = configActions?.map(({ p: title, v: value, vt: type }, index) => ({
             title,
             action: type === 'link' ? value : `${index}`,
-        }));
+        }))?.splice(0, 3);
         const defaultAction = actions?.[configActions?.findIndex(c => !!c.d) ?? -1]?.action;
 
         const close$ = getClose(this);
@@ -41,14 +44,22 @@ module.exports = function (RED: any) {
             switchMap(c => c.watchForActions(identifier)),
             takeUntil(close$),
         ).subscribe(action => {
-            const actionIndex = parseInt(action, 10);
-            if (configActions?.length && actionIndex >= 0 && actionIndex < configActions.length) {
-                const { v: value, vt: valuetype } = configActions[actionIndex];
-                const payload = getValue(RED, this, value, valuetype);
+            if (action.startsWith(JSON_ACTION_PREFIX)) {
+                const actionJson = action.substring(JSON_ACTION_PREFIX.length);
                 this.send({
-                    payload,
+                    payload: JSON.parse(actionJson),
                     topic: config.topic,
                 });
+            } else {
+                const actionIndex = parseInt(action, 10);
+                if (configActions?.length && actionIndex >= 0 && actionIndex < configActions.length) {
+                    const { v: value, vt: valuetype } = configActions[actionIndex];
+                    const payload = getValue(RED, this, value, valuetype);
+                    this.send({
+                        payload,
+                        topic: config.topic,
+                    });
+                }
             }
         });
 
@@ -84,6 +95,19 @@ module.exports = function (RED: any) {
 
                 delete msg?.payload?.close;
 
+                if (Array.isArray(msg.payload.actions) && msg.payload.actions.length) {
+                    msg.payload.actions = msg.payload.actions.map((v: any) => ({
+                        ...v,
+                        action: v.action.startsWith(LINK_ACTION_PREFIX)
+                            ? v.action
+                            : JSON_ACTION_PREFIX + JSON.stringify(v.action)
+                    }));
+                    msg.payload.data = {
+                        ...msg.payload.data,
+                        defaultAction: msg.payload.actions[0].action,
+                    };
+                }
+
                 getSafeUpdate({
                     update: msg.payload ?? {},
                     safeUpdateObject: notification,
@@ -92,12 +116,18 @@ module.exports = function (RED: any) {
                     warn: (propName) => this.warn(`ignoring property ${propName}`),
                 });
 
-                if (actions?.length) {
+                if (actions?.length && !notification.actions?.length) {
                     notification.actions = actions;
                     notification.data = {
                         ...notification.data,
+                        defaultAction,
+                    };
+                }
+
+                if (notification.actions?.length) {
+                    notification.data = {
+                        ...notification.data,
                         sender: identifier,
-                        defaultAction: defaultAction,
                     };
                 } else {
                     delete notification.actions;
