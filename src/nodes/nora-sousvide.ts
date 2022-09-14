@@ -128,13 +128,10 @@ module.exports = function (RED: any) {
                     statuses.push(state.on ? 'on' : 'off');
                 }
                 if (isStartStopState(state)) {
-                    if (state.isRunning) {
-                        statuses.push(state.isPaused ? 'paused' : 'running');
-
-                    }
-                } else {
-                    statuses.push('not running');
-                };
+                    statuses.push(state.isRunning
+                        ? (state.isPaused ? 'paused' : 'running')
+                        : 'not running');
+                }
                 if (isTemperatureSettingState(state)) {
                     const ambientTemperature: string = state.thermostatTemperatureAmbient.toFixed(2);
                     const setpointTemperature: string = state.thermostatTemperatureSetpoint.toFixed(2);

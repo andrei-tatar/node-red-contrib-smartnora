@@ -213,7 +213,9 @@ export function handleNodeInput(opts: {
     configure?: (msg: NodeMessage) => NodeMessage;
 }) {
     opts.node.on('input', async (msg, send, done) => {
-        if (opts.nodeConfig?.filter && `${opts.nodeConfig?.topic}` !== `${msg.topic}`) {
+        if (opts.nodeConfig?.filter &&
+            opts.nodeConfig?.topic &&
+            `${opts.nodeConfig?.topic}` !== `${msg.topic}`) {
             done?.();
             return;
         }
