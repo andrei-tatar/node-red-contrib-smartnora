@@ -20,7 +20,7 @@ Input payload will be an object that follow the payload defined in the attribute
 
 **Note:** you can also send messages with the state properties to the input of the node:
 - `online` - boolean, default: true
-- `on` - boolean [user if `On/Off` is checked] - on/off state (true = on, false = off)
+- `on` - boolean [used if `On/Off` is checked] - on/off state (true = on, false = off)
 - `temperature` - number [used if `Temperature` is checked] - the temperature to report (in Celsius)
 - `humidity` - number [used if `Humidity` is checked] - the relative humidity to report (in %)
 - `open` - number/boolean [used if `Open/close` is checked] - the open percentaget (0 to 100) or true/false

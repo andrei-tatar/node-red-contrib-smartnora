@@ -74,6 +74,7 @@
       "noraf-sprinkler": "build/nodes/nora-sprinkler.js",
       "noraf-switch": "build/nodes/nora-switch.js",
       "noraf-thermostat": "build/nodes/nora-thermostat.js",
+      "noraf-vacuum": "build/nodes/nora-vacuum.js",
       "noraf-async": "build/nodes/nora-async.js"
     }
   }

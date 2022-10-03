@@ -247,7 +247,7 @@ export class FirebaseSync {
                 };
 
             case 'notify':
-                previous.reject(new Error('too many notifications per sec'));
+                previous.reject(new RateLimitingError('too many notifications per sec'));
                 return current;
 
             case 'notify-home':
@@ -361,6 +361,12 @@ export class FirebaseSync {
 export class UnauthenticatedError extends Error {
     constructor() {
         super('No user authenticated');
+    }
+}
+
+export class RateLimitingError extends Error {
+    constructor(msg?: string) {
+        super(msg);
     }
 }
 

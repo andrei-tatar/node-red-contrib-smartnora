@@ -5,6 +5,7 @@ import { ConfigNode, NodeInterface, singleton } from '..';
 import { FirebaseConnection } from '../nora/connection';
 import { DeviceContext } from '../nora/device-context';
 import { getSafeUpdate } from '../nora/safe-update';
+import { RateLimitingError } from '../nora/sync';
 import { getClose, getId, getValue, handleNodeInput } from './util';
 
 const JSON_ACTION_PREFIX = 'json:';
@@ -139,7 +140,11 @@ module.exports = function (RED: any) {
                     await connection.sendNotification(notification);
                     notificationSent$.next(null);
                 } catch (err) {
-                    ctx.error$.next('Too many notifications');
+                    if (err instanceof RateLimitingError) {
+                        ctx.error$.next('Too many notifications');
+                    } else {
+                        throw err;
+                    }
                 }
             },
         });
