@@ -96,7 +96,7 @@ module.exports = function (RED: any) {
 
                 delete msg?.payload?.close;
 
-                if (Array.isArray(msg.payload.actions) && msg.payload.actions.length) {
+                if (typeof msg.payload === 'object' && Array.isArray(msg.payload.actions) && msg.payload.actions.length) {
                     msg.payload.actions = msg.payload.actions.map((v: any) => ({
                         ...v,
                         action: v.action.startsWith(LINK_ACTION_PREFIX)
