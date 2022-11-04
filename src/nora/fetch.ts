@@ -2,10 +2,10 @@ import { Agent, request } from 'https';
 import { gzip } from 'zlib';
 
 interface FetchOptions {
-    method: 'POST';
+    method: 'POST' | 'GET';
     agent?: Agent;
     headers?: Record<string, string>;
-    body: object;
+    body?: object;
 }
 
 export interface FetchResponse<T> {
@@ -16,7 +16,7 @@ export interface FetchResponse<T> {
 }
 
 export async function fetch<T = any>(url: string, { method, agent, headers, body }: FetchOptions): Promise<FetchResponse<T>> {
-    const bodyContent = await new Promise<Buffer>((resolve, reject) => {
+    const bodyContent = body ? await new Promise<Buffer>((resolve, reject) => {
         const jsonContent = Buffer.from(JSON.stringify(body));
         gzip(jsonContent, (err, result) => {
             if (err) {
@@ -25,7 +25,7 @@ export async function fetch<T = any>(url: string, { method, agent, headers, body
                 resolve(result);
             }
         });
-    });
+    }) : null;
 
     return new Promise<FetchResponse<T>>((resolve, reject) => {
         const uri = new URL(url);
@@ -38,12 +38,14 @@ export async function fetch<T = any>(url: string, { method, agent, headers, body
             headers:
             {
                 ...headers,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'content-type': 'application/json',
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'content-length': bodyContent.length,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'content-encoding': 'gzip'
+                ...(bodyContent ? {
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'content-type': 'application/json',
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'content-length': bodyContent.length,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'content-encoding': 'gzip'
+                } : {})
             },
         }, res => {
             const responseText = new Promise<string>((resolveResponse, rejectResponse) => {
@@ -74,6 +76,10 @@ export async function fetch<T = any>(url: string, { method, agent, headers, body
             reject(error);
         });
 
-        req.end(bodyContent);
+        if (bodyContent) {
+            req.end(bodyContent);
+        } else {
+            req.end();
+        }
     });
 }

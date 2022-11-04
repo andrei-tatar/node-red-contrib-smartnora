@@ -13,7 +13,7 @@ import {
 import {
     debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
     map,
-    mergeMap, retry, switchMap, tap,
+    mergeMap, retry, switchMap, tap, withLatestFrom,
 } from 'rxjs/operators';
 import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
@@ -77,7 +77,9 @@ export class FirebaseSync {
     );
 
     private groupUpdateHeartbeat$ = timer(0, HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
-        switchMap(_ => set(this.groupHeartbeat, new Date().getTime())),
+        withLatestFrom(this.getOffset()),
+        map(([_, { offset }]) => offset),
+        switchMap(offset => set(this.groupHeartbeat, new Date().getTime() + offset)),
         retry({
             delay: err => {
                 this.logger?.warn(`nora: while sending heartbeat: ${err.message}\n${err.stack}`);
@@ -355,6 +357,33 @@ export class FirebaseSync {
 
         const h = Math.floor(status / 100);
         return h !== 2 && h !== 4;
+    }
+
+    private getOffset() {
+        return defer(async () => {
+            const user = getAuth(this.app).currentUser;
+            if (!user) {
+                throw new UnauthenticatedError();
+            }
+            const token = await user.getIdToken();
+
+            const response = await fetch<{ offset: number }>(`${API_ENDPOINT}/client/offset?timestamp=${new Date().getTime()}`, {
+                method: 'GET',
+                agent: this.agent,
+                headers: {
+                    'authorization': `Bearer ${token}`,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    'user-agent': `${USER_AGENT}:${this.uid}`,
+                },
+            });
+            const { offset } = await response.json();
+
+            if (Math.abs(offset) > 5000) {
+                this.logger?.warn(`nora: check date/time. drift is ${Math.round(offset / 10) / 100} sec`);
+            }
+
+            return { offset };
+        });
     }
 }
 
