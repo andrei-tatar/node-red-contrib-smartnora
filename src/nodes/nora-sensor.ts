@@ -1,6 +1,6 @@
 import {
     Device, HumiditySettingDevice, isHumiditySetting, isOnOff, isOpenClose, isSensorState as isSensorDevice,
-    isTemperatureControl, OnOffDevice, OpenCloseDevice, SensorStateDevice, TemperatureControlDevice, SENSOR_TYPE_NOTIFICATION_SUPPORT
+    OnOffDevice, OpenCloseDevice, SensorStateDevice, SENSOR_TYPE_NOTIFICATION_SUPPORT, isTemperatureSetting, TemperatureSettingDevice
 } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { registerNoraDevice } from './util';
@@ -32,19 +32,27 @@ module.exports = function (RED: any) {
         };
 
         if (config.temperature) {
-            deviceConfig.traits.push('action.devices.traits.TemperatureControl');
-            if (isTemperatureControl(deviceConfig)) {
-                const temperatureControlAttributes: TemperatureControlDevice['attributes'] = {
-                    queryOnlyTemperatureControl: true,
-                    temperatureUnitForUX: config.unit,
-                    temperatureRange: {
-                        minThresholdCelsius: -100,
-                        maxThresholdCelsius: 100,
-                    },
+            deviceConfig.traits.push('action.devices.traits.TemperatureSetting');
+            if (isTemperatureSetting(deviceConfig)) {
+                const temperatureControlAttributes: TemperatureSettingDevice['attributes'] = {
+                    queryOnlyTemperatureSetting: true,
+                    thermostatTemperatureUnit: config.unit,
+                    availableThermostatModes: ['off'],
                 };
                 deviceConfig.attributes = {
                     ...deviceConfig.attributes,
                     ...temperatureControlAttributes,
+                };
+
+                const state: Omit<TemperatureSettingDevice['state'], 'online'> = {
+                    thermostatMode: 'off',
+                    thermostatTemperatureAmbient: 20,
+                    thermostatTemperatureSetpoint: 20,
+                };
+
+                deviceConfig.state = {
+                    ...deviceConfig.state,
+                    ...state,
                 };
             }
         }
@@ -146,7 +154,7 @@ module.exports = function (RED: any) {
                         : `open:${state.openPercent}%`);
                 }
                 if (isTemperatureState(state)) {
-                    statuses.push(`T:${state.temperatureAmbientCelsius}C`);
+                    statuses.push(`T:${state.thermostatTemperatureAmbient}C`);
                 }
                 if (isHumidityState(state)) {
                     statuses.push(`H:${state.humidityAmbientPercent}%`);
@@ -204,7 +212,7 @@ module.exports = function (RED: any) {
                     to: 'openPercent',
                 }, {
                     from: 'temperature',
-                    to: 'temperatureAmbientCelsius',
+                    to: 'thermostatTemperatureAmbient',
                 }, {
                     from: 'humidity',
                     to: 'humidityAmbientPercent',
@@ -216,8 +224,8 @@ module.exports = function (RED: any) {
             return isHumiditySetting(deviceConfig) && 'humidityAmbientPercent' in state;
         }
 
-        function isTemperatureState(state: any): state is TemperatureControlDevice['state'] {
-            return isTemperatureControl(deviceConfig) && 'temperatureAmbientCelsius' in state;
+        function isTemperatureState(state: any): state is TemperatureSettingDevice['state'] {
+            return isTemperatureSetting(deviceConfig) && 'thermostatTemperatureAmbient' in state;
         }
 
         function isSensorState(state: any): state is SensorStateDevice['state'] {
