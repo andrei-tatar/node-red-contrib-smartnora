@@ -105,7 +105,7 @@ export class LocalExecution {
 
     registerDeviceForLocalExecution(device: FirebaseDevice): Observable<never> {
         if (!deviceSupportsLocalExecution(device.device)) {
-            LocalExecution.logger?.trace(`[nora][local-execution] ${device.device.name}, doesn't support local execution, skipping`);
+            LocalExecution.logger?.trace(`[nora][local-execution] ${device.device.name.name}, doesn't support local execution, skipping`);
             return EMPTY;
         }
 
