@@ -5,7 +5,7 @@ import {
 } from '@andrei-tatar/nora-firebase-common';
 import { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { DatabaseReference, get, getDatabase, onValue, ref, remove, set } from 'firebase/database';
+import { DatabaseReference, getDatabase, onValue, ref, remove, set } from 'firebase/database';
 import {
     BehaviorSubject, concat, defer, merge, Observable,
     of, Subject, throwError, timer
@@ -156,22 +156,18 @@ export class FirebaseSync {
     }
 
     async sendNotification(notification: WebpushNotification) {
-        if (await this.hasDeviceTokens()) {
-            await this.queueJob({
-                type: 'notify',
-                notification,
-            });
-        }
+        await this.queueJob({
+            type: 'notify',
+            notification,
+        });
     }
 
     async sendGoogleHomeNotification(deviceId: string, notification: ObjectDetectionNotification) {
-        if (await this.hasDeviceTokens()) {
-            await this.queueJob({
-                type: 'notify-home',
-                deviceId,
-                notification,
-            });
-        }
+        await this.queueJob({
+            type: 'notify-home',
+            deviceId,
+            notification,
+        });
     }
 
     watchForActions(identifier: string): Observable<string> {
@@ -189,12 +185,6 @@ export class FirebaseSync {
                 return v;
             }),
         );
-    }
-
-    private async hasDeviceTokens() {
-        const tokensRef = ref(this.db, `user/${this.uid}/device_tokens`);
-        const tokens: string[] | null = await get(tokensRef).then(s => s.val());
-        return !!tokens?.length;
     }
 
     private async syncDevices(devices: Device[]) {
