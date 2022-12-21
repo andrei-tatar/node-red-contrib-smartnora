@@ -47,6 +47,10 @@ export function getSafeUpdate({
             continue;
         }
 
+        if (typeof v === 'undefined') {
+            continue;
+        }
+
         let updateValue: any = v;
         const updateKey = mapping?.find(m => m.from === key)?.to ?? key;
         const currentStatePath = statePath ? `${statePath}.${String(updateKey)}` : String(updateKey);
