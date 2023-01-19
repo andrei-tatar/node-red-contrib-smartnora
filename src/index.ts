@@ -136,6 +136,30 @@ export class HttpError extends Error {
     }
 }
 
-export function getHash(input: string): string {
+export function getHash(input: string | object): string {
+    if (typeof input !== 'string') {
+        input = JSON.stringify(flattenObject(input));
+    }
     return createHash('sha256').update(input).digest('base64');
+}
+
+function flattenObject(input: object): any {
+    switch (typeof input) {
+        case 'string':
+        case 'boolean':
+        case 'number':
+            return input;
+    }
+
+    if (Array.isArray(input)) {
+        return input;
+    }
+
+    const entries = Object.entries(input);
+    entries.sort((a, b) => a[0].localeCompare(b[0]));
+    return entries.map(([key, value]) => [key, flattenObject(value)]);
+}
+
+export function cloneDeep<T>(input: T): T {
+    return JSON.parse(JSON.stringify(input));
 }

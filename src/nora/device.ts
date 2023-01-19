@@ -4,14 +4,16 @@ import {
 } from '@andrei-tatar/nora-firebase-common';
 import { ObjectDetectionNotification } from '@andrei-tatar/nora-firebase-common';
 import { child, onValue } from 'firebase/database';
-import { firstValueFrom, merge, Observable, Subject } from 'rxjs';
-import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
-import { Logger, singleton } from '..';
+import { concat, defer, firstValueFrom, merge, NEVER, Observable, Subject } from 'rxjs';
+import { distinctUntilChanged, filter, finalize, map, tap } from 'rxjs/operators';
+import { cloneDeep, getHash, Logger, singleton } from '..';
 import { AsyncCommandsRegistry } from './async-commands.registry';
 import { getSafeUpdate } from './safe-update';
 import { FirebaseSync } from './sync';
 
 export class FirebaseDevice<T extends Device = Device> {
+    private static updatedStates = new Map<string, string>();
+
     private connectedAndSynced = false;
 
     private readonly _state$ = new Observable<{
@@ -54,10 +56,11 @@ export class FirebaseDevice<T extends Device = Device> {
         this._localStateUpdate$,
     );
 
-    readonly connectedAndSynced$ = new Observable<never>(_ => {
+    readonly connectedAndSynced$ = defer(() => {
         this.connectedAndSynced = true;
-        return () => this.connectedAndSynced = false;
+        return concat(this.syncStateIfChanged(), NEVER);
     }).pipe(
+        finalize(() => this.connectedAndSynced = false),
         singleton(),
     );
 
@@ -174,11 +177,23 @@ export class FirebaseDevice<T extends Device = Device> {
             }
 
             this.device.state = state;
-            if (this.connectedAndSynced) {
-                await this.sync.updateState(this.device.id, safeUpdate);
-            }
+        }
+
+        if (this.connectedAndSynced) {
+            await this.syncStateIfChanged();
         }
 
         return true;
+    }
+
+    private async syncStateIfChanged() {
+        const state = cloneDeep(this.device.state);
+        const lastUpdateHash = FirebaseDevice.updatedStates.get(this.device.id);
+        const currentHash = getHash(state);
+
+        if (!lastUpdateHash || lastUpdateHash !== currentHash) {
+            await this.sync.updateState(this.device.id, state);
+            FirebaseDevice.updatedStates.set(this.device.id, currentHash);
+        }
     }
 }
