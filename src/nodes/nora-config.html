@@ -1,10 +1,10 @@
 <script type="text/javascript">
     (function () {
-        const noraOrigin = 'https://smart-nora.eu';
+        const noraOrigins = ['https://smart-nora.eu', 'https://nora-firebase.firebaseapp.com'];
         let ssoWindow = null;
         let handler = null;
         window.addEventListener('message', ev => {
-            if (ev.origin.startsWith(noraOrigin) && handler) handler(ev.data);
+            if (noraOrigins.some(s => ev.origin.startsWith(s)) && handler) handler(ev.data);
         });
         RED.nodes.registerType('noraf-config', {
             category: 'config',
@@ -79,7 +79,7 @@
                         'height=600',
                     ].join(',');
                     if (ssoWindow === null || ssoWindow.closed) {
-                        ssoWindow = window.open(`${noraOrigin}/my-nora/sso`, '_blank', features);
+                        ssoWindow = window.open(`${noraOrigins[0]}/my-nora/sso`, '_blank', features);
                     } else {
                         ssoWindow.focus();
                     }
