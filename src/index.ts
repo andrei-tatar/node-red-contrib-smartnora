@@ -44,7 +44,7 @@ export interface ConfigNode {
     email: string;
     password?: string;
     sso?: string;
-    group?: string;
+    group: string;
     valid: boolean;
     localExecution: boolean;
     storeStateInContext: boolean;

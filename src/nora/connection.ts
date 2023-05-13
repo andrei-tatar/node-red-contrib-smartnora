@@ -38,7 +38,6 @@ export class FirebaseConnection {
             cached = this.configs[key] = this.getAppFromConfig(config)
                 .pipe(
                     map(app => new FirebaseSync(app, config.group, this.logger)),
-                    finalize(() => delete this.configs[key]),
                     retry({
                         delay: err => {
                             const seconds = Math.round(Math.random() * 120) / 2 + 30;
@@ -47,6 +46,7 @@ export class FirebaseConnection {
                             return timer(seconds * 1000);
                         }
                     }),
+                    finalize(() => delete this.configs[key]),
                     publishReplayRefCountWithDelay(5000),
                 );
         }

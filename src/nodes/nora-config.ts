@@ -1,5 +1,6 @@
 import { TwoFactor } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
+import { getId } from './util';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-config',
@@ -8,7 +9,7 @@ module.exports = function (RED: any) {
             this.email = this.credentials && this.credentials.email;
             this.password = this.credentials && this.credentials.password;
             this.sso = this.credentials && this.credentials.sso;
-            this.group = (config.group || '<default>').trim();
+            this.group = (config.group || getId(config)).trim();
             this.valid = !!this.email?.length && (!!this.password?.length || !!this.sso?.length);
             this.localExecution = config.localexecution ?? true;
             this.storeStateInContext = config.storeStateInContext ?? false;

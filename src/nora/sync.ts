@@ -106,7 +106,7 @@ export class FirebaseSync {
 
     constructor(
         private app: FirebaseApp,
-        private readonly group: string = '<default>',
+        private readonly group: string,
         private logger: Logger | null,
     ) {
         const user = getAuth(this.app).currentUser;

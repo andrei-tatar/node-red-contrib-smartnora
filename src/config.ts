@@ -1,6 +1,6 @@
 
 export interface NoraConfig {
-    group?: string;
+    group: string;
     email: string;
     password?: string;
     sso?: string;
