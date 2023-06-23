@@ -9,6 +9,7 @@ import { RateLimitingError } from '../nora/sync';
 import { getClose, getId, getValue, handleNodeInput } from './util';
 
 const JSON_ACTION_PREFIX = 'json:';
+const LINK_ACTION_PREFIX = 'https://';
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-notify', function (this: NodeInterface, config: any) {
@@ -98,7 +99,7 @@ module.exports = function (RED: any) {
                 if (typeof msg.payload === 'object' && Array.isArray(msg.payload.actions) && msg.payload.actions.length) {
                     msg.payload.actions = msg.payload.actions.map((v: any) => ({
                         ...v,
-                        action: typeof v.action === 'string'
+                        action: typeof v.action === 'string' && v.action.startsWith(LINK_ACTION_PREFIX)
                             ? v.action
                             : JSON_ACTION_PREFIX + JSON.stringify(v.action)
                     }));
