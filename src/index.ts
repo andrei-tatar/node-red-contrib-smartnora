@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { Device } from '@andrei-tatar/nora-firebase-common';
-import { concat, EMPTY, MonoTypeOperatorFunction, of, ReplaySubject, timer } from 'rxjs';
-import { filter, map, scan, share, switchMap } from 'rxjs/operators';
+import { concat, defer, EMPTY, MonoTypeOperatorFunction, of, OperatorFunction, ReplaySubject, timer } from 'rxjs';
+import { filter, map, retry, scan, share, switchMap } from 'rxjs/operators';
 
 export interface NodeMessage extends Record<string, any> {
     payload: any;
@@ -61,6 +61,34 @@ export function publishReplayRefCountWithDelay<T>(delay: number): MonoTypeOperat
         resetOnError: true,
         resetOnRefCountZero: () => timer(delay),
     });
+}
+
+export function retryWithBackoff<T>(config?: RetryWithBackoffConfig): MonoTypeOperatorFunction<T> {
+    const { initialInterval = 100, maxRetryCount = 6, logError, shouldRetry } = config ?? {};
+    return retry({
+        delay: (error, retryCount) => {
+            logError?.(error);
+            const attemptRetry = shouldRetry?.(error) ?? true;
+            if (attemptRetry) {
+                return timer(Math.pow(2, retryCount) * initialInterval);
+            }
+            throw error;
+        },
+        count: maxRetryCount,
+        resetOnSuccess: true,
+    });
+}
+
+interface RetryWithBackoffConfig {
+    initialInterval?: number;
+    maxRetryCount?: number;
+    logError?: (err: any) => void;
+    shouldRetry?: (err: any) => boolean;
+}
+
+
+export function scanWithFactory<T, A>(next: (accumulator: A, item: T) => A, factory: () => A): OperatorFunction<T, A> {
+    return source => defer(() => scan(next, factory())(source));
 }
 
 const NO_EVENT: unknown = Symbol('no-event');

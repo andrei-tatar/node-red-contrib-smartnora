@@ -32,8 +32,12 @@ export function getValue(RED: any, node: any, value: any, type: any) {
     }
 }
 
+export function escapeFirebasePath(value: string): string {
+    return value.replace(/[.#$\[\]]/g, ':');
+}
+
 export function getId({ id }: { id: string }) {
-    return id.replace('.', ':');
+    return escapeFirebasePath(id);
 }
 
 export function getNumberOrDefault(a: any, defaultValue = 0) {

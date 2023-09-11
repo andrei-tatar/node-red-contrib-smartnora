@@ -7,15 +7,16 @@ import { FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { DatabaseReference, getDatabase, onValue, ref, remove, set } from 'firebase/database';
 import {
-    BehaviorSubject, concat, defer, merge, Observable,
-    of, Subject, throwError, timer
+    BehaviorSubject, combineLatest, concat, defer, EMPTY, merge, Observable, of, Subject, throwError, timer
 } from 'rxjs';
 import {
-    debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements,
-    map,
-    mergeMap, retry, switchMap, tap, withLatestFrom,
+    catchError, concatMap, debounceTime, delayWhen, distinctUntilChanged, groupBy, ignoreElements, map, mergeMap,
+    retry, startWith, switchMap, tap,
 } from 'rxjs/operators';
-import { getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow, singleton } from '..';
+import {
+    getHash, HttpError, Logger, publishReplayRefCountWithDelay, rateLimitSlidingWindow,
+    retryWithBackoff, scanWithFactory, singleton
+} from '..';
 import { API_ENDPOINT, USER_AGENT } from '../config';
 import { fetch } from './fetch';
 import { FirebaseDevice } from './device';
@@ -71,20 +72,30 @@ export class FirebaseSync {
                 this.mergeJob
             )
         )),
-        mergeMap(job => this.handleJob(job), 1),
+        mergeMap(job =>
+            concat(
+                this.handleJob(job),
+                defer(() => {
+                    job.resolve();
+                    return EMPTY;
+                }),
+            ).pipe(
+                catchError(err => {
+                    job.reject(err);
+                    return EMPTY;
+                })), 1),
         ignoreElements(),
         publishReplayRefCountWithDelay(1000),
     );
 
-    private groupUpdateHeartbeat$ = timer(0, HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
-        withLatestFrom(this.getOffset()),
-        map(([_, { offset }]) => offset),
-        switchMap(offset => set(this.groupHeartbeat, new Date().getTime() + offset)),
-        retry({
-            delay: err => {
-                this.logger?.warn(`nora: while sending heartbeat: ${err.message}\n${err.stack}`);
-                return of(err);
-            }
+    private groupUpdateHeartbeat$ = combineLatest([
+        this.getOffset(),
+        timer(0, HEARTBEAT_TIMEOUT_SEC * 1000),
+    ]).pipe(
+        map(([{ offset }]) => new Date().getTime() + offset),
+        switchMap(timestamp => set(this.groupHeartbeat, timestamp)),
+        retryWithBackoff({
+            logError: (err) => this.logger?.warn(`nora: while sending heartbeat: ${err.message}`),
         }),
     ).pipe(ignoreElements());
 
@@ -248,43 +259,36 @@ export class FirebaseSync {
         }
     }
 
-    private async handleJob({ job, reject, resolve }: JobInQueue) {
-        try {
-            switch (job.type) {
-                case 'sync':
-                    await this.doHttpCall({
-                        path: 'sync',
-                        body: job.devices,
-                    });
-                    break;
+    private handleJob({ job }: JobInQueue) {
+        switch (job.type) {
+            case 'sync':
+                return this.doHttpCall({
+                    path: 'sync',
+                    body: job.devices,
+                });
 
-                case 'report-state':
-                    await this.doHttpCall({
-                        path: 'update-state',
-                        query: `id=${encodeURIComponent(job.deviceId)}`,
-                        body: job.update,
-                    });
-                    break;
+            case 'report-state':
+                return this.doHttpCall({
+                    path: 'update-state',
+                    query: `id=${encodeURIComponent(job.deviceId)}`,
+                    body: job.update,
+                });
 
-                case 'notify':
-                    await this.doHttpCall({
-                        path: 'notify',
-                        body: job.notification,
-                    });
-                    break;
+            case 'notify':
+                return this.doHttpCall({
+                    path: 'notify',
+                    body: job.notification,
+                });
 
-                case 'notify-home':
-                    await this.doHttpCall({
-                        path: 'home-notify',
-                        body: job.notification,
-                        query: `id=${encodeURIComponent(job.deviceId)}`,
-                    });
-                    break;
-            }
+            case 'notify-home':
+                return this.doHttpCall({
+                    path: 'home-notify',
+                    body: job.notification,
+                    query: `id=${encodeURIComponent(job.deviceId)}`,
+                });
 
-            resolve();
-        } catch (err) {
-            reject(err);
+            default:
+                return EMPTY;
         }
     }
 
@@ -298,19 +302,17 @@ export class FirebaseSync {
         });
     }
 
-    private async doHttpCall({
+    private doHttpCall({
         path,
         query = '',
         body,
-        tries = 3,
     }: {
         path: string;
         query?: string;
         method?: string;
         body: {};
-        tries?: number;
     }) {
-        while (tries--) {
+        return defer(async () => {
             const user = getAuth(this.app).currentUser;
             if (!user) {
                 throw new UnauthenticatedError();
@@ -328,16 +330,16 @@ export class FirebaseSync {
                 body,
             });
             if (!response.ok) {
-                const shouldRetry = this.shouldRetryRequest(response.status);
-                if (!shouldRetry || !tries) {
-                    throw new HttpError(response.status, await response.text());
-                }
-                const delay = Math.round(Math.random() * 20) * 100 + 300;
-                await new Promise(resolve => setTimeout(resolve, delay));
-                continue;
+                throw new HttpError(response.status, await response.text());
             }
             return response;
-        }
+        }).pipe(
+            retryWithBackoff({
+                maxRetryCount: 3,
+                shouldRetry: (err) => !(err instanceof HttpError) || this.shouldRetryRequest(err.statusCode),
+            }),
+            ignoreElements(),
+        );
     }
 
     private shouldRetryRequest(status: number) {
@@ -368,12 +370,28 @@ export class FirebaseSync {
             });
             const { offset } = await response.json();
 
-            if (Math.abs(offset) > 5000) {
-                this.logger?.warn(`nora: check date/time. drift is ${Math.round(offset / 10) / 100} sec`);
-            }
-
             return { offset };
-        });
+        }).pipe(
+            concatMap((value) => timer(0, HEARTBEAT_TIMEOUT_SEC * 1000).pipe(
+                scanWithFactory((ctx, _) => {
+                    // get offset again when time changes with more than a max error in one period
+                    // this is in order to recalibrate server offset when time updates
+                    const now = new Date().getTime();
+
+                    if (ctx.last !== -1) {
+                        const delta = Math.abs(((now - ctx.last) / 1000) - HEARTBEAT_TIMEOUT_SEC);
+                        if (delta > 10) {
+                            throw new Error('offset changed');
+                        }
+                    }
+
+                    ctx.last = now;
+                    return ctx;
+                }, () => ({ last: -1 })),
+                ignoreElements(),
+                startWith(value),
+            )),
+        );
     }
 }
 
