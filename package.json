@@ -21,23 +21,23 @@
     "node": ">=12.19"
   },
   "dependencies": {
-    "@andrei-tatar/nora-firebase-common": "^1.12.1",
+    "@andrei-tatar/nora-firebase-common": "^1.12.2",
     "cbor": "^8.1.0 <=8.1.0",
-    "firebase": "^10.0.0",
+    "firebase": "^10.3.1",
     "rxjs": "^7.8.1",
-    "tslib": "^2.6.0"
+    "tslib": "^2.6.2"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.5",
+    "@types/chai": "^4.3.6",
     "@types/mocha": "^10.0.1",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "chai": "^4.3.7",
-    "eslint": "^8.44.0",
-    "eslint-plugin-import": "^2.27.5",
+    "@typescript-eslint/eslint-plugin": "^6.6.0",
+    "@typescript-eslint/parser": "^6.6.0",
+    "chai": "^4.3.8",
+    "eslint": "^8.49.0",
+    "eslint-plugin-import": "^2.28.1",
     "mocha": "^10.2.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.1.6"
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "clean": "rm -rf build",
