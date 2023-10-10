@@ -24,7 +24,7 @@ This module provides a set of nodes in Node-RED for Google smart home Action int
 
 ## Subscription
 
-Yes, starting with the 1st of December, a paid subscription is required to have more than 5 devices synchronized with Google Home. This was added to cover the cloud costs of the service, the business overhead (starting and owning a business, accounting, taxes, VAT, payment processor fees, etc.), offer a bit of support to the ongoing development and hopefully a beer or two at the end of the month 🍻.
+A paid subscription is required to have more than 5 devices synchronized with Google Home. This was added to cover the cloud costs of the service, the business overhead (starting and owning a business, accounting, taxes, VAT, payment processor fees, etc.), offer a bit of support to the ongoing development and hopefully a beer or two at the end of the month 🍻.
 
 There are two ways of using the service:
 1. Free. This will limit the devices synced with Google to **5**. There is no way to determine which will be synced if you have more than 5 devices defined in node-red (note that not all nodes are a device).
@@ -34,7 +34,7 @@ Once you create a subscription, you can cancel/change it at any time from https:
 
 Canceling a subscription maintains it active until the end of the paid period, it's not immediate. So if you pay for one year and don't want a recurring payment, you can just cancel it and the subscription will remain active for the rest of the year. 
 
-**Please use first the free subscription**, check that NORA works on your setup, play with the devices you may want to use. 
+**Please use first the free subscription**, check that NORA works on your setup, play with the devices you may want to use and only once you are satisfied with everything, upgrade to a paid subscription. 
 
 ## Supported nodes
 
