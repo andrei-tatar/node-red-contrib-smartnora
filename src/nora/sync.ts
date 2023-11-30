@@ -199,7 +199,7 @@ export class FirebaseSync {
     }
 
     private async syncDevices(devices: Device[]) {
-        const syncAttributes = devices.map(({ id, attributes, name }) => ({ id, attributes, name }));
+        const syncAttributes = devices.map(({ state, ...allExceptState }) => allExceptState);
         syncAttributes.sort((a, b) => a.id.localeCompare(b.id));
 
         const hash = getHash(syncAttributes);
