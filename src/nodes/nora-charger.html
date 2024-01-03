@@ -24,6 +24,9 @@
             isRechargeable: {
                 value: true,
             },
+            queryOnlyEnergyStorage: {
+                value: false,
+            },
             energyStorageDistanceUnitForUX: {
                 value: 'KILOMETERS',
             },
@@ -95,6 +98,10 @@
     <div class="form-row">
         <label style="width:auto" for="node-input-isRechargeable"><i class="fa fa-battery-half"></i> Is rechargeable </label>
         <input type="checkbox" id="node-input-isRechargeable" style="display:inline-block; width:auto; vertical-align:top;">
+    </div>
+    <div class="form-row">
+        <label style="width:auto" for="node-input-queryOnlyEnergyStorage"><i class="fa fa-question"></i> Query only </label>
+        <input type="checkbox" id="node-input-queryOnlyEnergyStorage" style="display:inline-block; width:auto; vertical-align:top;">
     </div>
     <div class="form-row">
         <label for="node-input-energyStorageDistanceUnitForUX" style="width:auto"><i class="fa fa-car"></i> Energy Distance Unit</label>

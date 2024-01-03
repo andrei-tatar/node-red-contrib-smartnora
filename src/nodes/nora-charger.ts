@@ -1,6 +1,14 @@
-import { EnergyStorageDevice } from '@andrei-tatar/nora-firebase-common';
+import { EnergyStorageDevice, EneryStorageCapacity } from '@andrei-tatar/nora-firebase-common';
 import { ConfigNode, NodeInterface } from '..';
 import { registerNoraDevice } from './util';
+
+const SHORT_UNIT = new Map<string, string>([
+    ['SECONDS', 'sec'],
+    ['MILES', 'mi'],
+    ['KILOMETERS', 'km'],
+    ['PERCENTAGE', '%'],
+    ['KILOWATT_HOURS', 'kWh'],
+]);
 
 module.exports = function (RED: any) {
     RED.nodes.registerType('noraf-charger', function (this: NodeInterface, config: any) {
@@ -25,7 +33,7 @@ module.exports = function (RED: any) {
                     descriptiveCapacityRemaining: 'MEDIUM',
                 },
                 attributes: {
-                    queryOnlyEnergyStorage: false,
+                    queryOnlyEnergyStorage: !!config.queryOnlyEnergyStorage,
                     energyStorageDistanceUnitForUX: config.energyStorageDistanceUnitForUX,
                     isRechargeable: !!config.isRechargeable,
                 },
@@ -37,16 +45,19 @@ module.exports = function (RED: any) {
                 const states: string[] = [];
 
                 if (state.capacityRemaining?.length) {
-                    states.push(`R:${state.capacityRemaining[0].rawValue}${state.capacityRemaining[0].unit}`);
+                    states.push(`R:${humanReadable(state.capacityRemaining[0])}`);
                 } else {
                     states.push(state.descriptiveCapacityRemaining);
                 }
+
                 if (state.capacityUntilFull?.length) {
-                    states.push(`F:${state.capacityUntilFull[0].rawValue}${state.capacityUntilFull[0].unit}`);
+                    states.push(`F:${humanReadable(state.capacityUntilFull[0])}`);
                 }
+
                 if (state.isCharging) {
                     states.push('charging');
                 }
+
                 if (state.isPluggedIn) {
                     states.push('plugged-in');
                 }
@@ -63,3 +74,7 @@ module.exports = function (RED: any) {
     });
 };
 
+function humanReadable(cap: EneryStorageCapacity) {
+    const shortUnit = SHORT_UNIT.get(cap.unit);
+    return `${cap.rawValue}${shortUnit}`;
+}
