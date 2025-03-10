@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-smartnora",
-  "version": "1.23.0",
+  "version": "1.24.0",
   "description": "Google Smart Home integration via Smart Nora https://smart-nora.eu/",
   "keywords": [
     "node-red",
