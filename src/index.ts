@@ -24,7 +24,7 @@ export interface NodeInterface {
         fill: 'red' | 'green' | 'yellow' | 'blue' | 'grey';
         text: string;
         shape: 'ring' | 'dot';
-    } | {}): void;
+    } | object): void;
 
     context(): {
         get<T>(key: string): T;

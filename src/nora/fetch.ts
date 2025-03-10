@@ -39,11 +39,8 @@ export async function fetch<T = any>(url: string, { method, agent, headers, body
             {
                 ...headers,
                 ...(bodyContent ? {
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'content-type': 'application/json',
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'content-length': bodyContent.length,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'content-encoding': 'gzip'
                 } : {})
             },

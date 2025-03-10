@@ -127,7 +127,6 @@ module.exports = function (RED: any) {
                         key: i.v,
                         names: [{
                             lang: config.language,
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             name_synonym: i.n.split(',').map(s => s.trim()),
                         }],
                     })),
@@ -158,7 +157,6 @@ module.exports = function (RED: any) {
                         key: i.v,
                         names: [{
                             lang: config.appsLanguage,
-                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             name_synonym: i.n.split(',').map(s => s.trim()),
                         }],
                     }))

@@ -143,7 +143,7 @@ class FirebaseContextStorage {
     }
 
     private encode(value: string) {
-        return value.replace(/[\/\.#$\[\]]/g, m => ENCODE_MAP.get(m) ?? m);
+        return value.replace(/[/.#$[\]]/g, m => ENCODE_MAP.get(m) ?? m);
     }
 
     private decode(value: string) {

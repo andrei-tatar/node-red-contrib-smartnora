@@ -87,7 +87,7 @@ module.exports = function (RED: any) {
                         spectrumRgb: 0,
                     };
                     break;
-                case 'temperature':
+                case 'temperature': {
                     const tempMin = getNumberOrDefault(config.temperaturemin, 2700);
                     const tempMax = getNumberOrDefault(config.temperaturemax, 5500);
                     deviceConfig.attributes = {
@@ -101,6 +101,7 @@ module.exports = function (RED: any) {
                         temperatureK: tempMin,
                     };
                     break;
+                }
             }
         }
 
@@ -115,19 +116,19 @@ module.exports = function (RED: any) {
                     statuses.push(`${state.brightness}`);
                 }
 
-                if (isHsvColor(deviceConfig, state) && 'spectrumHsv' in state?.color) {
+                if (isHsvColor(deviceConfig, state) && 'spectrumHsv' in state.color) {
                     const hue = state.color.spectrumHsv.hue;
                     const saturation = (state.color.spectrumHsv.saturation ?? 0) * 100;
                     const value = (state.color.spectrumHsv.value ?? 0) * 100;
                     statuses.push(R`H:${hue}° S:${saturation}% V:${value}%`);
                 }
 
-                if (isRgbColor(deviceConfig, state) && 'spectrumRgb' in state?.color) {
+                if (isRgbColor(deviceConfig, state) && 'spectrumRgb' in state.color) {
                     const rgbColor = `#${state.color.spectrumRgb.toString(16).padStart(6, '0')}`;
                     statuses.push(`${rgbColor}`);
                 }
 
-                if (isTemperatureColor(deviceConfig, state) && 'temperatureK' in state?.color) {
+                if (isTemperatureColor(deviceConfig, state) && 'temperatureK' in state.color) {
                     statuses.push(`${state.color.temperatureK}K`);
                 }
 

@@ -48,7 +48,7 @@ export class LocalExecution {
                     params: any;
                 }>(req);
                 switch (body.type) {
-                    case 'EXECUTE':
+                    case 'EXECUTE': {
                         LocalExecution.logger?.trace(`[nora][local-execution] Executing ${body.command} - device: ${body.deviceId}`);
                         const device = this.devices$.value.find(d => d.cloudId === body.deviceId);
                         try {
@@ -66,10 +66,10 @@ export class LocalExecution {
                             }
                         }
                         return;
+                    }
                 }
             }
-
-            // eslint-disable-next-line @typescript-eslint/naming-convention
+             
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('NOT FOUND');
         });
@@ -145,7 +145,6 @@ export class LocalExecution {
 
     private sendJson(res: ServerResponse, body: object) {
         res.writeHead(200, {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             'content-type': 'application/json'
         });
         res.write(JSON.stringify(body));

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+
 import { validate } from '@andrei-tatar/nora-firebase-common';
 import * as chai from 'chai';
 import { getSafeUpdate } from './safe-update';

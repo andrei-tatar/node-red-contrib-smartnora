@@ -8,6 +8,7 @@ export interface NoraConfig {
 
 export const API_ENDPOINT = 'https://api.smart-nora.eu';
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { name, version }: { name: string; version: string } = require('../package.json');
 const USE_NAME = name.split('-').slice(-1)[0];
 export const USER_AGENT = `${USE_NAME}/${version}`;

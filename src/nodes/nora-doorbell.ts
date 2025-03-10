@@ -45,7 +45,6 @@ module.exports = function (RED: any) {
 
                 if (Object.entries(objects).length) {
                     const notification: ObjectDetectionNotification = {
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         ObjectDetection: {
                             priority: 0,
                             detectionTimestamp: new Date().getTime(),

@@ -28,13 +28,11 @@ module.exports = function (RED: any) {
                 availableArmLevels: armLevels && armLevels?.length > 0
                     ? {
                         levels: armLevels.map(({ v, n }) => ({
-                            /* eslint-disable */
                             level_name: v,
                             level_values: [{
                                 level_synonym: n.split(',').map(p => p.trim()),
                                 lang: config.language,
                             }],
-                            /* eslint-enable */
                         })),
                         ordered: true,
                     }

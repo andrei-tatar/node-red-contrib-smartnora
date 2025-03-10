@@ -16,7 +16,7 @@ export function convertValueType(RED: any, value: any, type: any,
             if (parts.length === 0) {
                 throw new Error();
             }
-        } catch (err) {
+        } catch (_err) {
             value = defaultValue;
             type = defaultType;
         }
@@ -33,7 +33,7 @@ export function getValue(RED: any, node: any, value: any, type: any) {
 }
 
 export function escapeFirebasePath(value: string): string {
-    return value.replace(/[.#$\[\]]/g, ':');
+    return value.replace(/[.#$[\]]/g, ':');
 }
 
 export function getId({ id }: { id: string }) {
@@ -243,7 +243,6 @@ export function handleNodeInput(opts: {
     });
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export function R(template: TemplateStringsArray, ...substiutions: any[]): string {
     return String.raw(template, ...substiutions.map(v => {
         if (typeof v === 'number') {

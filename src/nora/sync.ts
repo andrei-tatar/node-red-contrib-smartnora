@@ -199,7 +199,7 @@ export class FirebaseSync {
     }
 
     private async syncDevices(devices: Device[]) {
-        const syncAttributes = devices.map(({ state, ...allExceptState }) => allExceptState);
+        const syncAttributes = devices.map(({ state: _, ...allExceptState }) => allExceptState);
         syncAttributes.sort((a, b) => a.id.localeCompare(b.id));
 
         const hash = getHash(syncAttributes);
@@ -310,7 +310,7 @@ export class FirebaseSync {
         path: string;
         query?: string;
         method?: string;
-        body: {};
+        body: object;
     }) {
         return defer(async () => {
             const user = getAuth(this.app).currentUser;
@@ -324,7 +324,7 @@ export class FirebaseSync {
                 agent: this.agent,
                 headers: {
                     'authorization': `Bearer ${token}`,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                     
                     'user-agent': `${USER_AGENT}:${this.uid}`,
                 },
                 body,
@@ -364,7 +364,6 @@ export class FirebaseSync {
                 agent: this.agent,
                 headers: {
                     'authorization': `Bearer ${token}`,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
                     'user-agent': `${USER_AGENT}:${this.uid}`,
                 },
             });
