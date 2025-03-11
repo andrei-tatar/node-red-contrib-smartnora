@@ -18,11 +18,11 @@
     "url": "git+https://github.com/andrei-tatar/node-red-contrib-smartnora.git"
   },
   "engines": {
-    "node": ">=12.19"
+    "node": ">=18"
   },
   "dependencies": {
     "@andrei-tatar/nora-firebase-common": "^1.13.0",
-    "cbor": "^8.1.0 <=8.1.0",
+    "cbor": "^10.0.3",
     "firebase": "^11.4.0",
     "rxjs": "^7.8.2",
     "tslib": "^2.8.1"
@@ -36,7 +36,7 @@
     "mocha": "^11.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
-    "typescript-eslint": "^8.26.0"
+    "typescript-eslint": "^8.26.1"
   },
   "scripts": {
     "clean": "rm -rf build",
