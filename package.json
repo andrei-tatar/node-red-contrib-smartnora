@@ -22,28 +22,29 @@
   },
   "dependencies": {
     "@andrei-tatar/nora-firebase-common": "^1.13.0",
-    "cbor": "^10.0.3",
-    "firebase": "^11.4.0",
+    "cbor": "^9.0.2",
+    "firebase": "^11.10.0",
     "rxjs": "^7.8.2",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.22.0",
-    "@types/chai": "^5.2.0",
+    "@eslint/js": "^9.39.1",
+    "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.10",
-    "chai": "^4.5.0",
-    "eslint": "^9.22.0",
-    "mocha": "^11.1.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "^8.26.1"
+    "@types/node": "^24.10.1",
+    "chai": "^6.2.1",
+    "eslint": "^9.39.1",
+    "mocha": "^11.7.5",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0"
   },
   "scripts": {
     "clean": "rm -rf build",
     "lint": "eslint",
     "build": "npm run lint && tsc && cp src/nodes/*.html build/nodes/ && cp -r src/nodes/icons build/nodes/icons",
     "pub": "npm run clean && npm run build && npm test && npm publish --access=public --registry https://registry.npmjs.org/",
-    "test": "mocha --reporter spec --require ts-node/register 'src/**/*.test.ts'"
+    "test": "mocha"
   },
   "author": "Andrei Tatar",
   "license": "ISC",
