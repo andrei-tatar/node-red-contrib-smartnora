@@ -1,4 +1,4 @@
 /*
 !/build
 !/examples
-/build/tsconfig.tsbuildinfo
+*.tsbuildinfo

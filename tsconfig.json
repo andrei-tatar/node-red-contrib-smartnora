@@ -12,7 +12,8 @@
     "importHelpers": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "removeComments": true
+    "removeComments": true,
+    "rootDir": "./src"
   },
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/*.test.ts", "*.js"]
 }
