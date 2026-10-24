@@ -13,8 +13,8 @@ module.exports = function (RED: any) {
         }
 
         const availableModes = config.modes.split(',');
-        const rangeMin = parseInt(config.rangeMin, 10);
-        const rangeMax = parseInt(config.rangeMax, 10);
+        const rangeMin = parseFloat(config.rangeMin);
+        const rangeMax = parseFloat(config.rangeMax);
 
         registerNoraDevice<TemperatureSettingDevice>(this, RED, config, {
             deviceConfig: {
@@ -28,7 +28,7 @@ module.exports = function (RED: any) {
                 attributes: {
                     availableThermostatModes: availableModes,
                     thermostatTemperatureUnit: config.unit,
-                    bufferRangeCelsius: parseInt(config.bufferRangeCelsius, 10) || undefined,
+                    bufferRangeCelsius: parseFloat(config.bufferRangeCelsius) || undefined,
                     commandOnlyTemperatureSetting: config.commandOnly ?? undefined,
                     queryOnlyTemperatureSetting: config.queryOnly ?? undefined,
                     thermostatTemperatureRange: !isNaN(rangeMin) && !isNaN(rangeMax)
